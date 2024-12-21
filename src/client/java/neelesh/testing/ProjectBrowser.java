@@ -20,18 +20,18 @@ import java.util.concurrent.Executors;
 import static neelesh.testing.Testing.MOD_ID;
 
 public class ProjectBrowser extends Screen {
-    private final Identifier[] ICON_TEXTURE_ID = new Identifier[TestingClient.ROWS_ON_PAGE];
+    private Identifier[] ICON_TEXTURE_ID = new Identifier[TestingClient.ROWS_ON_PAGE];
     private int scrollAmount = 0;
     private TextFieldWidget searchBox;
     private ButtonWidget[] installButtons = new ButtonWidget[TestingClient.ROWS_ON_PAGE];
-    private final ButtonWidget[] projectScreenButtons = new ButtonWidget[TestingClient.ROWS_ON_PAGE];
+    private ButtonWidget[] projectScreenButtons = new ButtonWidget[TestingClient.ROWS_ON_PAGE];
     private Screen prevScreen;
     private static Thread t;
     private static Thread searchThread;
     private final ButtonWidget doneButton = ButtonWidget.builder(Text.of("Done"), button -> {
         client.setScreen(prevScreen);
     }).build();
-    private final ModInfo[] INFO = TestingClient.getModInformation();
+    private ModInfo[] INFO = TestingClient.getModInformation();
     private final ProjectType projectType;
     private static int n = 0;
     //private boolean showingFilterOptions;
@@ -132,9 +132,14 @@ public class ProjectBrowser extends Screen {
             ButtonWidget buttonWidget = ButtonWidget.builder(Text.of("Install"), button -> {
                 Thread thread2 = new Thread(() -> {
                     TestingClient.downloadVersion(INFO[finalI].getSlug(), projectType);
+                    INFO[finalI].setInstalled(true);
+                    if (t != null) {
+                        t.interrupt();
+                    }
                     t = new Thread(() -> {
                         TestingClient.updateInstalled(projectType);
                     });
+                    t.start();
                 });
                 thread2.start();
             }).build();
