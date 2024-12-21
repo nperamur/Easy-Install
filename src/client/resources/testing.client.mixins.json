@@ -1,0 +1,14 @@
+{
+	"required": true,
+	"package": "neelesh.testing.mixin.client",
+	"compatibilityLevel": "JAVA_21",
+	"client": [
+		"TitleScreenMixin",
+		"ResourceScreenMixin",
+		"ShaderPackScreenMixin",
+		"GameMenuScreenMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}

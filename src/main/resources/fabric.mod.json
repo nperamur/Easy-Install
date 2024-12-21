@@ -1,0 +1,49 @@
+{
+	"schemaVersion": 1,
+	"id": "testing",
+	"version": "1.0.0",
+	"name": "testing",
+	"description": "This is an example description! Tell everyone what your mod is about!",
+	"authors": [
+		"Me!"
+	],
+	"contact": {
+		"homepage": "https://fabricmc.net/",
+		"sources": "https://github.com/FabricMC/fabric-example-mod"
+	},
+	"license": "CC0-1.0",
+	"icon": "assets/testing/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"neelesh.testing.Testing"
+		],
+		"client": [
+			"neelesh.testing.TestingClient"
+		],
+		"fabric-datagen": [
+			"neelesh.testing.TestingDataGenerator"
+		],
+		"modmenu": [
+			"neelesh.testing.ModMenuImplApi"
+		]
+	},
+
+	"mixins": [
+		"testing.mixins.json",
+		{
+			"config": "testing.client.mixins.json",
+			"environment": "client"
+		}
+	],
+
+	"depends": {
+		"fabricloader": ">=0.16.7",
+		"minecraft": "~1.21.3",
+		"java": ">=21",
+		"fabric-api": "*"
+	},
+	"suggests": {
+		"another-mod": "*"
+	}
+}
