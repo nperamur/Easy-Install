@@ -137,7 +137,7 @@ public class DescriptionTab extends GridScreenTab implements Drawable {
         }
         context.getMatrices().translate(0, 0, 100);
         String body = projectScreen.getModInfo().getBody();
-        String s = "";
+        StringBuilder s = new StringBuilder();
         float scale = 1.0f;
         int y = 30;
         int x = 140;
@@ -183,11 +183,11 @@ public class DescriptionTab extends GridScreenTab implements Drawable {
                 }
                 imageIndex++;
             }
-            if (body.charAt(i) == '#' && (i == 0 || body.charAt(i-1) != '#') && s.replace(" ", "").replace("\n", "").isEmpty() || i == body.length() - 1) {
+            if (body.charAt(i) == '#' && (i == 0 || body.charAt(i-1) != '#') && s.toString().replace(" ", "").replace("\n", "").isEmpty() || i == body.length() - 1) {
                 if (i == body.length() - 1) {
-                    s+=body.charAt(i);
+                    s.append(body.charAt(i));
                 }
-                MutableText text = extractTextFromHtml(convertMarkdownToHtml(s), false);
+                MutableText text = extractTextFromHtml(convertMarkdownToHtml(s.toString()), false);
                 if (count == 0) {
                     putLinkButtons(text, x, y, (int) ((projectScreen.width-x-10) / scale), scale);
                 }
@@ -197,13 +197,13 @@ public class DescriptionTab extends GridScreenTab implements Drawable {
                     scale = 1.4f;
                     context.getMatrices().scale(scale, scale, 1.0f);
                 }
-                s = "";
+                s = new StringBuilder();
                 x = 140;
                 y += imageHeight;
                 imageHeight = 0;
                 y += (int) (wrappedSize * scale);
             } else if ((body.charAt(i) == '\n')) {
-                MutableText text = extractTextFromHtml(convertMarkdownToHtml(s), false);
+                MutableText text = extractTextFromHtml(convertMarkdownToHtml(s.toString()), false);
                 if (!text.getString().trim().isEmpty()) {
                     y += imageHeight;
                     if (imageHeight > 0) {
@@ -211,7 +211,7 @@ public class DescriptionTab extends GridScreenTab implements Drawable {
                     }
                     imageHeight = 0;
                 }
-                s=text.getString();
+                s = new StringBuilder(text.getString());
                 if (count == 0) {
                     putLinkButtons(text, x, y, (int) ((projectScreen.width-x-10) / scale), scale);
                 }
@@ -220,15 +220,15 @@ public class DescriptionTab extends GridScreenTab implements Drawable {
                     context.getMatrices().scale(1/scale, 1/scale, 1.0f);
                 }
                 int wrappedSize = projectScreen.getTextRenderer().getWrappedLinesHeight(text, (int) ((projectScreen.width-x-10) / scale));
-                if (!s.trim().isEmpty()) {
+                if (!s.toString().trim().isEmpty()) {
                     y += (int) (wrappedSize * scale);
                     if (scale > 1) {
                         y -= 10;
                     }
                 }
                 scale = 1f;
-                s = "";
-            } else if (((body.charAt(i) == '-' && body.charAt(i+1) != '-') || (body.charAt(i) == '*' && (i == body.length()-1 || body.charAt(i+1) != '*'))) && (s.replace(" ", "").replace("\n", "").isEmpty())) {
+                s = new StringBuilder();
+            } else if (((body.charAt(i) == '-' && body.charAt(i+1) != '-') || (body.charAt(i) == '*' && (i == body.length()-1 || body.charAt(i+1) != '*'))) && (s.toString().replace(" ", "").replace("\n", "").isEmpty())) {
                 x = 160;
             } if (body.startsWith("---", i) || body.startsWith("\n\n", i)) {
                 x = 140;
@@ -236,8 +236,8 @@ public class DescriptionTab extends GridScreenTab implements Drawable {
                 imageHeight = 0;
             }
 
-            if (body.charAt(i) != '#' || !s.replace(" ", "").replace("\n", "").isEmpty()) {
-                s += body.charAt(i);
+            if (body.charAt(i) != '#' || !s.toString().replace(" ", "").replace("\n", "").isEmpty()) {
+                s.append(body.charAt(i));
             }
         }
         context.getMatrices().scale(1/scale, 1/scale, 1.0f);
