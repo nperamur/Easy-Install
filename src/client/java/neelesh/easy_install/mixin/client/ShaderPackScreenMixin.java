@@ -1,9 +1,9 @@
-package neelesh.testing.mixin.client;
+package neelesh.easy_install.mixin.client;
 
 
-import neelesh.testing.ProjectBrowser;
-import neelesh.testing.ProjectType;
-import neelesh.testing.TestingClient;
+import neelesh.easy_install.GalleryImage;
+import neelesh.easy_install.ProjectBrowser;
+import neelesh.easy_install.ProjectType;
 import net.irisshaders.iris.gui.element.ShaderPackOptionList;
 import net.irisshaders.iris.gui.screen.ShaderPackScreen;
 import net.minecraft.client.MinecraftClient;
@@ -20,10 +20,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(ShaderPackScreen.class)
 public class ShaderPackScreenMixin extends Screen {
-    private ProjectBrowser modBrowser = new ProjectBrowser(this, ProjectType.SHADER);
     private ButtonWidget buttonWidget = new ButtonWidget.Builder(Text.of("Add Shaders"), button -> {
-        TestingClient.search("", ProjectType.SHADER);
-        MinecraftClient.getInstance().setScreen(modBrowser);
+        ProjectBrowser browser = new ProjectBrowser(this, ProjectType.SHADER);
+        MinecraftClient.getInstance().setScreen(browser);
     }).build();
 
     @Shadow

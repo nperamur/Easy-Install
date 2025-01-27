@@ -1,4 +1,4 @@
-package neelesh.testing;
+package neelesh.easy_install;
 
 import java.net.URL;
 
@@ -12,16 +12,21 @@ public class ModInfo {
     private boolean installed;
     private String body;
     private ProjectType projectType;
+    private boolean updated;
+    private String id;
+    private String latestHash;
 
-    public ModInfo(URL iconUrl, String title, String description, String author, String slug, boolean installed, ProjectType projectType) {
+    public ModInfo(URL iconUrl, String title, String description, String author, String slug, String id, boolean installed, ProjectType projectType) {
         this.iconUrl = iconUrl;
         this.title = title;
         this.description = description;
         this.author = author;
         this.slug = slug;
         this.installed = installed;
+        this.id = id;
         this.body = "";
         this.projectType = projectType;
+        this.updated = true;
     }
 
     public URL getIconUrl() {
@@ -79,5 +84,25 @@ public class ModInfo {
 
     public ProjectType getProjectType() {
         return projectType;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public boolean isUpdated() {
+        return updated;
+    }
+
+    public void setUpdated(boolean updated) {
+        this.updated = updated;
+    }
+
+    public void setLatestHash(String hash) {
+        this.latestHash = hash;
+    }
+
+    public String getLatestHash() {
+        return latestHash;
     }
 }

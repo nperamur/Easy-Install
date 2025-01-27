@@ -1,24 +1,13 @@
-package neelesh.testing.mixin.client;
+package neelesh.easy_install.mixin;
 
 
-import neelesh.testing.ProjectBrowser;
-import neelesh.testing.ProjectType;
-import neelesh.testing.TestingClient;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.screen.TitleScreen;
-import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.text.Text;
+import net.minecraft.server.MinecraftServer;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 
-@Mixin(TitleScreen.class)
+@Mixin(MinecraftServer.class)
 //@Mixin(LivingEntity.class)
-public class TitleScreenMixin extends Screen {
+public class ExampleMixin {
 	//@Inject(at = @At("HEAD"), method = "takeKnockback")\
 	/**
 	 @Shadow
@@ -231,55 +220,8 @@ public class TitleScreenMixin extends Screen {
 	 return 0;
 	 }
 
-	 */
 
-//
-//	@Shadow
-//	private ClientWorld world;
-//
-//	@Inject(method = "renderLayer", at = @At("INVOKE"))
-//	private void beforeRenderLayer(RenderLayer layer, double x, double y, double z, Matrix4f matrix4f, Matrix4f matrix4f2, CallbackInfo info) throws IOException {
-//
-//		RenderSystem.setShaderColor(1.0f, 0.2f, 0.2f, 1.0f); // Full red for light sources
-//
-//
-//	}
-//
-//
-//	@Inject(method = "renderLayer", at = @At("TAIL"))
-//	private void resetRenderLayerColor(RenderLayer layer, double x, double y, double z, Matrix4f matrix4f, Matrix4f matrix4f2, CallbackInfo info) {
-//		RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f); // Reset to white
-//	}
-	//@Shadow
-	//protected <T extends Element & Selectable> T addSelectableChild(T child) {
-		//return null; // This method will be implemented by the mixin framework
-	//}
-
-	private ProjectBrowser modBrowser = new ProjectBrowser(this, ProjectType.MOD);
-	private ButtonWidget buttonWidget = new ButtonWidget.Builder(Text.of("Add Mods"), button -> {
-		TestingClient.search("", ProjectType.MOD);
-		MinecraftClient.getInstance().setScreen(modBrowser);
-	}).build();
-
-	protected TitleScreenMixin(Text title) {
-		super(title);
-	}
-
-
-	@Inject(method = "render", at = @At("TAIL"))
-	private void addCustomButton(DrawContext context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
-		buttonWidget.setHeight(15);
-		buttonWidget.setWidth(80);
-		buttonWidget.setPosition(175, height-15);
-		buttonWidget.render(context, mouseX, mouseY, delta);
-		this.addSelectableChild(buttonWidget);
-	}
-
-
-
-
-
-
+}*/
 }
 
 

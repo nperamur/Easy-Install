@@ -1,4 +1,4 @@
-package neelesh.testing;
+package neelesh.easy_install;
 
 import net.minecraft.client.texture.NativeImage;
 import net.minecraft.util.Identifier;
@@ -46,10 +46,6 @@ public class GalleryImage {
 
     public String getDescription() {
         return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
     }
 
     public void setTitle(String title) {

@@ -1,9 +1,9 @@
-package neelesh.testing;
+package neelesh.easy_install;
 
 import net.fabricmc.fabric.api.datagen.v1.DataGeneratorEntrypoint;
 import net.fabricmc.fabric.api.datagen.v1.FabricDataGenerator;
 
-public class TestingDataGenerator implements DataGeneratorEntrypoint {
+public class EasyInstallDataGenerator implements DataGeneratorEntrypoint {
 	@Override
 	public void onInitializeDataGenerator(FabricDataGenerator fabricDataGenerator) {
 

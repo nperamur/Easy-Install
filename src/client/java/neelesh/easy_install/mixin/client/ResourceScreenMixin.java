@@ -1,15 +1,14 @@
-package neelesh.testing.mixin.client;
+package neelesh.easy_install.mixin.client;
 
-import neelesh.testing.ProjectBrowser;
-import neelesh.testing.ProjectType;
-import neelesh.testing.TestingClient;
+import neelesh.easy_install.EasyInstallClient;
+import neelesh.easy_install.GalleryImage;
+import neelesh.easy_install.ProjectBrowser;
+import neelesh.easy_install.ProjectType;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.screen.TitleScreen;
 import net.minecraft.client.gui.screen.pack.PackScreen;
 import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.resource.ResourcePackManager;
 import net.minecraft.text.Text;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -31,7 +30,6 @@ public class ResourceScreenMixin extends Screen {
     @Shadow
     private final Path file;
     private ProjectType projectType;
-    private ProjectBrowser browser;
     private String buttonText;
     private ButtonWidget buttonWidget;
     protected ResourceScreenMixin(Text title, Path file) {
@@ -46,12 +44,11 @@ public class ResourceScreenMixin extends Screen {
             this.buttonText = "Add resource packs";
         } else {
             this.projectType = ProjectType.DATA_PACK;
-            TestingClient.setDataPackTempDir(file);
+            EasyInstallClient.setDataPackTempDir(file);
             this.buttonText = "Add data packs";
         }
-        this.browser = new ProjectBrowser(this, projectType);
         this.buttonWidget = new ButtonWidget.Builder(Text.of(buttonText), button -> {
-            TestingClient.search("", projectType);
+            ProjectBrowser browser = new ProjectBrowser(this, projectType);
             MinecraftClient.getInstance().setScreen(browser);
         }).build();
         buttonWidget.setHeight(15);

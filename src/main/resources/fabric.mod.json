@@ -1,38 +1,38 @@
 {
 	"schemaVersion": 1,
-	"id": "testing",
+	"id": "easy-install",
 	"version": "1.0.0",
-	"name": "testing",
+	"name": "Easy Install",
 	"description": "This is an example description! Tell everyone what your mod is about!",
 	"authors": [
-		"Me!"
+		"blue_cube78"
 	],
 	"contact": {
 		"homepage": "https://fabricmc.net/",
 		"sources": "https://github.com/FabricMC/fabric-example-mod"
 	},
 	"license": "CC0-1.0",
-	"icon": "assets/testing/icon.png",
+	"icon": "assets/easy_install/icon.png",
 	"environment": "*",
 	"entrypoints": {
 		"main": [
-			"neelesh.testing.Testing"
+			"neelesh.easy_install.EasyInstall"
 		],
 		"client": [
-			"neelesh.testing.TestingClient"
+			"neelesh.easy_install.EasyInstallClient"
 		],
 		"fabric-datagen": [
-			"neelesh.testing.TestingDataGenerator"
+			"neelesh.easy_install.EasyInstallDataGenerator"
 		],
 		"modmenu": [
-			"neelesh.testing.ModMenuImplApi"
+			"neelesh.easy_install.ModMenuImplApi"
 		]
 	},
 
 	"mixins": [
-		"testing.mixins.json",
+		"easy_install.mixins.json",
 		{
-			"config": "testing.client.mixins.json",
+			"config": "easy_install.client.mixins.json",
 			"environment": "client"
 		}
 	],

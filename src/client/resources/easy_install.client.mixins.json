@@ -1,6 +1,6 @@
 {
 	"required": true,
-	"package": "neelesh.testing.mixin.client",
+	"package": "neelesh.easy_install.mixin.client",
 	"compatibilityLevel": "JAVA_21",
 	"client": [
 		"TitleScreenMixin",

@@ -1,4 +1,4 @@
-package neelesh.testing;
+package neelesh.easy_install;
 
 public enum ProjectType {
     MOD,
