@@ -97,13 +97,11 @@ public class DescriptionTab extends GridScreenTab implements Drawable {
                             }
                             if (linkInImage) {
                                 projectImage.setLink(projectScreen.getModInfo().getBody().substring(projectScreen.getModInfo().getBody().substring(i + 1).indexOf('(') + 2 + i, projectScreen.getModInfo().getBody().substring(i + 1).indexOf(')') + 1 + i));
-                                System.out.println("Clickable Button: " + projectScreen.getModInfo().getBody().substring(projectScreen.getModInfo().getBody().substring(i + 1).indexOf('(') + i + 2, projectScreen.getModInfo().getBody().substring(i + 1).indexOf(')') + 1 + i));
                             }
                             projectImages.add(projectImage);
                         }
-                        System.out.println("successfully loaded project image" + " " + str);
                     } catch (MalformedURLException e) {
-                        System.out.println("cannot load project image");
+                        e.printStackTrace();
                     }
                     linkInImage = false;
                     imageWidth = "";
@@ -295,7 +293,6 @@ public class DescriptionTab extends GridScreenTab implements Drawable {
                     buttonWidget.setPosition((int) (x + projectScreen.getTextRenderer().getWidth(o) * scale), y + 9 * numLines);
                     originalY.add(y + 9 * numLines);
                     projectScreen.addSelectableChild(buttonWidget);
-                    System.out.println(o.getString());
                     buttonWidget.setDimensions((int) (projectScreen.getTextRenderer().getWidth(p) * scale), (int) (9 * scale));
                     linkButtons.add(buttonWidget);
                     if (linkLengths.get(l) == j) {

@@ -79,9 +79,8 @@ public class Version {
         try {
             executorService.awaitTermination(Integer.MAX_VALUE, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
-            return;
+            e.printStackTrace();
         }
-//        }
     }
 
     @Override
