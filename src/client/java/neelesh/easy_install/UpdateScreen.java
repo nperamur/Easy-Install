@@ -22,7 +22,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.stream.Collectors;
-//TODO: FIX UPDATING, ADD SCROLLING, ADD DONE BUTTON
 public class UpdateScreen extends Screen {
     private ArrayList<Version> versions;
     private ArrayList<String> titles;

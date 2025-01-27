@@ -50,9 +50,7 @@ public class EasyInstallClient implements ClientModInitializer {
 	}
 
 	@Override
-	public void onInitializeClient() {
-		System.out.println("HELLOWORLD");
-	}
+	public void onInitializeClient() {}
 
 	public static int getRowsOnPage() {
 		return rowsOnPage;
@@ -329,7 +327,6 @@ public class EasyInstallClient implements ClientModInitializer {
 			if (jsonObject.get(hash) != null) {
 				String h = jsonObject.get(hash).getAsJsonObject().get("files").getAsJsonArray().get(0).getAsJsonObject().get("hashes").getAsJsonObject().get("sha1").getAsString();
 				if (!hashes.contains(h)) {
-					System.out.println(jsonObject.get(hash).getAsJsonObject().get("name").getAsString() + " needs an update!");
 					JsonObject versionInfo = jsonObject.get(hash).getAsJsonObject();
 					try {
 						Version version = createVersion(versionInfo, projectType);
