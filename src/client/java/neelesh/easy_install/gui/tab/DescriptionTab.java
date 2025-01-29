@@ -1,6 +1,5 @@
 package neelesh.easy_install.gui.tab;
 
-import neelesh.easy_install.GalleryImage;
 import neelesh.easy_install.IconManager;
 import neelesh.easy_install.ProjectImage;
 import neelesh.easy_install.ProjectScreen;
@@ -45,16 +44,16 @@ public class DescriptionTab extends GridScreenTab implements Drawable {
 
     public DescriptionTab(Text title, ProjectScreen projectScreen) {
         super(title);
-        projectScreen.getModInfo().setBody(extractTextFromHtml(projectScreen.getModInfo().getBody(), true).getString());
+        projectScreen.getProjectInfo().setBody(extractTextFromHtml(projectScreen.getProjectInfo().getBody(), true).getString());
         count = -1;
         this.projectScreen = projectScreen;
         this.projectImages = projectScreen.getProjectImages();
         if (thread != null) {
             thread.interrupt();
         }
-        for (int i = 0; i < projectScreen.getModInfo().getBody().length(); i++) {
-            if (i < projectScreen.getModInfo().getBody().length() - 2 && (projectScreen.getModInfo().getBody().charAt(i) == '-') && projectScreen.getModInfo().getBody().charAt(i + 1) == '\n' && (i == 0 || projectScreen.getModInfo().getBody().charAt(i - 1) != '-')) {
-                projectScreen.getModInfo().setBody(projectScreen.getModInfo().getBody().substring(0, i + 1) + " " + projectScreen.getModInfo().getBody().substring(i + 3));
+        for (int i = 0; i < projectScreen.getProjectInfo().getBody().length(); i++) {
+            if (i < projectScreen.getProjectInfo().getBody().length() - 2 && (projectScreen.getProjectInfo().getBody().charAt(i) == '-') && projectScreen.getProjectInfo().getBody().charAt(i + 1) == '\n' && (i == 0 || projectScreen.getProjectInfo().getBody().charAt(i - 1) != '-')) {
+                projectScreen.getProjectInfo().setBody(projectScreen.getProjectInfo().getBody().substring(0, i + 1) + " " + projectScreen.getProjectInfo().getBody().substring(i + 3));
             }
         }
         thread = new Thread(() ->{
@@ -64,27 +63,27 @@ public class DescriptionTab extends GridScreenTab implements Drawable {
             boolean puttingImageUrl = false;
             boolean puttingImageWidth = false;
             String imageWidth = "";
-            for (int i = 0; i < projectScreen.getModInfo().getBody().length(); i++) {
-                if (projectScreen.getModInfo().getBody().startsWith("[![", i)) {
+            for (int i = 0; i < projectScreen.getProjectInfo().getBody().length(); i++) {
+                if (projectScreen.getProjectInfo().getBody().startsWith("[![", i)) {
                     linkInImage = true;
                 }
-                if (projectScreen.getModInfo().getBody().startsWith("![", i)) {
+                if (projectScreen.getProjectInfo().getBody().startsWith("![", i)) {
                     isImage = true;
-                } else if (projectScreen.getModInfo().getBody().startsWith("width=", i) && isImage) {
+                } else if (projectScreen.getProjectInfo().getBody().startsWith("width=", i) && isImage) {
                     puttingImageWidth = true;
                     i += 5;
                 } else if (puttingImageWidth) {
-                    puttingImageWidth = Character.isDigit(projectScreen.getModInfo().getBody().charAt(i));
+                    puttingImageWidth = Character.isDigit(projectScreen.getProjectInfo().getBody().charAt(i));
                     if (puttingImageWidth) {
-                        imageWidth += Integer.parseInt(projectScreen.getModInfo().getBody().substring(i, i + 1));
+                        imageWidth += Integer.parseInt(projectScreen.getProjectInfo().getBody().substring(i, i + 1));
                     }
                 }
-                if (projectScreen.getModInfo().getBody().charAt(i) == ')' && isImage) {
+                if (projectScreen.getProjectInfo().getBody().charAt(i) == ')' && isImage) {
                     puttingImageUrl = false;
                     isImage = false;
                     URL url;
-                    if (linkInImage && i < projectScreen.getModInfo().getBody().length() - 2 && projectScreen.getModInfo().getBody().charAt(i + 1) == '\n') {
-                        projectScreen.getModInfo().setBody(projectScreen.getModInfo().getBody().substring(0, i + 1) + " " + projectScreen.getModInfo().getBody().substring(i + 2));
+                    if (linkInImage && i < projectScreen.getProjectInfo().getBody().length() - 2 && projectScreen.getProjectInfo().getBody().charAt(i + 1) == '\n') {
+                        projectScreen.getProjectInfo().setBody(projectScreen.getProjectInfo().getBody().substring(0, i + 1) + " " + projectScreen.getProjectInfo().getBody().substring(i + 2));
                     }
                     try {
                         url = new URL(str);
@@ -96,7 +95,7 @@ public class DescriptionTab extends GridScreenTab implements Drawable {
                                 projectImage.setWidth(Integer.parseInt(imageWidth));
                             }
                             if (linkInImage) {
-                                projectImage.setLink(projectScreen.getModInfo().getBody().substring(projectScreen.getModInfo().getBody().substring(i + 1).indexOf('(') + 2 + i, projectScreen.getModInfo().getBody().substring(i + 1).indexOf(')') + 1 + i));
+                                projectImage.setLink(projectScreen.getProjectInfo().getBody().substring(projectScreen.getProjectInfo().getBody().substring(i + 1).indexOf('(') + 2 + i, projectScreen.getProjectInfo().getBody().substring(i + 1).indexOf(')') + 1 + i));
                             }
                             projectImages.add(projectImage);
                         }
@@ -108,9 +107,9 @@ public class DescriptionTab extends GridScreenTab implements Drawable {
                     str = "";
                 }
                 if (puttingImageUrl) {
-                    str += projectScreen.getModInfo().getBody().charAt(i);
+                    str += projectScreen.getProjectInfo().getBody().charAt(i);
                 }
-                if (projectScreen.getModInfo().getBody().charAt(i) == '(' && isImage) {
+                if (projectScreen.getProjectInfo().getBody().charAt(i) == '(' && isImage) {
                     puttingImageUrl = true;
                 }
                 count = 0;
@@ -134,7 +133,7 @@ public class DescriptionTab extends GridScreenTab implements Drawable {
             }
         }
         context.getMatrices().translate(0, 0, 100);
-        String body = projectScreen.getModInfo().getBody();
+        String body = projectScreen.getProjectInfo().getBody();
         StringBuilder s = new StringBuilder();
         float scale = 1.0f;
         int y = 30;

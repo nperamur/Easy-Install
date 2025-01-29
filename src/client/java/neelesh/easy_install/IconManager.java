@@ -20,7 +20,7 @@ import java.net.URL;
 
 public class IconManager {
 
-    public static Identifier loadIcon(ModInfo info, Identifier textureId, MinecraftClient client, Thread thread) {
+    public static Identifier loadIcon(ProjectInfo info, Identifier textureId, MinecraftClient client, Thread thread) {
         try {
             URL url = info.getIconUrl();
             if (url == null) {
@@ -151,7 +151,9 @@ public class IconManager {
                 System.out.println(url);
                 try (InputStream inputStream = connection.getInputStream()) {
                     image = loadImage(inputStream, isWebp, false);
-
+                    if (image == null) {
+                        image = loadSvgImage(url.toURI());
+                    }
                 } finally {
                     connection.disconnect();
                 }

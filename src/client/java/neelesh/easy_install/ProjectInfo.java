@@ -2,7 +2,7 @@ package neelesh.easy_install;
 
 import java.net.URL;
 
-public class ModInfo {
+public class ProjectInfo {
     private URL iconUrl;
     private String title;
     private String description;
@@ -16,7 +16,7 @@ public class ModInfo {
     private String id;
     private String latestHash;
 
-    public ModInfo(URL iconUrl, String title, String description, String author, String slug, String id, boolean installed, ProjectType projectType) {
+    public ProjectInfo(URL iconUrl, String title, String description, String author, String slug, String id, boolean installed, ProjectType projectType) {
         this.iconUrl = iconUrl;
         this.title = title;
         this.description = description;

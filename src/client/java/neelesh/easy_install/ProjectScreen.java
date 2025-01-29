@@ -38,7 +38,7 @@ import static net.minecraft.client.gui.screen.world.CreateWorldScreen.TAB_HEADER
 
 
 public class ProjectScreen extends Screen {
-    private ModInfo modInfo;
+    private ProjectInfo projectInfo;
     private final Identifier iconTextureId;
     //make the image into an object
     private int maxY;
@@ -47,16 +47,16 @@ public class ProjectScreen extends Screen {
     private VersionsTab versionsTab;
     private final ButtonWidget installButton = ButtonWidget.builder(Text.of("Install"), button -> {
         Thread thread = new Thread(() -> {
-            if (!modInfo.isUpdated()) {
+            if (!projectInfo.isUpdated()) {
                 Thread thread2 = new Thread(() -> {
                     HashMap<String, String> oldHashes = EasyInstallClient.getOldHashes();
-                    File dir = new File(EasyInstallClient.getDir(modInfo.getProjectType()));
+                    File dir = new File(EasyInstallClient.getDir(projectInfo.getProjectType()));
                     File[] files = dir.listFiles();
                     if (files != null) {
                         for (File file : files) {
                             try {
                                 String hash = EasyInstallClient.createFileHash(file.toPath());
-                                if (oldHashes.containsKey(hash) && oldHashes.get(hash).equals(modInfo.getLatestHash())) {
+                                if (oldHashes.containsKey(hash) && oldHashes.get(hash).equals(projectInfo.getLatestHash())) {
                                     file.delete();
                                 }
                             } catch (IOException e) {
@@ -67,8 +67,8 @@ public class ProjectScreen extends Screen {
                 });
                 thread2.start();
             }
-            EasyInstallClient.downloadVersion(modInfo.getSlug(), modInfo.getProjectType());
-            modInfo.setInstalled(true);
+            EasyInstallClient.downloadVersion(projectInfo.getSlug(), projectInfo.getProjectType());
+            projectInfo.setInstalled(true);
             versionsTab.setInitialized(false);
         });
         thread.start();
@@ -77,7 +77,7 @@ public class ProjectScreen extends Screen {
 
     private final ButtonWidget siteButton = ButtonWidget.builder(Text.of("Modrinth↗"), button -> {
         try {
-            Util.getOperatingSystem().open(new URI("https://modrinth.com/project/" + modInfo.getSlug()));
+            Util.getOperatingSystem().open(new URI("https://modrinth.com/project/" + projectInfo.getSlug()));
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }
@@ -96,9 +96,9 @@ public class ProjectScreen extends Screen {
     private int scrollAmount = 15;
     public static final Identifier VERTICAL_SEPARATOR_TEXTURE = Identifier.of(EasyInstall.MOD_ID,"textures/gui/vertical_separator.png");
     private Thread thread;
-    protected ProjectScreen(Screen parent, ModInfo modInfo) {
-        super(Text.literal(modInfo.getTitle()));
-        this.modInfo = modInfo;
+    protected ProjectScreen(Screen parent, ProjectInfo projectInfo) {
+        super(Text.literal(projectInfo.getTitle()));
+        this.projectInfo = projectInfo;
         iconTextureId = Identifier.of("project_texture_id");
         this.prevScreen = parent;
     }
@@ -123,20 +123,20 @@ public class ProjectScreen extends Screen {
         }
         float titleSize = 1.4f;
         context.getMatrices().scale(titleSize, titleSize, 1.0f);
-        context.drawTextWrapped(textRenderer, StringVisitable.plain(modInfo.getTitle()), (int) (10 /titleSize), 40, (int) (110/titleSize),0xFFFFFF);
-        int wrappedHeight =  textRenderer.getWrappedLinesHeight(StringVisitable.plain(modInfo.getTitle()), (int) (110/titleSize));
+        context.drawTextWrapped(textRenderer, StringVisitable.plain(projectInfo.getTitle()), (int) (10 /titleSize), 40, (int) (110/titleSize),0xFFFFFF);
+        int wrappedHeight =  textRenderer.getWrappedLinesHeight(StringVisitable.plain(projectInfo.getTitle()), (int) (110/titleSize));
         context.getMatrices().scale(1/titleSize, 1/titleSize, 1.0f);
         context.drawTexture(RenderLayer::getGuiTextured, iconTextureId, 10, 0, 0, 0, 50, 50, 50, 50);
-        context.drawTextWrapped(textRenderer, StringVisitable.plain(modInfo.getDescription()), 10, (int) (65 + wrappedHeight*titleSize), 110, 0xFFFFFF);
-        installButton.active = !modInfo.isInstalled();
-        installButton.setPosition(10, (int) ((65 + textRenderer.getWrappedLinesHeight(StringVisitable.plain(modInfo.getDescription()), 110) + wrappedHeight * titleSize + 10)));
-        siteButton.setPosition(65, (int) ((65 + textRenderer.getWrappedLinesHeight(StringVisitable.plain(modInfo.getDescription()), 110) + wrappedHeight * titleSize + 10)));
+        context.drawTextWrapped(textRenderer, StringVisitable.plain(projectInfo.getDescription()), 10, (int) (65 + wrappedHeight*titleSize), 110, 0xFFFFFF);
+        installButton.active = !projectInfo.isInstalled();
+        installButton.setPosition(10, (int) ((65 + textRenderer.getWrappedLinesHeight(StringVisitable.plain(projectInfo.getDescription()), 110) + wrappedHeight * titleSize + 10)));
+        siteButton.setPosition(65, (int) ((65 + textRenderer.getWrappedLinesHeight(StringVisitable.plain(projectInfo.getDescription()), 110) + wrappedHeight * titleSize + 10)));
         installButton.render(context, mouseX, mouseY, delta);
         siteButton.render(context, mouseX, mouseY, delta);
 
         if (!installButton.active) {
             installButton.setMessage(Text.of("Installed"));
-        } else if (modInfo.isUpdated()) {
+        } else if (projectInfo.isUpdated()) {
             installButton.setMessage(Text.of("Install"));
         } else {
             installButton.setMessage(Text.of("Update"));
@@ -161,7 +161,7 @@ public class ProjectScreen extends Screen {
         this.addSelectableChild(installButton);
         this.addSelectableChild(siteButton);
         Thread thread = new Thread(() -> {
-            IconManager.loadIcon(modInfo, iconTextureId, client, Thread.currentThread());
+            IconManager.loadIcon(projectInfo, iconTextureId, client, Thread.currentThread());
         });
         thread.start();
         //        boolean isImage = false;
@@ -170,7 +170,7 @@ public class ProjectScreen extends Screen {
         //        boolean puttingImageWidth = false;
         //        int imageCount = 0;
         //        String imageWidth = "";
-        String urlString = "https://api.modrinth.com/v2/project/" + modInfo.getSlug();
+        String urlString = "https://api.modrinth.com/v2/project/" + projectInfo.getSlug();
         try {
             URL url = URI.create(urlString).toURL();
             HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
@@ -183,7 +183,7 @@ public class ProjectScreen extends Screen {
                 }
                 JsonObject jsonObject = (JsonObject) JsonParser.parseString(response);
                 String body = jsonObject.get("body").getAsString();
-                modInfo.setBody(body);
+                projectInfo.setBody(body);
                 JsonArray gallery = jsonObject.get("gallery").getAsJsonArray();
                 for (int i = 0; i < gallery.size(); i++) {
                     try {
@@ -215,7 +215,7 @@ public class ProjectScreen extends Screen {
         tabNavigationWidget.init();
         tabNavigationWidget.selectTab(0, false);
         this.addSelectableChild(tabNavigationWidget);
-        System.out.println(modInfo.getBody());
+        System.out.println(projectInfo.getBody());
     }
 
     @Override
@@ -256,8 +256,8 @@ public class ProjectScreen extends Screen {
         super.renderDarkening(context, x, y, width, height);
     }
 
-    public ModInfo getModInfo() {
-        return this.modInfo;
+    public ProjectInfo getProjectInfo() {
+        return this.projectInfo;
     }
 
     public <T extends net.minecraft.client.gui.Element & Selectable> T addSelectableChild(T child) {

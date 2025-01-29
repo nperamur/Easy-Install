@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 
 public class EasyInstallClient implements ClientModInitializer {
 	private static int rowsOnPage = 20;
-	private static ModInfo[] modInfo = new ModInfo[100];
+	private static ProjectInfo[] projectInfo = new ProjectInfo[100];
 	private static final String GAME_VERSION = SharedConstants.getGameVersion().getName();
 	private static Path dataPackTempDir;
 	private static int totalPages;
@@ -64,8 +64,8 @@ public class EasyInstallClient implements ClientModInitializer {
 		rowsOnPage = rows;
 	}
 
-	public static ModInfo[] getModInformation() {
-		return modInfo;
+	public static ProjectInfo[] getProjectInformation() {
+		return projectInfo;
 	}
 
 	public static void setDataPackTempDir(Path path) {
@@ -188,7 +188,7 @@ public class EasyInstallClient implements ClientModInitializer {
 
 		numUpdates = updateNeededProjectIds.size();
 
-		for (ModInfo info : modInfo) {
+		for (ProjectInfo info : projectInfo) {
 			if (info != null) {
 				info.setInstalled(installedProjectIds.contains(info.getId()));
 				if (updateNeededProjectIds.contains(info.getId())) {
@@ -218,7 +218,7 @@ public class EasyInstallClient implements ClientModInitializer {
 
 	}
 
-	private static void initializeModInfo(String urlString, ProjectType projectType) {
+	private static void initializeProject(String urlString, ProjectType projectType) {
 		int rows = 0;
 		try {
 			URL url2 = URI.create(urlString).toURL();
@@ -240,11 +240,11 @@ public class EasyInstallClient implements ClientModInitializer {
 				try {
 					jsonObject = JsonParser.parseString(response2).getAsJsonObject().get("hits").getAsJsonArray().get(x).getAsJsonObject();
 				} catch (Exception e) {
-					modInfo[x] = null;
+					projectInfo[x] = null;
 					continue;
 				}
 				try {
-					modInfo[x] = new ModInfo(new URL(jsonObject.get("icon_url").getAsString()),
+					projectInfo[x] = new ProjectInfo(new URL(jsonObject.get("icon_url").getAsString()),
 							jsonObject.get("title").getAsString(),
 							jsonObject.get("description").getAsString(),
 							jsonObject.get("author").getAsString(),
@@ -252,7 +252,7 @@ public class EasyInstallClient implements ClientModInitializer {
 							jsonObject.get("project_id").getAsString(),
 							false, projectType);
 				} catch (MalformedURLException e) {
-					modInfo[x] = new ModInfo(null,
+					projectInfo[x] = new ProjectInfo(null,
 							jsonObject.get("title").getAsString(),
 							jsonObject.get("description").getAsString(),
 							jsonObject.get("author").getAsString(),
@@ -282,7 +282,7 @@ public class EasyInstallClient implements ClientModInitializer {
 			case SHADER -> URLEncoder.encode(String.format("[[\"versions:%s\"],[\"project_type:shader\"],[\"categories:iris\"]]", GAME_VERSION), StandardCharsets.UTF_8);
 		};
 		String urlString = "https://api.modrinth.com/v2/search?limit=" + rowsOnPage + "&query=" + URLEncoder.encode(query, StandardCharsets.UTF_8) + "&facets=" + encodedFacets + "&offset=" + offset + "&index=" + sortMethod.toLowerCase();
-		initializeModInfo(urlString, projectType);
+		initializeProject(urlString, projectType);
 	}
 
 

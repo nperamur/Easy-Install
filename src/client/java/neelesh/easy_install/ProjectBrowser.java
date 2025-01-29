@@ -13,6 +13,7 @@ import net.minecraft.client.texture.NativeImageBackedTexture;
 import net.minecraft.text.StringVisitable;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.StringHelper;
 import org.lwjgl.glfw.GLFW;
 
 import java.io.File;
@@ -26,7 +27,7 @@ public class ProjectBrowser extends Screen {
     private Identifier[] ICON_TEXTURE_ID = new Identifier[100];
     private static final Identifier SCROLLER_TEXTURE = Identifier.ofVanilla("widget/scroller");
     public static final Identifier SCROLLER_BACKGROUND_TEXTURE = Identifier.ofVanilla("widget/scroller_background");
-    private ModInfo[] INFO = EasyInstallClient.getModInformation();
+    private ProjectInfo[] INFO = EasyInstallClient.getProjectInformation();
     private double scrollAmount = 0;
     private TextFieldWidget searchBox;
     private ButtonWidget[] installButtons = new ButtonWidget[100];
@@ -423,12 +424,24 @@ public class ProjectBrowser extends Screen {
     }
 
     @Override
-    public boolean keyReleased(int keyCode, int scanCode, int modifiers) {
-        if (searchBox.isSelected() && (GLFW.glfwGetKeyName(keyCode, scanCode) != null || (keyCode == GLFW.GLFW_KEY_BACKSPACE))) {
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        String s = searchBox.getText();
+        boolean keyPressed = super.keyPressed(keyCode, scanCode, modifiers);
+        if (!s.equals(searchBox.getText())) {
             pageNumber = 0;
             search(searchBox.getText());
         }
-        return super.keyReleased(keyCode, scanCode, modifiers);
+        return keyPressed;
+    }
+
+    @Override
+    public boolean charTyped(char chr, int modifiers) {
+        boolean charTyped = super.charTyped(chr, modifiers);
+        if (searchBox.isSelected() && StringHelper.isValidChar(chr)) {
+            pageNumber = 0;
+            search(searchBox.getText());
+        }
+        return charTyped;
     }
 
     private void search(String query) {

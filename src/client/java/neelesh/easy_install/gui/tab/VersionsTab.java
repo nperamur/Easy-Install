@@ -4,7 +4,6 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import neelesh.easy_install.EasyInstallClient;
-import neelesh.easy_install.GalleryImage;
 import neelesh.easy_install.ProjectScreen;
 import neelesh.easy_install.Version;
 import net.minecraft.client.gui.DrawContext;
@@ -31,7 +30,7 @@ public class VersionsTab extends GridScreenTab implements Drawable {
         super(title);
         this.projectScreen = projectScreen;
         Thread thread = new Thread(() -> {
-            String response = EasyInstallClient.getVersions(projectScreen.getModInfo().getSlug(), projectScreen.getModInfo().getProjectType());
+            String response = EasyInstallClient.getVersions(projectScreen.getProjectInfo().getSlug(), projectScreen.getProjectInfo().getProjectType());
             JsonArray jsonArray = JsonParser.parseString(response).getAsJsonArray();
             versions = new Version[jsonArray.size()];
             versionButtons = new ButtonWidget[jsonArray.size()];
@@ -39,7 +38,7 @@ public class VersionsTab extends GridScreenTab implements Drawable {
                 JsonObject versionInfo = jsonArray.get(i).getAsJsonObject();
                 Version version;
                 try {
-                    version = EasyInstallClient.createVersion(versionInfo, projectScreen.getModInfo().getProjectType());
+                    version = EasyInstallClient.createVersion(versionInfo, projectScreen.getProjectInfo().getProjectType());
                     versions[i] = version;
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -49,7 +48,7 @@ public class VersionsTab extends GridScreenTab implements Drawable {
                     Thread t = new Thread(() -> {
                         versions[finalI].download();
                         initialized = false;
-                        EasyInstallClient.checkInstalled(projectScreen.getModInfo().getProjectType());
+                        EasyInstallClient.checkInstalled(projectScreen.getProjectInfo().getProjectType());
                     });
                     t.start();
                 }).build();
@@ -84,7 +83,7 @@ public class VersionsTab extends GridScreenTab implements Drawable {
             context.drawText(projectScreen.getTextRenderer(), Text.of(String.format("%,d", versions[i].getNumDownloads()) + " downloads"), projectScreen.width - projectScreen.getTextRenderer().getWidth(String.format("%,d", versions[i].getNumDownloads()) + " downloads") - 8, i * 40 + projectScreen.getScrollAmount() + 36, 0xFFFFFF, true);
 
 
-            File file = new File(EasyInstallClient.getSavePath(projectScreen.getModInfo().getProjectType(), versions[i].getFilename()).toString());
+            File file = new File(EasyInstallClient.getSavePath(projectScreen.getProjectInfo().getProjectType(), versions[i].getFilename()).toString());
 
 
             if (file.exists() && projectScreen.getTabManager().getCurrentTab() == this && !initialized) {
