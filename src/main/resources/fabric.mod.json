@@ -24,9 +24,6 @@
 		],
 		"fabric-datagen": [
 			"neelesh.easy_install.EasyInstallDataGenerator"
-		],
-		"modmenu": [
-			"neelesh.easy_install.ModMenuImplApi"
 		]
 	},
 

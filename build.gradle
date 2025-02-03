@@ -59,7 +59,6 @@ dependencies {
 
 	// Fabric API. This is technically optional, but you probably want it anyway.
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
-	modImplementation("com.terraformersmc:modmenu:${project.modmenu_version}")
 	include(implementation("com.github.zakgof:webp4j:0.0.2"))
 	include(implementation("org.scijava:native-lib-loader:2.3.2"))
 	include(implementation 'org.commonmark:commonmark:0.19.0')
