@@ -180,7 +180,7 @@ public class DescriptionTab extends GridScreenTab implements Drawable {
                 }
                 imageIndex++;
             }
-            if (body.charAt(i) == '#' && (i == 0 || body.charAt(i-1) != '#') && s.toString().replace(" ", "").replace("\n", "").isEmpty() || i == body.length() - 1) {
+            if (body.charAt(i) == '#' && s.toString().trim().isEmpty() || i == body.length() - 1) {
                 if (i == body.length() - 1) {
                     s.append(body.charAt(i));
                 }
@@ -233,7 +233,7 @@ public class DescriptionTab extends GridScreenTab implements Drawable {
                 imageHeight = 0;
             }
 
-            if (body.charAt(i) != '#' || !s.toString().replace(" ", "").replace("\n", "").isEmpty()) {
+            if (body.charAt(i) != '#' || !s.toString().trim().isEmpty()) {
                 s.append(body.charAt(i));
             }
         }

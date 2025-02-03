@@ -13,10 +13,12 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class EasyInstallClient implements ClientModInitializer {
 	private static int rowsOnPage = 20;
@@ -50,7 +52,9 @@ public class EasyInstallClient implements ClientModInitializer {
 	}
 
 	@Override
-	public void onInitializeClient() {}
+	public void onInitializeClient() {
+
+	}
 
 	public static int getRowsOnPage() {
 		return rowsOnPage;
@@ -165,9 +169,14 @@ public class EasyInstallClient implements ClientModInitializer {
 
 	public static void checkInstalled(ProjectType projectType) {
 		HashSet<String> hashes = getFileHashes(projectType);
-        assert hashes != null;
+		if (Thread.currentThread().isInterrupted()) {
+			return;
+		}
         String response = getUpdates(hashes, projectType);
         assert response != null;
+		if (Thread.currentThread().isInterrupted()) {
+			return;
+		}
         JsonObject jsonObject = JsonParser.parseString(response).getAsJsonObject();
 		HashSet<String> installedProjectIds = new HashSet<>();
 		HashSet<String> updateNeededProjectIds = new HashSet<>();
@@ -232,9 +241,15 @@ public class EasyInstallClient implements ClientModInitializer {
 					response2 = reader.lines().collect(Collectors.joining("\n"));
 				}
 			} else {
-				throw new RuntimeException();
+				System.out.println(responseCode2);
+				numRows = 0;
+				totalPages = 1;
+				return;
 			}
 			httpURLConnection.disconnect();
+			if (Thread.currentThread().isInterrupted()) {
+				return;
+			}
 			for (int x = 0; x < rowsOnPage; x++) {
 				JsonObject jsonObject;
 				try {
@@ -264,7 +279,7 @@ public class EasyInstallClient implements ClientModInitializer {
 				rows++;
 			}
 			totalPages = (JsonParser.parseString(response2).getAsJsonObject().get("total_hits").getAsInt() - 1) / rowsOnPage + 1;
-			numRows = Math.max(1, rows);
+			numRows = Math.max(0, rows);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -273,44 +288,30 @@ public class EasyInstallClient implements ClientModInitializer {
 
 
 
-	public static void search(String query, ProjectType projectType, int offset) {
+	public static void search(String query, ProjectType projectType, int offset, HashSet<String> categories) {
+		StringBuilder categoriesString = new StringBuilder();
+		for (String category : categories) {
+            categoriesString.append(",[\"categories:").append(category).append("\"]");
+		}
 		String encodedFacets;
 		encodedFacets = switch(projectType) {
-			case MOD -> URLEncoder.encode(String.format("[[\"categories:fabric\"],[\"versions:%s\"],[\"project_type:mod\"]]", GAME_VERSION), StandardCharsets.UTF_8);
-			case RESOURCE_PACK -> URLEncoder.encode(String.format("[[\"versions:%s\"],[\"project_type:resourcepack\"]]", GAME_VERSION), StandardCharsets.UTF_8);
-			case DATA_PACK -> URLEncoder.encode(String.format("[[\"versions:%s\"],[\"project_type:datapack\"]]", GAME_VERSION), StandardCharsets.UTF_8);
-			case SHADER -> URLEncoder.encode(String.format("[[\"versions:%s\"],[\"project_type:shader\"],[\"categories:iris\"]]", GAME_VERSION), StandardCharsets.UTF_8);
+			case MOD -> URLEncoder.encode(String.format("[[\"categories:fabric\"],[\"versions:%s\"],[\"project_type:mod\"]" + categoriesString + "]", GAME_VERSION), StandardCharsets.UTF_8);
+			case RESOURCE_PACK -> URLEncoder.encode(String.format("[[\"versions:%s\"],[\"project_type:resourcepack\"]" + categoriesString + "]", GAME_VERSION), StandardCharsets.UTF_8);
+			case DATA_PACK -> URLEncoder.encode(String.format("[[\"versions:%s\"],[\"project_type:datapack\"]" + categoriesString + "]", GAME_VERSION), StandardCharsets.UTF_8);
+			case SHADER -> URLEncoder.encode(String.format("[[\"versions:%s\"],[\"project_type:shader\"],[\"categories:iris\"]" + categoriesString + "]", GAME_VERSION), StandardCharsets.UTF_8);
 		};
+
 		String urlString = "https://api.modrinth.com/v2/search?limit=" + rowsOnPage + "&query=" + URLEncoder.encode(query, StandardCharsets.UTF_8) + "&facets=" + encodedFacets + "&offset=" + offset + "&index=" + sortMethod.toLowerCase();
 		initializeProject(urlString, projectType);
 	}
 
 
 	public static void search(String query, ProjectType projectType) {
-		search(query, projectType, 0);
+		search(query, projectType, 0, new HashSet<>());
 	}
 
 	public static String createFileHash(Path path) throws IOException {
 		File file = new File(path.toString());
-//		MessageDigest messageDigest;
-		//		try {
-//			messageDigest = MessageDigest.getInstance("SHA-512");
-//		} catch (NoSuchAlgorithmException e) {
-//			messageDigest = null;
-//			e.printStackTrace();
-//		}
-//		byte[] bytes = new byte[8192];
-//		int numBytes = 0;
-//		while (numBytes != -1) {
-//			messageDigest.update(bytes, 0, numBytes);
-//			numBytes = file.read(bytes);
-//		}
-//		file.close();
-//		bytes = messageDigest.digest();
-//		StringBuilder stringBuilder = new StringBuilder();
-//		for (byte b : bytes) {
-//			stringBuilder.append(String.format("%02x", b));
-//		}
 		return Files.asByteSource(file).hash(Hashing.sha1()).toString();
 
 
@@ -418,10 +419,10 @@ public class EasyInstallClient implements ClientModInitializer {
 
 	private static HashSet<String> getFileHashes(ProjectType projectType) {
 		File dir = new File(getDir(projectType));
-		File[] files = dir.listFiles();
-		Set<String> hashes = Collections.synchronizedSet(new HashSet<>());
+		Set<File> files = Arrays.stream(Objects.requireNonNull(dir.listFiles())).parallel().collect(Collectors.toSet());
+		Set<String> hashes = ConcurrentHashMap.newKeySet();
 		int numberOfThreads;
-		numberOfThreads = 5;
+		numberOfThreads = Math.max(1, Runtime.getRuntime().availableProcessors() / 2 - 2);
 		ExecutorService executorService = Executors.newFixedThreadPool(numberOfThreads);
 		if (files != null) {
 			for (File file : files) {
@@ -442,9 +443,44 @@ public class EasyInstallClient implements ClientModInitializer {
 			executorService.awaitTermination(Integer.MAX_VALUE, TimeUnit.SECONDS);
 		} catch (InterruptedException e) {
 			executorService.shutdownNow();
-            return null;
+            return new HashSet<>();
         }
         return new HashSet<>(hashes);
+	}
+
+	public static JsonArray getCategoryTags(ProjectType projectType) {
+		String urlString = "https://api.modrinth.com/v2/tag/category";
+		try {
+			URL url = URI.create(urlString).toURL();
+			HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
+			httpURLConnection.setRequestMethod("GET");
+			int responseCode = httpURLConnection.getResponseCode();
+			if (responseCode == httpURLConnection.HTTP_OK) {
+				try (BufferedReader reader = new BufferedReader(new InputStreamReader(httpURLConnection.getInputStream()))) {
+					String response = reader.lines().collect(Collectors.joining("\n"));
+					JsonArray arr = JsonParser.parseString(response).getAsJsonArray();
+					JsonArray finalArr = new JsonArray();
+					System.out.println(response);
+					for (int i = 0; i < arr.size(); i++) {
+						String type = arr.get(i).getAsJsonObject().get("project_type").toString();
+						System.out.println(type);
+						if (type.equals("\"shader\"") && projectType == ProjectType.SHADER
+						|| type.equals("\"mod\"") && projectType == ProjectType.MOD
+						|| type.equals("\"resourcepack\"") && projectType == ProjectType.RESOURCE_PACK
+						|| type.equals("\"mod\"") && projectType == ProjectType.DATA_PACK) {
+							finalArr.add(arr.get(i));
+						}
+					}
+					return finalArr;
+				}
+			} else {
+				System.out.println(responseCode);
+			}
+			httpURLConnection.disconnect();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return new JsonArray();
 	}
 }
 

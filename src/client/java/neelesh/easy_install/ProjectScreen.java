@@ -161,7 +161,7 @@ public class ProjectScreen extends Screen {
         this.addSelectableChild(installButton);
         this.addSelectableChild(siteButton);
         Thread thread = new Thread(() -> {
-            IconManager.loadIcon(projectInfo, iconTextureId, client, Thread.currentThread());
+            IconManager.loadIcon(projectInfo, iconTextureId, Thread.currentThread());
         });
         thread.start();
         //        boolean isImage = false;

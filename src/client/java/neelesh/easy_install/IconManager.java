@@ -20,7 +20,8 @@ import java.net.URL;
 
 public class IconManager {
 
-    public static Identifier loadIcon(ProjectInfo info, Identifier textureId, MinecraftClient client, Thread thread) {
+    public static Identifier loadIcon(ProjectInfo info, Identifier textureId, Thread thread) {
+        MinecraftClient client = MinecraftClient.getInstance();
         try {
             URL url = info.getIconUrl();
             if (url == null) {
@@ -39,7 +40,6 @@ public class IconManager {
             boolean isWebp = url.toString().substring(url.toString().length()-4).equals("webp");
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setInstanceFollowRedirects(true);
-            System.out.println(url);
             connection.setRequestMethod("GET");
             try (InputStream inputStream = connection.getInputStream()) {
                 NativeImage image = loadImage(inputStream, isWebp, true);
@@ -121,16 +121,7 @@ public class IconManager {
 
 
     }
-//    private static BufferedImage scaleImage(BufferedImage original, int newWidth, int newHeight) {
-//        BufferedImage scaledImage = new BufferedImage(newWidth, newHeight, BufferedImage.TYPE_INT_ARGB);
-//        Graphics2D g2d = scaledImage.createGraphics();
-//
-//        // Draw the original image scaled to the new size
-//        g2d.drawImage(original, 0, 0, newWidth, newHeight, null);
-//        g2d.dispose();
-//
-//        return scaledImage;
-//    }
+    
     public static NativeImage loadIcon(URL url, Identifier textureId, MinecraftClient client) {
         NativeImage image = null;
         try {
@@ -143,12 +134,12 @@ public class IconManager {
                 });
                 return null;
             }
-            boolean isWebp = url.toString().substring(url.toString().length() - 4).equals("webp");
-            if (!url.toString().substring(url.toString().length() - 4).equals(".svg")) {
+            String fileEnd = url.toString().substring(url.toString().length() - 4);
+            boolean isWebp = fileEnd.equals("webp");
+            if (!fileEnd.equals(".svg")) {
                 HttpURLConnection connection = (HttpURLConnection) url.openConnection();
                 connection.setInstanceFollowRedirects(true);
                 connection.setRequestMethod("GET");
-                System.out.println(url);
                 try (InputStream inputStream = connection.getInputStream()) {
                     image = loadImage(inputStream, isWebp, false);
                     if (image == null) {

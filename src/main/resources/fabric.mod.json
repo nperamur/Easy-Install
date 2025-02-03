@@ -3,15 +3,16 @@
 	"id": "easy-install",
 	"version": "1.0.0",
 	"name": "Easy Install",
-	"description": "This is an example description! Tell everyone what your mod is about!",
+	"description": "Browse, install, and update mods, resource packs, data packs, and shaders from Modrinth directly in-game!",
 	"authors": [
 		"blue_cube78"
 	],
 	"contact": {
 		"homepage": "https://fabricmc.net/",
-		"sources": "https://github.com/FabricMC/fabric-example-mod"
+		"sources": "https://github.com/FabricMC/fabric-example-mod",
+		"issues": "https://github.com/nperamur/WhackingStick/issues"
 	},
-	"license": "CC0-1.0",
+	"license": "MIT",
 	"icon": "assets/easy_install/icon.png",
 	"environment": "*",
 	"entrypoints": {
@@ -30,7 +31,6 @@
 	},
 
 	"mixins": [
-		"easy_install.mixins.json",
 		{
 			"config": "easy_install.client.mixins.json",
 			"environment": "client"

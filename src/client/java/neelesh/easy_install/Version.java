@@ -66,7 +66,6 @@ public class Version {
 
     public void download() {
         EasyInstallClient.downloadVersion(this.downloadUrl, this.filename, this.projectType);
-//        if (this.projectType.equals(ProjectType.MOD)) {
         int numberOfThreads = 5;
         ExecutorService executorService = Executors.newFixedThreadPool(numberOfThreads);
         for(int i = 0; i < this.dependencies.size(); i++) {
