@@ -1,7 +1,8 @@
-package neelesh.easy_install;
+package neelesh.easy_install.gui.screen;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonParser;
+import neelesh.easy_install.*;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
@@ -23,6 +24,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.stream.Collectors;
 public class UpdateScreen extends Screen {
+
     private ArrayList<Version> versions;
     private ArrayList<String> titles;
     private ArrayList<Identifier> ICON_TEXTURE_ID;
@@ -30,15 +32,11 @@ public class UpdateScreen extends Screen {
     private ButtonWidget updateAll;
     private ButtonWidget doneButton;
     private double scrollAmount;
-    private Screen parent;
-
-
 
     protected UpdateScreen(ProjectType projectType, Screen parent) {
         super(Text.of("Update Screen"));
         versions = EasyInstallClient.getUpdatedVersions(projectType);
         this.scrollAmount = 0;
-        this.parent = parent;
         titles = new ArrayList<>();
         ICON_TEXTURE_ID = new ArrayList<>();
         doneButton = ButtonWidget.builder(Text.of("Done"), button -> MinecraftClient.getInstance().setScreen(parent)).build();
@@ -108,7 +106,7 @@ public class UpdateScreen extends Screen {
                                     texture.upload();
                                     client.getTextureManager().registerTexture(ICON_TEXTURE_ID.get(finalI), texture);
                                 });
-                                IconManager.loadIcon(URI.create(jsonArray.get(finalX).getAsJsonObject().get("icon_url").getAsString()).toURL(), ICON_TEXTURE_ID.get(finalI), client);
+                                ImageLoader.loadImage(URI.create(jsonArray.get(finalX).getAsJsonObject().get("icon_url").getAsString()).toURL(), ICON_TEXTURE_ID.get(finalI), client);
                             } catch (MalformedURLException e) {
                                 throw new RuntimeException(e);
                             }
@@ -161,7 +159,7 @@ public class UpdateScreen extends Screen {
                 default -> null;
             };
             context.drawText(textRenderer, Text.literal("•" + versions.get(i).getVersionType()).formatted(formatting), 50, i * 50 + 55 + (int) scrollAmount, 0xFFFFFF, true);
-            context.drawText(textRenderer, Text.of(versions.get(i).getVersionNumber()), 50 + textRenderer.getWidth("•" + versions.get(i).getVersionType()) + 8, i * 50 + 55 + + (int) scrollAmount, 0xFFFFFF, true);
+            context.drawText(textRenderer, Text.of(versions.get(i).getVersionNumber()), 50 + textRenderer.getWidth("•" + versions.get(i).getVersionType()) + 8, i * 50 + 55 + (int) scrollAmount, 0xFFFFFF, true);
             context.drawText(textRenderer, Text.of(String.format("%,d", versions.get(i).getNumDownloads()) + " downloads"), width - textRenderer.getWidth(String.format("%,d", versions.get(i).getNumDownloads()) + " downloads") - 8, installButtons.get(i).getY() + installButtons.get(i).getHeight() + 2, 0xFFFFFF, true);
 
             installButtons.get(i).render(context, mouseX, mouseY, delta);

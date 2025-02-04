@@ -4,7 +4,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import neelesh.easy_install.EasyInstallClient;
-import neelesh.easy_install.ProjectScreen;
+import neelesh.easy_install.gui.screen.ProjectScreen;
 import neelesh.easy_install.Version;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.Drawable;
@@ -18,7 +18,7 @@ import net.minecraft.util.Formatting;
 import java.io.File;
 import java.io.IOException;
 
-import static neelesh.easy_install.ProjectScreen.VERTICAL_SEPARATOR_TEXTURE;
+import static neelesh.easy_install.gui.screen.ProjectScreen.VERTICAL_SEPARATOR_TEXTURE;
 
 public class VersionsTab extends GridScreenTab implements Drawable {
     private Version[] versions;

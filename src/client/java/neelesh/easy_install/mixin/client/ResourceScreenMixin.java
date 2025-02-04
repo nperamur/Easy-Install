@@ -1,8 +1,7 @@
 package neelesh.easy_install.mixin.client;
 
 import neelesh.easy_install.EasyInstallClient;
-import neelesh.easy_install.GalleryImage;
-import neelesh.easy_install.ProjectBrowser;
+import neelesh.easy_install.gui.screen.ProjectBrowser;
 import neelesh.easy_install.ProjectType;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;

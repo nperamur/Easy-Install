@@ -1,8 +1,8 @@
 package neelesh.easy_install.gui.tab;
 
 import neelesh.easy_install.GalleryImage;
-import neelesh.easy_install.IconManager;
-import neelesh.easy_install.ProjectScreen;
+import neelesh.easy_install.ImageLoader;
+import neelesh.easy_install.gui.screen.ProjectScreen;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.Drawable;
@@ -16,7 +16,7 @@ import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import static neelesh.easy_install.ProjectScreen.VERTICAL_SEPARATOR_TEXTURE;
+import static neelesh.easy_install.gui.screen.ProjectScreen.VERTICAL_SEPARATOR_TEXTURE;
 
 public class GalleryTab extends GridScreenTab implements Drawable {
     private ArrayList<GalleryImage> galleryImages;
@@ -25,12 +25,13 @@ public class GalleryTab extends GridScreenTab implements Drawable {
         super(title);
         this.galleryImages = projectScreen.getGalleryImages();
         int numberOfThreads = 5;
-        ExecutorService executorService = Executors.newFixedThreadPool(numberOfThreads);
-        for (int i = 0; i < galleryImages.size(); i++) {
-            int finalI = i;
-            executorService.submit(() -> galleryImages.get(finalI).setImage(IconManager.loadIcon(galleryImages.get(finalI).getUrl(), galleryImages.get(finalI).getId(), MinecraftClient.getInstance())));
+        try (ExecutorService executorService = Executors.newFixedThreadPool(numberOfThreads)) {
+            for (int i = 0; i < galleryImages.size(); i++) {
+                int finalI = i;
+                executorService.submit(() -> galleryImages.get(finalI).setImage(ImageLoader.loadImage(galleryImages.get(finalI).getUrl(), galleryImages.get(finalI).getId(), MinecraftClient.getInstance())));
+            }
+            executorService.shutdown();
         }
-        executorService.shutdown();
         this.projectScreen = projectScreen;
     }
 

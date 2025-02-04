@@ -1,6 +1,8 @@
-package neelesh.easy_install;
+package neelesh.easy_install.gui.screen;
 
 import com.google.gson.JsonArray;
+import neelesh.easy_install.EasyInstallClient;
+import neelesh.easy_install.ProjectType;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
@@ -86,11 +88,11 @@ public class CategoryScreen extends Screen {
                 context.drawText(textRenderer, StringUtils.capitalize(header), (int)(20 /1.4f), (int) ((i * 25 + offset + scrollAmount)/1.4f), Colors.WHITE, true);
                 context.getMatrices().scale(1/1.4f,1/1.4f, 1f);
                 offset += 20;
-                for (int j = 0; j < boxes.size(); j++) {
+                for (CheckboxWidget box : boxes) {
 //                    boxes.get(j).setPosition(width * (j % 2) + 50 * (int) Math.pow(-1, j) - 40, i/2 * 25 + 10);
-                    boxes.get(j).setPosition(20, i * 25 + offset + (int) scrollAmount);
-                    boxes.get(j).render(context, mouseX, mouseY, delta);
-                    if (boxes.get(j).isChecked()) {
+                    box.setPosition(20, i * 25 + offset + (int) scrollAmount);
+                    box.render(context, mouseX, mouseY, delta);
+                    if (box.isChecked()) {
                         clearButton.active = true;
                     }
                     i++;

@@ -1,8 +1,9 @@
-package neelesh.easy_install;
+package neelesh.easy_install.gui.screen;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import neelesh.easy_install.*;
 import neelesh.easy_install.gui.tab.DescriptionTab;
 import neelesh.easy_install.gui.tab.GalleryTab;
 import neelesh.easy_install.gui.tab.VersionsTab;
@@ -73,7 +74,6 @@ public class ProjectScreen extends Screen {
         });
         thread.start();
     }).build();
-    private int count;
 
     private final ButtonWidget siteButton = ButtonWidget.builder(Text.of("Modrinth↗"), button -> {
         try {
@@ -88,14 +88,12 @@ public class ProjectScreen extends Screen {
         MinecraftClient.getInstance().setScreen(this.prevScreen);
     }).build();
     private DescriptionTab descriptionTab;
-    private GalleryTab galleryTab;
     private Tab prevTab;
 
     private final TabManager tabManager = new TabManager(this::addDrawableChild, child -> this.remove(child));
     private TabNavigationWidget tabNavigationWidget;
     private int scrollAmount = 15;
     public static final Identifier VERTICAL_SEPARATOR_TEXTURE = Identifier.of(EasyInstall.MOD_ID,"textures/gui/vertical_separator.png");
-    private Thread thread;
     protected ProjectScreen(Screen parent, ProjectInfo projectInfo) {
         super(Text.literal(projectInfo.getTitle()));
         this.projectInfo = projectInfo;
@@ -152,7 +150,6 @@ public class ProjectScreen extends Screen {
     @Override
     protected void init() {
         super.init();
-        this.count = -1;
         installButton.setDimensions(52, 14);
         siteButton.setDimensions(55, 14);
         galleryImages = new ArrayList<>();
@@ -161,7 +158,7 @@ public class ProjectScreen extends Screen {
         this.addSelectableChild(installButton);
         this.addSelectableChild(siteButton);
         Thread thread = new Thread(() -> {
-            IconManager.loadIcon(projectInfo, iconTextureId, Thread.currentThread());
+            ImageLoader.loadIcon(projectInfo, iconTextureId, Thread.currentThread());
         });
         thread.start();
         //        boolean isImage = false;
@@ -203,7 +200,7 @@ public class ProjectScreen extends Screen {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        this.galleryTab = new GalleryTab(Text.of("Gallery"), this);
+        GalleryTab galleryTab = new GalleryTab(Text.of("Gallery"), this);
         this.descriptionTab = new DescriptionTab(Text.of("Description"), this);
         this.versionsTab = new VersionsTab(Text.of("Versions"), this);
         if (!galleryImages.isEmpty()) {
@@ -233,7 +230,7 @@ public class ProjectScreen extends Screen {
 
     @Override
     protected void renderDarkening(DrawContext context) {
-        context.drawTexture(RenderLayer::getGuiTextured, TAB_HEADER_BACKGROUND_TEXTURE, 0, 0, 0.0F, 0.0F, this.width, ((TabButtonWidget) this.tabNavigationWidget.children().get(0)).getHeight(), 16, 16);
+        context.drawTexture(RenderLayer::getGuiTextured, TAB_HEADER_BACKGROUND_TEXTURE, 0, 0, 0.0F, 0.0F, this.width, ((TabButtonWidget) this.tabNavigationWidget.children().getFirst()).getHeight(), 16, 16);
     }
 
     @Override

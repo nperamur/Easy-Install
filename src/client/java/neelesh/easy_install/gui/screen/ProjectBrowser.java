@@ -1,6 +1,6 @@
-package neelesh.easy_install;
+package neelesh.easy_install.gui.screen;
 
-import com.kitfox.svg.SVGLoader;
+import neelesh.easy_install.*;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
@@ -19,7 +19,6 @@ import net.minecraft.util.StringHelper;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -170,9 +169,7 @@ public class ProjectBrowser extends Screen {
             search(searchBox.getText());
             initialized = true;
         } else {
-            Thread thread = new Thread(() -> {
-                EasyInstallClient.checkInstalled(projectType);
-            });
+            Thread thread = new Thread(() -> EasyInstallClient.checkInstalled(projectType));
             thread.start();
 
 
@@ -416,27 +413,28 @@ public class ProjectBrowser extends Screen {
 
     public void loadIcons() {
         int numberOfThreads = Runtime.getRuntime().availableProcessors() / 2 + 2;
-        ExecutorService executorService = Executors.newFixedThreadPool(numberOfThreads);
-        for (int i = 0; i < EasyInstallClient.getRowsOnPage(); i++) {
-            int finalI = i;
-            if (INFO[i] == null) {
-                break;
+        try (ExecutorService executorService = Executors.newFixedThreadPool(numberOfThreads)) {
+            for (int i = 0; i < EasyInstallClient.getRowsOnPage(); i++) {
+                int finalI = i;
+                if (INFO[i] == null) {
+                    break;
+                }
+                if (!Thread.currentThread().isInterrupted()) {
+                    client.execute(() -> {
+                        NativeImageBackedTexture texture = new NativeImageBackedTexture(new NativeImage(1, 1, false));
+                        texture.getImage().setColorArgb(0, 0, 0x00000000);
+                        texture.upload();
+                        client.getTextureManager().registerTexture(ICON_TEXTURE_ID[finalI], texture);
+                    });
+                    Thread thread = Thread.currentThread();
+                    executorService.submit(() -> ImageLoader.loadIcon(INFO[finalI], ICON_TEXTURE_ID[finalI], thread));
+                } else {
+                    executorService.shutdownNow();
+                    return;
+                }
             }
-            if (!Thread.currentThread().isInterrupted()) {
-                client.execute(() -> {
-                    NativeImageBackedTexture texture = new NativeImageBackedTexture(new NativeImage(1, 1, false));
-                    texture.getImage().setColorArgb(0, 0, 0x00000000);
-                    texture.upload();
-                    client.getTextureManager().registerTexture(ICON_TEXTURE_ID[finalI], texture);
-                });
-                Thread thread = Thread.currentThread();
-                executorService.submit(() -> IconManager.loadIcon(INFO[finalI], ICON_TEXTURE_ID[finalI], thread));
-            } else {
-                executorService.shutdownNow();
-                return;
-            }
+            executorService.shutdown();
         }
-        executorService.shutdown();
     }
 
     @Override

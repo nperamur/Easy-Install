@@ -1,8 +1,8 @@
 package neelesh.easy_install.gui.tab;
 
-import neelesh.easy_install.IconManager;
+import neelesh.easy_install.ImageLoader;
 import neelesh.easy_install.ProjectImage;
-import neelesh.easy_install.ProjectScreen;
+import neelesh.easy_install.gui.screen.ProjectScreen;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.Drawable;
@@ -29,7 +29,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 
-import static neelesh.easy_install.ProjectScreen.VERTICAL_SEPARATOR_TEXTURE;
+import static neelesh.easy_install.gui.screen.ProjectScreen.VERTICAL_SEPARATOR_TEXTURE;
 
 public class DescriptionTab extends GridScreenTab implements Drawable {
     private ProjectScreen projectScreen;
@@ -88,7 +88,7 @@ public class DescriptionTab extends GridScreenTab implements Drawable {
                     try {
                         url = new URL(str);
                         Identifier id = Identifier.of("project_image:" + i);
-                        NativeImage image = IconManager.loadIcon(url, id, MinecraftClient.getInstance());
+                        NativeImage image = ImageLoader.loadImage(url, id, MinecraftClient.getInstance());
                         if (image != null) {
                             ProjectImage projectImage = new ProjectImage(image, id, i);
                             if (!imageWidth.isEmpty()) {

@@ -18,7 +18,7 @@ import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
 
-public class IconManager {
+public class ImageLoader {
 
     public static Identifier loadIcon(ProjectInfo info, Identifier textureId, Thread thread) {
         MinecraftClient client = MinecraftClient.getInstance();
@@ -37,7 +37,7 @@ public class IconManager {
                 });
                 return null;
             }
-            boolean isWebp = url.toString().substring(url.toString().length()-4).equals("webp");
+            boolean isWebp = url.toString().endsWith("webp");
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setInstanceFollowRedirects(true);
             connection.setRequestMethod("GET");
@@ -122,7 +122,7 @@ public class IconManager {
 
     }
     
-    public static NativeImage loadIcon(URL url, Identifier textureId, MinecraftClient client) {
+    public static NativeImage loadImage(URL url, Identifier textureId, MinecraftClient client) {
         NativeImage image = null;
         try {
             if (url == null) {
