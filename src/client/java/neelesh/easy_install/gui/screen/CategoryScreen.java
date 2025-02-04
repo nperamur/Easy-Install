@@ -89,7 +89,6 @@ public class CategoryScreen extends Screen {
                 context.getMatrices().scale(1/1.4f,1/1.4f, 1f);
                 offset += 20;
                 for (CheckboxWidget box : boxes) {
-//                    boxes.get(j).setPosition(width * (j % 2) + 50 * (int) Math.pow(-1, j) - 40, i/2 * 25 + 10);
                     box.setPosition(20, i * 25 + offset + (int) scrollAmount);
                     box.render(context, mouseX, mouseY, delta);
                     if (box.isChecked()) {
