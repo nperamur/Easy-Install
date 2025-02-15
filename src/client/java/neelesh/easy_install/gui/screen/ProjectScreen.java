@@ -41,11 +41,10 @@ import static net.minecraft.client.gui.screen.world.CreateWorldScreen.TAB_HEADER
 public class ProjectScreen extends Screen {
     private ProjectInfo projectInfo;
     private final Identifier iconTextureId;
-    //make the image into an object
     private int maxY;
-    private final ArrayList<ProjectImage> projectImages = new ArrayList<ProjectImage>();
-    private ArrayList<GalleryImage> galleryImages;
+    private ArrayList<GalleryImage> galleryImages = new ArrayList<>();
     private VersionsTab versionsTab;
+    private boolean initialized;
     private final ButtonWidget installButton = ButtonWidget.builder(Text.of("Install"), button -> {
         Thread thread = new Thread(() -> {
             if (!projectInfo.isUpdated()) {
@@ -68,8 +67,9 @@ public class ProjectScreen extends Screen {
                 });
                 thread2.start();
             }
-            EasyInstallClient.downloadVersion(projectInfo.getSlug(), projectInfo.getProjectType());
             projectInfo.setInstalled(true);
+            versionsTab.setFirstVersionActive(false);
+            EasyInstallClient.downloadVersion(projectInfo.getSlug(), projectInfo.getProjectType());
             versionsTab.setInitialized(false);
         });
         thread.start();
@@ -113,6 +113,8 @@ public class ProjectScreen extends Screen {
         }
         prevTab = tabManager.getCurrentTab();
         ((Drawable) tabManager.getCurrentTab()).render(context, mouseX, mouseY, delta);
+        descriptionTab.setLinksActive(tabManager.getCurrentTab() instanceof DescriptionTab);
+        versionsTab.setActive(tabManager.getCurrentTab() instanceof VersionsTab);
         for (int i = 0; i < tabNavigationWidget.children().size(); i++) {
             ((TabButtonWidget) tabNavigationWidget.children().get(i)).setWidth((this.width - 130)/(tabNavigationWidget.children().size()));
             ((TabButtonWidget) tabNavigationWidget.children().get(i)).setY(scrollAmount-10);
@@ -152,8 +154,6 @@ public class ProjectScreen extends Screen {
         super.init();
         installButton.setDimensions(52, 14);
         siteButton.setDimensions(55, 14);
-        galleryImages = new ArrayList<>();
-
         this.addSelectableChild(doneButton);
         this.addSelectableChild(installButton);
         this.addSelectableChild(siteButton);
@@ -161,47 +161,46 @@ public class ProjectScreen extends Screen {
             ImageLoader.loadIcon(projectInfo, iconTextureId, Thread.currentThread());
         });
         thread.start();
-        //        boolean isImage = false;
-        //        boolean linkInImage = false;
-        //        boolean puttingImageUrl = false;
-        //        boolean puttingImageWidth = false;
-        //        int imageCount = 0;
-        //        String imageWidth = "";
-        String urlString = "https://api.modrinth.com/v2/project/" + projectInfo.getSlug();
-        try {
-            URL url = URI.create(urlString).toURL();
-            HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
-            httpURLConnection.setRequestMethod("GET");
-            int responseCode = httpURLConnection.getResponseCode();
-            if (responseCode == httpURLConnection.HTTP_OK) {
-                String response;
-                try (BufferedReader reader = new BufferedReader(new InputStreamReader(httpURLConnection.getInputStream()))) {
-                    response = reader.lines().collect(Collectors.joining("\n"));
-                }
-                JsonObject jsonObject = (JsonObject) JsonParser.parseString(response);
-                String body = jsonObject.get("body").getAsString();
-                projectInfo.setBody(body);
-                JsonArray gallery = jsonObject.get("gallery").getAsJsonArray();
-                for (int i = 0; i < gallery.size(); i++) {
-                    try {
-                        galleryImages.add(new GalleryImage(Identifier.of("gallery_image:" + i), URI.create(gallery.get(i).getAsJsonObject().get("url").getAsString()).toURL(), gallery.get(i).getAsJsonObject().get("description").getAsString()));
-                    } catch (UnsupportedOperationException e) {
-                        galleryImages.add(new GalleryImage(Identifier.of("gallery_image:" + i), URI.create(gallery.get(i).getAsJsonObject().get("url").getAsString()).toURL()));
+        if (!initialized) {
+            String urlString = "https://api.modrinth.com/v2/project/" + projectInfo.getSlug();
+            try {
+                URL url = URI.create(urlString).toURL();
+                HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
+                httpURLConnection.setRequestMethod("GET");
+                int responseCode = httpURLConnection.getResponseCode();
+                if (responseCode == httpURLConnection.HTTP_OK) {
+                    String response;
+                    try (BufferedReader reader = new BufferedReader(new InputStreamReader(httpURLConnection.getInputStream()))) {
+                        response = reader.lines().collect(Collectors.joining("\n"));
                     }
-                    try {
-                        galleryImages.get(i).setTitle(gallery.get(i).getAsJsonObject().get("title").getAsString());
-                    } catch (UnsupportedOperationException ignored) {
+                    JsonObject jsonObject = (JsonObject) JsonParser.parseString(response);
+                    String body = jsonObject.get("body").getAsString();
+                    projectInfo.setBody(body);
+                    JsonArray gallery = jsonObject.get("gallery").getAsJsonArray();
+                    for (int i = 0; i < gallery.size(); i++) {
+                        try {
+                            galleryImages.add(new GalleryImage(Identifier.of("gallery_image:" + i), URI.create(gallery.get(i).getAsJsonObject().get("url").getAsString()).toURL(), gallery.get(i).getAsJsonObject().get("description").getAsString()));
+                        } catch (UnsupportedOperationException e) {
+                            galleryImages.add(new GalleryImage(Identifier.of("gallery_image:" + i), URI.create(gallery.get(i).getAsJsonObject().get("url").getAsString()).toURL()));
+                        }
+                        try {
+                            galleryImages.get(i).setTitle(gallery.get(i).getAsJsonObject().get("title").getAsString());
+                        } catch (UnsupportedOperationException ignored) {
 
+                        }
                     }
-                    System.out.println("GalleryImage: " + gallery.get(i));
                 }
+                httpURLConnection.disconnect();
+            } catch (IOException e) {
+                e.printStackTrace();
             }
-            httpURLConnection.disconnect();
-        } catch (IOException e) {
-            e.printStackTrace();
+            this.descriptionTab = new DescriptionTab(Text.of("Description"), this);
+            initialized = true;
+        }
+        for (ButtonWidget link : descriptionTab.getLinkButtons()) {
+            this.addSelectableChild(link);
         }
         GalleryTab galleryTab = new GalleryTab(Text.of("Gallery"), this);
-        this.descriptionTab = new DescriptionTab(Text.of("Description"), this);
         this.versionsTab = new VersionsTab(Text.of("Versions"), this);
         if (!galleryImages.isEmpty()) {
             tabNavigationWidget = TabNavigationWidget.builder(this.tabManager, this.width-131).tabs(descriptionTab, galleryTab, versionsTab).build();
@@ -212,12 +211,11 @@ public class ProjectScreen extends Screen {
         tabNavigationWidget.init();
         tabNavigationWidget.selectTab(0, false);
         this.addSelectableChild(tabNavigationWidget);
-        System.out.println(projectInfo.getBody());
     }
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
-        int scrollDelta = (int) (verticalAmount * 12);
+        int scrollDelta = (int) (verticalAmount * 13);
         if (scrollAmount + scrollDelta <= 20 && scrollAmount + scrollDelta >= - maxY + height - 10) {
             scrollAmount += scrollDelta;
         } else if (scrollAmount + scrollDelta > 20) {
@@ -273,9 +271,6 @@ public class ProjectScreen extends Screen {
         return galleryImages;
     }
 
-    public ArrayList<ProjectImage> getProjectImages() {
-        return projectImages;
-    }
 
 
 }

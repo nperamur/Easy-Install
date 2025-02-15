@@ -1,6 +1,9 @@
 package neelesh.easy_install;
 
-import com.kitfox.svg.app.beans.SVGIcon;
+import com.github.weisj.jsvg.SVGDocument;
+import com.github.weisj.jsvg.nodes.Image;
+import com.github.weisj.jsvg.parser.LoaderContext;
+import com.github.weisj.jsvg.parser.SVGLoader;
 import com.mojang.logging.LogUtils;
 import com.zakgof.webp4j.Webp4j;
 import net.minecraft.client.MinecraftClient;
@@ -15,12 +18,11 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
-import java.net.URI;
 import java.net.URL;
+import java.util.logging.Level;
 
 public class ImageLoader {
-
-    public static Identifier loadIcon(ProjectInfo info, Identifier textureId, Thread thread) {
+    public static void loadIcon(ProjectInfo info, Identifier textureId, Thread thread) {
         MinecraftClient client = MinecraftClient.getInstance();
         try {
             URL url = info.getIconUrl();
@@ -35,40 +37,46 @@ public class ImageLoader {
                     texture.upload();
                     client.getTextureManager().registerTexture(textureId, texture);
                 });
-                return null;
+                return;
             }
             boolean isWebp = url.toString().endsWith("webp");
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-            connection.setInstanceFollowRedirects(true);
-            connection.setRequestMethod("GET");
-            try (InputStream inputStream = connection.getInputStream()) {
-                NativeImage image = loadImage(inputStream, isWebp, true);
-                TextureManager textureManager = client.getTextureManager();
-                if (!thread.isInterrupted()) {
-                    client.execute(() -> {
+            NativeImage image;
+            if (url.toString().endsWith("svg")) {
+                image = loadSvgImage(url);
 
-                        try {
-                            NativeImageBackedTexture texture;
-                            texture = new NativeImageBackedTexture(image);
-                            texture.upload();
-                            textureManager.registerTexture(textureId, texture);
-                            image.close();
-                        } catch (Throwable var3) {
-                            image.close();
-                            throw var3;
-                        }
-                    });
+            } else {
+                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+                connection.setInstanceFollowRedirects(true);
+                connection.setRequestMethod("GET");
+                try (InputStream inputStream = connection.getInputStream()) {
+                    image = loadImage(inputStream, isWebp, true);
+
+                } finally {
+                    connection.disconnect(); // Disconnect the connection
                 }
-
-            } finally {
-                connection.disconnect(); // Disconnect the connection
             }
+
+            if (!thread.isInterrupted()) {
+                TextureManager textureManager = client.getTextureManager();
+                NativeImage finalImage = image;
+                client.execute(() -> {
+                    NativeImageBackedTexture texture;
+                    texture = new NativeImageBackedTexture(finalImage);
+                    texture.upload();
+                    if (!thread.isInterrupted()) {
+                        textureManager.registerTexture(textureId, texture);
+                    }
+                    finalImage.close();
+                });
+            }
+
+
         } catch (IOException e) {
             LogUtils.getLogger().error("Failed to load image: {}", e.getMessage());
         }
-        return textureId;
     }
-    private static NativeImage loadImage(InputStream input, boolean webp, boolean scaled) {
+
+    private static NativeImage loadImage(InputStream input, boolean webp, boolean icon) {
         try {
 
 
@@ -80,32 +88,19 @@ public class ImageLoader {
                 } catch (Exception e) {
                     bufferedImage = null;
                 }
-            } else {
 
+            } else {
                 bufferedImage = ImageIO.read(input);
             }
             if (bufferedImage == null) {
-                System.err.println("Failed to read image.");
-                if (!scaled) {
+//                System.err.println("Failed to read image.");
+                if (!icon) {
                     return null;
                 }
                 bufferedImage = new BufferedImage(1500, 1500, BufferedImage.TYPE_INT_RGB);
                 bufferedImage.createGraphics();
             }
             NativeImage nativeImage;
-//            if (scaled) {
-//                int newWidth = 200;
-//                int newHeight = 200;
-//                BufferedImage scaledImage = bufferedImage;
-//                nativeImage = new NativeImage(scaledImage.getWidth(), scaledImage.getHeight(), false);
-//                for (int x = 0; x < scaledImage.getWidth(); x++) {
-//                    for (int y = 0; y < scaledImage.getHeight(); y++) {
-//                        int rgb = scaledImage.getRGB(x, y);
-//                        nativeImage.setColorArgb(x, y, rgb);
-//                    }
-//                }
-//                return nativeImage;
-//            }
             nativeImage = new NativeImage(bufferedImage.getWidth(), bufferedImage.getHeight(), false);
             for (int x = 0; x < bufferedImage.getWidth(); x++) {
                 for (int y = 0; y < bufferedImage.getHeight(); y++) {
@@ -121,39 +116,38 @@ public class ImageLoader {
 
 
     }
-    
+
     public static NativeImage loadImage(URL url, Identifier textureId, MinecraftClient client) {
         NativeImage image = null;
         try {
             if (url == null) {
                 client.execute(() -> {
                     NativeImageBackedTexture texture = new NativeImageBackedTexture(new NativeImage(1, 1, false));
-                    texture.getImage().setColorArgb(1, 1, 0xFF000000);
+                    texture.getImage().setColorArgb(0, 0, 0xFF000000);
                     texture.upload();
                     client.getTextureManager().registerTexture(textureId, texture);
                 });
                 return null;
             }
-            String fileEnd = url.toString().substring(url.toString().length() - 4);
-            boolean isWebp = fileEnd.equals("webp");
-            if (!fileEnd.equals(".svg")) {
+            boolean isWebp = url.toString().endsWith("webp");
+            if (!url.toString().endsWith("svg")) {
                 HttpURLConnection connection = (HttpURLConnection) url.openConnection();
                 connection.setInstanceFollowRedirects(true);
                 connection.setRequestMethod("GET");
                 try (InputStream inputStream = connection.getInputStream()) {
                     image = loadImage(inputStream, isWebp, false);
-                    if (image == null) {
-                        image = loadSvgImage(url.toURI());
+                    if (image == null && !url.toString().endsWith("webp") && !url.toString().endsWith("png") && !url.toString().endsWith("jpg")) {
+                        image = loadSvgImage(url);
                     }
                 } finally {
                     connection.disconnect();
                 }
             } else {
-                image = loadSvgImage(url.toURI());
+                image = loadSvgImage(url);
             }
 
         } catch (Exception e) {
-            LogUtils.getLogger().error("Failed to load image: {}", e.getMessage());
+            EasyInstall.LOGGER.warn("Failed to load image: {}", e.getMessage());
         }
         if (image == null) {
             return null;
@@ -161,32 +155,26 @@ public class ImageLoader {
         TextureManager textureManager = client.getTextureManager();
         NativeImage finalImage = image;
         client.execute(() -> {
-
-            try {
-                NativeImageBackedTexture texture;
-                texture = new NativeImageBackedTexture(finalImage);
-
-                texture.upload();
-                textureManager.registerTexture(textureId, texture);
-            } catch (Throwable var3) {
-                finalImage.close();
-                throw var3;
-            }
+            NativeImageBackedTexture texture;
+            texture = new NativeImageBackedTexture(finalImage);
+            texture.upload();
+            textureManager.registerTexture(textureId, texture);
+            finalImage.close();
         });
         return image;
     }
 
-    private static NativeImage loadSvgImage(URI url) {
+    private static NativeImage loadSvgImage(URL url) {
+        java.util.logging.Logger svgLogger = java.util.logging.Logger.getLogger(Image.class.getName());
+        svgLogger.setLevel(Level.SEVERE);
         try {
 
+            SVGLoader loader = new SVGLoader();
+            SVGDocument svgDocument = loader.load(url, LoaderContext.createDefault());
 
-            SVGIcon svgIcon = new SVGIcon();
-            svgIcon.setSvgURI(url);
-            svgIcon.setAntiAlias(true);
-
-
-            int width = svgIcon.getIconWidth();
-            int height = svgIcon.getIconHeight();
+            assert svgDocument != null;
+            int width = (int) svgDocument.viewBox().getWidth();
+            int height = (int) svgDocument.viewBox().getHeight();
 
 
             BufferedImage bufferedImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
@@ -194,8 +182,9 @@ public class ImageLoader {
 
             Graphics2D g2d = bufferedImage.createGraphics();
             g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2d.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
 
-            svgIcon.paintIcon(null, g2d, 0, 0);
+            svgDocument.render(null, g2d);
             g2d.dispose();
 
             NativeImage nativeImage = new NativeImage(bufferedImage.getWidth(), bufferedImage.getHeight(), false);
@@ -206,10 +195,7 @@ public class ImageLoader {
                 }
             }
             return nativeImage;
-
-
         } catch (Exception e) {
-            e.printStackTrace();
             return null;
         }
     }

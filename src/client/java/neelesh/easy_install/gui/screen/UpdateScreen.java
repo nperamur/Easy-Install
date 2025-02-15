@@ -144,7 +144,6 @@ public class UpdateScreen extends Screen {
         context.drawText(textRenderer, updateText, width / 2 - textRenderer.getWidth(updateText)/2, 10 + (int) scrollAmount, 0xFFFFFF, true);
         int i = 0;
         while(i < versions.size()) {
-            //context.drawText(textRenderer, versions.get(i).getName(), width / 2 - textRenderer.getWidth(updateText)/2, 20 + (i + 1) * 30, 0xFFFFFF, true);
             context.drawTexture(RenderLayer::getGuiTextured, ICON_TEXTURE_ID.get(i), 0, i * 50 + 30 + (int) scrollAmount, 0, 0, 40, 40, 40, 40);
             context.getMatrices().scale(1.5f, 1.5f, 1.5f);
             context.drawText(textRenderer, titles.get(i), (int) (50 / 1.5), (int) ((i * 50 + 30) / 1.5 + scrollAmount/1.5), 0xFFFFFF, true);
@@ -189,7 +188,7 @@ public class UpdateScreen extends Screen {
     public void updateVersion(ProjectType projectType, int index) {
         Thread thread = new Thread(() -> {
             versions.get(index).download();
-            EasyInstallClient.checkInstalled(projectType);
+            EasyInstallClient.checkStatus(projectType);
         });
         thread.start();
         HashMap<String, String> oldHashes = EasyInstallClient.getOldHashes();
@@ -211,8 +210,8 @@ public class UpdateScreen extends Screen {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
-        if (scrollAmount + verticalAmount * 12 <= 0 && scrollAmount + verticalAmount * 12 >= -EasyInstallClient.getNumUpdates() * 50 - 45 + height) {
-            scrollAmount += verticalAmount*12;
+        if (scrollAmount + verticalAmount * 13 <= 0 && scrollAmount + verticalAmount * 13 >= -EasyInstallClient.getNumUpdates() * 50 - 45 + height) {
+            scrollAmount += verticalAmount * 13;
         }
         return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount);
     }

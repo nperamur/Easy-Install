@@ -17,7 +17,6 @@ public class GalleryImage {
         this.url = url;
         this.description = description;
         this.title = "";
-        System.out.println(description);
     }
 
     public GalleryImage(Identifier id, URL url) {

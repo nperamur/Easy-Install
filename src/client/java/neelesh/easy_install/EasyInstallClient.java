@@ -83,14 +83,15 @@ public class EasyInstallClient implements ClientModInitializer {
 		String response = getVersions(slug, projectType);
 		JsonObject jsonObject = JsonParser.parseString(response).getAsJsonArray().get(0).getAsJsonObject().get("files").getAsJsonArray().get(0).getAsJsonObject();
 		String filename = jsonObject.get("filename").getAsString();
-		try {
-			URL versionURL = URI.create(jsonObject.get("url").getAsString()).toURL();
-			downloadVersion(versionURL, filename, projectType);
-		} catch (MalformedURLException e) {
-			throw new RuntimeException(e);
-		}
+
 		int numberOfThreads = 5;
 		try(ExecutorService executorService = Executors.newFixedThreadPool(numberOfThreads)) {
+			try {
+				URL versionURL = URI.create(jsonObject.get("url").getAsString()).toURL();
+				executorService.submit(() -> downloadVersion(versionURL, filename, projectType));
+			} catch (MalformedURLException e) {
+				throw new RuntimeException(e);
+			}
 			JsonArray dependencies = JsonParser.parseString(response).getAsJsonArray().get(0).getAsJsonObject().get("dependencies").getAsJsonArray();
 			for (int i = 0; i < dependencies.size(); i++) {
 				JsonObject dependency = dependencies.get(i).getAsJsonObject();
@@ -101,6 +102,11 @@ public class EasyInstallClient implements ClientModInitializer {
 				}
 			}
 			executorService.shutdown();
+			try {
+				executorService.awaitTermination(Integer.MAX_VALUE, TimeUnit.SECONDS);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 
@@ -160,7 +166,7 @@ public class EasyInstallClient implements ClientModInitializer {
     }
 
 
-	public static void checkInstalled(ProjectType projectType) {
+	public static void checkStatus(ProjectType projectType) {
 		HashSet<String> hashes = getFileHashes(projectType);
 		if (Thread.currentThread().isInterrupted()) {
 			return;
@@ -179,11 +185,12 @@ public class EasyInstallClient implements ClientModInitializer {
 			if (jsonObject.get(hash) != null) {
 				String h = jsonObject.get(hash).getAsJsonObject().get("files").getAsJsonArray().get(0).getAsJsonObject().get("hashes").getAsJsonObject().get("sha1").getAsString();
 				oldHashes.put(hash, h);
+				String projectId = jsonObject.get(hash).getAsJsonObject().get("project_id").getAsString();
 				if (hashes.contains(h)) {
-					installedProjectIds.add(jsonObject.get(hash).getAsJsonObject().get("project_id").getAsString());
+					installedProjectIds.add(projectId);
 				} else {
-					updateNeededProjectIds.add(jsonObject.get(hash).getAsJsonObject().get("project_id").getAsString());
-					hashMap.put(jsonObject.get(hash).getAsJsonObject().get("project_id").getAsString(), h);
+					updateNeededProjectIds.add(projectId);
+					hashMap.put(projectId, h);
 				}
 			}
 		}
@@ -197,6 +204,8 @@ public class EasyInstallClient implements ClientModInitializer {
 					info.setLatestHash(hashMap.get(info.getId()));
 				}
 				info.setUpdated(!updateNeededProjectIds.contains(info.getId()));
+			} else {
+				break;
 			}
 		}
 
@@ -207,11 +216,7 @@ public class EasyInstallClient implements ClientModInitializer {
 		try {
 			try (InputStream in = new BufferedInputStream(url.openStream());
 				 FileOutputStream out = new FileOutputStream(savePath)) {
-				byte[] dataBuffer = new byte[8192];
-				int bytesRead;
-				while ((bytesRead = in.read(dataBuffer, 0, dataBuffer.length)) != -1) {
-					out.write(dataBuffer, 0, bytesRead);
-				}
+				in.transferTo(out);
 			}
             EasyInstall.LOGGER.info("Download complete: {}", savePath);
 		} catch (IOException e) {
@@ -415,11 +420,12 @@ public class EasyInstallClient implements ClientModInitializer {
 
 	private static HashSet<String> getFileHashes(ProjectType projectType) {
 		File dir = new File(getDir(projectType));
-		Set<File> files = Arrays.stream(Objects.requireNonNull(dir.listFiles())).parallel().collect(Collectors.toSet());
+		File[] files = dir.listFiles();
 		Set<String> hashes = ConcurrentHashMap.newKeySet();
 		int numberOfThreads;
 		numberOfThreads = Math.max(1, Runtime.getRuntime().availableProcessors() / 2 - 2);
 		try (ExecutorService executorService = Executors.newFixedThreadPool(numberOfThreads)) {
+            assert files != null;
             for (File file : files) {
                 executorService.submit(() -> {
                     try {

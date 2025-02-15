@@ -19,13 +19,6 @@ import java.nio.file.Path;
 
 @Mixin(PackScreen.class)
 public class ResourceScreenMixin extends Screen {
-
-    //Shows for: Current Version/ All Versions
-    //Tooltip:
-    //[Current Version] - Lists all projects available for this version of Minecraft
-    //All Versions - Lists all projects available regardless of the version of Minecraft. Use as your own risk.
-
-
     @Shadow
     private final Path file;
     private ProjectType projectType;

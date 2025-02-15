@@ -46,9 +46,14 @@ public class VersionsTab extends GridScreenTab implements Drawable {
                 int finalI = i;
                 versionButtons[i] = ButtonWidget.builder(Text.of("Install"), buttonWidget -> {
                     Thread t = new Thread(() -> {
+                        versionButtons[finalI].active = false;
+                        versionButtons[finalI].setMessage(Text.of("Installed"));
+                        if (finalI == 0) {
+                            projectScreen.getProjectInfo().setInstalled(true);
+                        }
                         versions[finalI].download();
                         initialized = false;
-                        EasyInstallClient.checkInstalled(projectScreen.getProjectInfo().getProjectType());
+                        EasyInstallClient.checkStatus(projectScreen.getProjectInfo().getProjectType());
                     });
                     t.start();
                 }).build();
@@ -90,7 +95,6 @@ public class VersionsTab extends GridScreenTab implements Drawable {
                 String hash;
                 try {
                     hash = EasyInstallClient.createFileHash(file.toPath());
-                    System.out.println(hash);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
@@ -118,5 +122,27 @@ public class VersionsTab extends GridScreenTab implements Drawable {
 
     public void setInitialized(boolean initialized) {
         this.initialized = initialized;
+    }
+
+    public void setFirstVersionActive(boolean active) {
+        if (versionButtons.length > 0) {
+            versionButtons[0].active = active;
+            versionButtons[0].setMessage(Text.of("Installed"));        }
+    }
+
+    public void setActive(boolean active) {
+        if (versionButtons == null) {
+            return;
+        }
+        for (ButtonWidget versionButton : versionButtons) {
+            if (versionButton == null) {
+                continue;
+            }
+            if (!active) {
+                versionButton.active = active;
+            } else {
+                versionButton.active = !versionButton.getMessage().getString().equals("Installed");
+            }
+        }
     }
 }

@@ -9,16 +9,16 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 public class Version {
-    private String name;
-    private String versionNumber;
-    private String versionType;
-    private URL downloadUrl;
-    private int numDownloads;
-    private ProjectType projectType;
-    private JsonArray dependencies;
-    private String id;
-    private String filename;
-    private String hash;
+    private final String name;
+    private final String versionNumber;
+    private final String versionType;
+    private final URL downloadUrl;
+    private final int numDownloads;
+    private final ProjectType projectType;
+    private final JsonArray dependencies;
+    private final String id;
+    private final String filename;
+    private final String hash;
 
     public Version(String name, String versionNumber, String versionType, URL downloadUrl, int numDownloads, ProjectType projectType, String filename, JsonArray dependencies, String hash, String id) {
         this.name = name;
@@ -65,20 +65,21 @@ public class Version {
     }
 
     public void download() {
-        EasyInstallClient.downloadVersion(this.downloadUrl, this.filename, this.projectType);
         int numberOfThreads = 5;
-        ExecutorService executorService = Executors.newFixedThreadPool(numberOfThreads);
-        for(int i = 0; i < this.dependencies.size(); i++) {
-            if (this.dependencies.get(i).getAsJsonObject().get("dependency_type").getAsString().equals("required")) {
-                String id = this.dependencies.get(i).getAsJsonObject().get("project_id").getAsString();
-                executorService.submit(() -> EasyInstallClient.downloadVersion(id, EasyInstallClient.getProjectType(id)));
+        try (ExecutorService executorService = Executors.newFixedThreadPool(numberOfThreads)) {
+            executorService.submit(() -> EasyInstallClient.downloadVersion(this.downloadUrl, this.filename, this.projectType));
+            for (int i = 0; i < this.dependencies.size(); i++) {
+                if (this.dependencies.get(i).getAsJsonObject().get("dependency_type").getAsString().equals("required")) {
+                    String id = this.dependencies.get(i).getAsJsonObject().get("project_id").getAsString();
+                    executorService.submit(() -> EasyInstallClient.downloadVersion(id, EasyInstallClient.getProjectType(id)));
+                }
             }
-        }
-        executorService.shutdown();
-        try {
-            executorService.awaitTermination(Integer.MAX_VALUE, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+            executorService.shutdown();
+            try {
+                executorService.awaitTermination(Integer.MAX_VALUE, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -98,16 +99,5 @@ public class Version {
                 '}';
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Version version = (Version) o;
-        return numDownloads == version.numDownloads && Objects.equals(name, version.name) && Objects.equals(versionNumber, version.versionNumber) && Objects.equals(versionType, version.versionType) && Objects.equals(downloadUrl, version.downloadUrl) && projectType == version.projectType && Objects.equals(dependencies, version.dependencies) && Objects.equals(id, version.id) && Objects.equals(filename, version.filename) && Objects.equals(hash, version.hash);
-    }
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(name, versionNumber, versionType, downloadUrl, numDownloads, projectType, dependencies, id, filename, hash);
-    }
 }

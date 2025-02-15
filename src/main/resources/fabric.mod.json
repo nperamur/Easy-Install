@@ -8,13 +8,13 @@
 		"blue_cube78"
 	],
 	"contact": {
-		"homepage": "https://fabricmc.net/",
-		"sources": "https://github.com/FabricMC/fabric-example-mod",
-		"issues": "https://github.com/nperamur/WhackingStick/issues"
+		"homepage": "https://modrinth.com/project/easy-install",
+		"sources": "https://github.com/nperamur/Easy-Install",
+		"issues": "https://github.com/nperamur/Easy-Install/issues"
 	},
 	"license": "MIT",
 	"icon": "assets/easy_install/icon.png",
-	"environment": "*",
+	"environment": "client",
 	"entrypoints": {
 		"main": [
 			"neelesh.easy_install.EasyInstall"
@@ -36,7 +36,7 @@
 
 	"depends": {
 		"fabricloader": ">=0.16.7",
-		"minecraft": "~1.21.3",
+		"minecraft": ["1.21.2", "1.21.3"],
 		"java": ">=21",
 		"fabric-api": "*"
 	},

@@ -25,13 +25,17 @@ public class GalleryTab extends GridScreenTab implements Drawable {
         super(title);
         this.galleryImages = projectScreen.getGalleryImages();
         int numberOfThreads = 5;
-        try (ExecutorService executorService = Executors.newFixedThreadPool(numberOfThreads)) {
-            for (int i = 0; i < galleryImages.size(); i++) {
-                int finalI = i;
-                executorService.submit(() -> galleryImages.get(finalI).setImage(ImageLoader.loadImage(galleryImages.get(finalI).getUrl(), galleryImages.get(finalI).getId(), MinecraftClient.getInstance())));
-            }
-            executorService.shutdown();
-        }
+        Thread thread = new Thread(() -> {
+            try (ExecutorService executorService = Executors.newFixedThreadPool(numberOfThreads)) {
+                    for (int i = 0; i < galleryImages.size(); i++) {
+                        int finalI = i;
+                        executorService.submit(() -> galleryImages.get(finalI).setImage(ImageLoader.loadImage(galleryImages.get(finalI).getUrl(), galleryImages.get(finalI).getId(), MinecraftClient.getInstance())));
+                    }
+                    executorService.shutdown();
+                }
+            });
+        thread.start();
+
         this.projectScreen = projectScreen;
     }
 

@@ -26,6 +26,13 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class ProjectBrowser extends Screen {
+    //Filter By Versions Button/Feature: Experimental and may or may not be implemented
+    //Right now the code is commented out. Here's the plan:
+    //Shows for: Current Version/ All Versions
+    //Tooltip:
+    //[Current Version] - Lists all projects available for this version of Minecraft
+    //All Versions - Lists all projects available regardless of the version of Minecraft. Use as your own risk.
+
     private Identifier[] ICON_TEXTURE_ID = new Identifier[100];
     private static final Identifier SCROLLER_TEXTURE = Identifier.ofVanilla("widget/scroller");
     public static final Identifier SCROLLER_BACKGROUND_TEXTURE = Identifier.ofVanilla("widget/scroller_background");
@@ -78,11 +85,6 @@ public class ProjectBrowser extends Screen {
         }
         this.pageNumber = 0;
 
-    }
-
-
-    public ProjectBrowser(Screen parent) {
-        this(parent, ProjectType.RESOURCE_PACK);
     }
 
     @Override
@@ -169,11 +171,10 @@ public class ProjectBrowser extends Screen {
             search(searchBox.getText());
             initialized = true;
         } else {
-            Thread thread = new Thread(() -> EasyInstallClient.checkInstalled(projectType));
+            Thread thread = new Thread(() -> EasyInstallClient.checkStatus(projectType));
             thread.start();
-
-
-            loadIcons();
+            Thread thread2 = new Thread(this::loadIcons);
+            thread2.start();
 
 
         }
@@ -250,10 +251,10 @@ public class ProjectBrowser extends Screen {
                         });
                         thread2.start();
                     }
-                    EasyInstallClient.downloadVersion(INFO[finalI].getSlug(), projectType);
                     INFO[finalI].setInstalled(true);
+                    EasyInstallClient.downloadVersion(INFO[finalI].getSlug(), projectType);
                     t = new Thread(() -> {
-                        EasyInstallClient.checkInstalled(projectType);
+                        EasyInstallClient.checkStatus(projectType);
                     });
                     t.start();
                 });
@@ -308,7 +309,7 @@ public class ProjectBrowser extends Screen {
                 projectScreenButtons[i].render(context, mouseX, mouseY, delta);
                 projectScreenButtons[i].setY(firstRowY + (int) scrollAmount + i * 50 - 2);
             } catch (NullPointerException ignored) {
-                System.out.println("Bad");
+
             }
         }
         int scrollBarHeight = Math.max(35, (int) (Math.pow(height - firstRowY + 13, 2) / (EasyInstallClient.getNumRows() * 50 + 35)));
@@ -401,11 +402,11 @@ public class ProjectBrowser extends Screen {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
-        if (scrollAmount + verticalAmount * 12 <= 0 && scrollAmount + verticalAmount * 12 >= -50 * EasyInstallClient.getNumRows() - (double) firstRowY + height - 35) {
-            scrollAmount += verticalAmount * 12;
-        } else if (scrollAmount + verticalAmount * 12 < -50 * EasyInstallClient.getNumRows() - (double) firstRowY + height - 35 && scrollAmount != 0) {
+        if (scrollAmount + verticalAmount * 13 <= 0 && scrollAmount + verticalAmount * 13 >= -50 * EasyInstallClient.getNumRows() - (double) firstRowY + height - 35) {
+            scrollAmount += verticalAmount * 13;
+        } else if (scrollAmount + verticalAmount * 13 < -50 * EasyInstallClient.getNumRows() - (double) firstRowY + height - 35 && scrollAmount != 0) {
             scrollAmount = -50 * EasyInstallClient.getNumRows() - firstRowY + height - 35;
-        } else if (scrollAmount + verticalAmount * 12 > 0) {
+        } else if (scrollAmount + verticalAmount * 13 > 0) {
             scrollAmount = 0;
         }
         return true;
@@ -477,7 +478,7 @@ public class ProjectBrowser extends Screen {
                     t.interrupt();
                 }
                 t = new Thread(() -> {
-                    EasyInstallClient.checkInstalled(this.projectType);
+                    EasyInstallClient.checkStatus(this.projectType);
                 });
                 t.start();
                 loadIcons();

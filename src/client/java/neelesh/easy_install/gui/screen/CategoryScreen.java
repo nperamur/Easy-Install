@@ -106,11 +106,11 @@ public class CategoryScreen extends Screen {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
-        if (scrollAmount + verticalAmount * 12 <= 0 && scrollAmount + verticalAmount * 12 >= -20 - maxY + height) {
-            scrollAmount += 12 * verticalAmount;
-        } else if (scrollAmount + verticalAmount * 12 > 0) {
+        if (scrollAmount + verticalAmount * 13 <= 0 && scrollAmount + verticalAmount * 13 >= -20 - maxY + height) {
+            scrollAmount += 13 * verticalAmount;
+        } else if (scrollAmount + verticalAmount * 13 > 0) {
             scrollAmount = 0;
-        } else if (scrollAmount + verticalAmount * 12 < -20 - maxY + height) {
+        } else if (scrollAmount + verticalAmount * 13 < -20 - maxY + height) {
             scrollAmount = - 20 - maxY + height;
         }
         return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount);

@@ -4,7 +4,7 @@ import net.fabricmc.api.ModInitializer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-//TODO: remove mod menu dependency thing
+
 public class EasyInstall implements ModInitializer {
 	public static final String MOD_ID = "easy_install";
 
