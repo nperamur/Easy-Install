@@ -128,6 +128,7 @@ public class UpdateScreen extends Screen {
     @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
         super.render(context, mouseX, mouseY, delta);
+        renderDarkening(context);
         doneButton.setDimensions(80, 18);
         doneButton.setPosition(0, 0);
         updateAll.visible = !versions.isEmpty() && updateAll.visible;

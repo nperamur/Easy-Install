@@ -77,6 +77,7 @@ public class CategoryScreen extends Screen {
     @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
         super.render(context, mouseX, mouseY, delta);
+        renderDarkening(context);
         clearButton.active = false;
         clearButton.setPosition(width - 115, 8);
         if (checkBoxes != null) {

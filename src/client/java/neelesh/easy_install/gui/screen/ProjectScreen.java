@@ -10,6 +10,7 @@ import neelesh.easy_install.gui.tab.VersionsTab;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.Drawable;
+import net.minecraft.client.gui.Element;
 import net.minecraft.client.gui.Selectable;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.tab.Tab;
@@ -197,9 +198,7 @@ public class ProjectScreen extends Screen {
             this.descriptionTab = new DescriptionTab(Text.of("Description"), this);
             initialized = true;
         }
-        for (ButtonWidget link : descriptionTab.getLinkButtons()) {
-            this.addSelectableChild(link);
-        }
+        descriptionTab.refreshLinkPositions();
         GalleryTab galleryTab = new GalleryTab(Text.of("Gallery"), this);
         this.versionsTab = new VersionsTab(Text.of("Versions"), this);
         if (!galleryImages.isEmpty()) {
@@ -271,6 +270,9 @@ public class ProjectScreen extends Screen {
         return galleryImages;
     }
 
+    public void removeChild(Element c) {
+        this.remove(c);
+    }
 
 
 }

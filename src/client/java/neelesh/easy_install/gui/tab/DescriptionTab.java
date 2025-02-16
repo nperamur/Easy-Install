@@ -112,10 +112,10 @@ public class DescriptionTab extends GridScreenTab implements Drawable {
                 if (projectScreen.getProjectInfo().getBody().charAt(i) == '(' && isImage) {
                     puttingImageUrl = true;
                 }
-                MinecraftClient.getInstance().execute(() -> {
-                    count = 0;
-                });
             }
+            MinecraftClient.getInstance().execute(() -> {
+                count = 0;
+            });
         });
         thread.start();
     }
@@ -472,7 +472,23 @@ public class DescriptionTab extends GridScreenTab implements Drawable {
     public void setLinksActive(boolean active) {
         for (ButtonWidget linkButton : linkButtons) {
             linkButton.active = active;
+
         }
+    }
+
+    public void refreshLinkPositions() {
+        for (ButtonWidget link : linkButtons) {
+            projectScreen.removeChild(link);
+        }
+        if (count >= 0) {
+            count = 0;
+            linkUrls.clear();
+            linkLengths.clear();
+            linkIndexes.clear();
+            linkButtons.clear();
+            originalY.clear();
+        }
+
     }
 
     public ArrayList<ButtonWidget> getLinkButtons() {
