@@ -22,13 +22,15 @@ import java.util.stream.Collectors;
 public class EasyInstallClient implements ClientModInitializer {
 	private static int rowsOnPage = 20;
 	private static ProjectInfo[] projectInfo = new ProjectInfo[100];
-	private static final String GAME_VERSION = SharedConstants.getGameVersion().getName();
+	private static String GAME_VERSION;
 	private static Path dataPackTempDir;
 	private static int totalPages;
 	private static String sortMethod = "Relevance";
 	private static int numRows = 20;
 	private static HashMap<String, String> oldHashes = new HashMap<>();
 	private static int numUpdates;
+	private static HashSet<String> updatesNeeded = new HashSet<>();
+	private static HashSet<String> installedProjects = new HashSet<>();
 
     public static String getSortMethod() {
         return sortMethod;
@@ -52,7 +54,7 @@ public class EasyInstallClient implements ClientModInitializer {
 
 	@Override
 	public void onInitializeClient() {
-
+		GAME_VERSION = SharedConstants.getGameVersion().getName();
 	}
 
 	public static int getRowsOnPage() {
@@ -173,7 +175,7 @@ public class EasyInstallClient implements ClientModInitializer {
 		}
         String response = getUpdates(hashes, projectType);
         assert response != null;
-		if (Thread.currentThread().isInterrupted()) {
+		if (Thread.currentThread().isInterrupted() || hashes.isEmpty()) {
 			return;
 		}
         JsonObject jsonObject = JsonParser.parseString(response).getAsJsonObject();
@@ -196,7 +198,8 @@ public class EasyInstallClient implements ClientModInitializer {
 		}
 
 		numUpdates = updateNeededProjectIds.size();
-
+		updatesNeeded = updateNeededProjectIds;
+		installedProjects = installedProjectIds;
 		for (ProjectInfo info : projectInfo) {
 			if (info != null) {
 				info.setInstalled(installedProjectIds.contains(info.getId()));
@@ -273,6 +276,8 @@ public class EasyInstallClient implements ClientModInitializer {
 							false, projectType);
 
 				}
+				projectInfo[x].setInstalled(installedProjects.contains(projectInfo[x].getId()));
+				projectInfo[x].setUpdated(!updatesNeeded.contains(projectInfo[x].getId()));
 				rows++;
 			}
 			totalPages = (JsonParser.parseString(response).getAsJsonObject().get("total_hits").getAsInt() - 1) / rowsOnPage + 1;
