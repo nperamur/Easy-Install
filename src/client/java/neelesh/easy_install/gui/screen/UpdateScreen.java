@@ -79,7 +79,6 @@ public class UpdateScreen extends Screen {
         this.addSelectableChild(updateAll);
         try {
             URL url = URI.create("https://api.modrinth.com/v2/projects?ids=" + URLEncoder.encode(projectIds.toString(), StandardCharsets.UTF_8)).toURL();
-            System.out.println(url);
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("GET");
             int responseCode = connection.getResponseCode();

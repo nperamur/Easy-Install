@@ -238,7 +238,7 @@ public class DescriptionTab extends GridScreenTab implements Drawable {
         context.drawTexture(
                 RenderLayer::getGuiTextured, VERTICAL_SEPARATOR_TEXTURE, 131, projectScreen.getScrollAmount() + ((TabButtonWidget) projectScreen.getTabNavigationWidget().children().getFirst()).getHeight() - 12, 0.0F, 0.0F, 2, y + imageHeight, 2, 32
         );
-       projectScreen.setMaxY(y + imageHeight);
+        projectScreen.setMaxY(y + imageHeight);
         if (count != -1) {
             count++;
         }
