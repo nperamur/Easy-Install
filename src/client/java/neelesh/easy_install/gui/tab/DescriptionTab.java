@@ -1,6 +1,7 @@
 package neelesh.easy_install.gui.tab;
 
 import com.google.common.net.UrlEscapers;
+import neelesh.easy_install.EasyInstall;
 import neelesh.easy_install.ImageLoader;
 import neelesh.easy_install.ProjectImage;
 import neelesh.easy_install.gui.screen.ProjectScreen;
@@ -13,6 +14,9 @@ import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.client.gui.widget.TabButtonWidget;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.texture.NativeImage;
+import net.minecraft.client.texture.NativeImageBackedTexture;
+import net.minecraft.client.texture.ResourceTexture;
+import net.minecraft.client.texture.TextureManager;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.StringVisitable;
 import net.minecraft.text.Style;
@@ -87,7 +91,13 @@ public class DescriptionTab extends GridScreenTab implements Drawable {
                     }
                     try {
                         url = new URL(str); //UrlEscapers.urlFragmentEscaper().escape(str)
-                        Identifier id = Identifier.of("project_image:" + i);
+                        Identifier id = Identifier.of(EasyInstall.MOD_ID, "project_image_" + i);
+                        TextureManager textureManager = MinecraftClient.getInstance().getTextureManager();
+                        MinecraftClient.getInstance().execute(() -> {
+                            NativeImage image = new NativeImage(1, 1, false);
+                            NativeImageBackedTexture texture = new NativeImageBackedTexture(image);
+                            textureManager.registerTexture(id, texture);
+                        });
                         NativeImage image = ImageLoader.loadImage(url, id, MinecraftClient.getInstance());
                         if (image != null) {
                             ProjectImage projectImage = new ProjectImage(image, id, i);

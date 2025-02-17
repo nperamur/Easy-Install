@@ -180,9 +180,9 @@ public class ProjectScreen extends Screen {
                     JsonArray gallery = jsonObject.get("gallery").getAsJsonArray();
                     for (int i = 0; i < gallery.size(); i++) {
                         try {
-                            galleryImages.add(new GalleryImage(Identifier.of("gallery_image:" + i), URI.create(gallery.get(i).getAsJsonObject().get("url").getAsString()).toURL(), gallery.get(i).getAsJsonObject().get("description").getAsString()));
+                            galleryImages.add(new GalleryImage(Identifier.of(EasyInstall.MOD_ID, "gallery_image_" + i), URI.create(gallery.get(i).getAsJsonObject().get("url").getAsString()).toURL(), gallery.get(i).getAsJsonObject().get("description").getAsString()));
                         } catch (UnsupportedOperationException e) {
-                            galleryImages.add(new GalleryImage(Identifier.of("gallery_image:" + i), URI.create(gallery.get(i).getAsJsonObject().get("url").getAsString()).toURL()));
+                            galleryImages.add(new GalleryImage(Identifier.of(EasyInstall.MOD_ID, "gallery_image__" + i), URI.create(gallery.get(i).getAsJsonObject().get("url").getAsString()).toURL()));
                         }
                         try {
                             galleryImages.get(i).setTitle(gallery.get(i).getAsJsonObject().get("title").getAsString());

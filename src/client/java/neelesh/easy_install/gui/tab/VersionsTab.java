@@ -127,7 +127,8 @@ public class VersionsTab extends GridScreenTab implements Drawable {
     public void setFirstVersionActive(boolean active) {
         if (versionButtons.length > 0) {
             versionButtons[0].active = active;
-            versionButtons[0].setMessage(Text.of("Installed"));        }
+            versionButtons[0].setMessage(Text.of("Installed"));
+        }
     }
 
     public void setActive(boolean active) {
