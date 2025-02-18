@@ -175,7 +175,7 @@ public class EasyInstallClient implements ClientModInitializer {
 		}
         String response = getUpdates(hashes, projectType);
         assert response != null;
-		if (Thread.currentThread().isInterrupted() || hashes.isEmpty()) {
+		if (Thread.currentThread().isInterrupted() || hashes == null) {
 			return;
 		}
         JsonObject jsonObject = JsonParser.parseString(response).getAsJsonObject();
@@ -448,7 +448,7 @@ public class EasyInstallClient implements ClientModInitializer {
 				executorService.awaitTermination(Integer.MAX_VALUE, TimeUnit.SECONDS);
 			} catch (InterruptedException e) {
 				executorService.shutdownNow();
-				return new HashSet<>();
+				return null;
 			}
 		}
         return new HashSet<>(hashes);

@@ -294,7 +294,7 @@ public class ProjectBrowser extends Screen {
                 context.drawTexture(RenderLayer::getGuiTextured, ICON_TEXTURE_ID[i], 0, firstRowY + (int) scrollAmount + i * 50, 0, 0, 40, 40, 40, 40);
                 context.drawText(textRenderer, INFO[i].getTitle(), 60, firstRowY + (int) scrollAmount + i * 50, 0xFFFFFF, false);
                 context.drawText(textRenderer, "by " + INFO[i].getAuthor(), 60 + textRenderer.getWidth(INFO[i].getTitle()) + 20, firstRowY + (int) scrollAmount + i * 50, 0xFFFFFF, false);
-                context.drawTextWrapped(textRenderer, StringVisitable.plain(INFO[i].getDescription().replace("\n", "")), 60, firstRowY + (int) scrollAmount + i * 50 + 15, width - 70, 0xFFFFFF);
+                context.drawWrappedText(textRenderer, StringVisitable.plain(INFO[i].getDescription().replace("\n", "")), 60, firstRowY + (int) scrollAmount + i * 50 + 15, width - 70, 0xFFFFFF, false);
                 installButtons[i].render(context, mouseX, mouseY, delta);
                 installButtons[i].setY(firstRowY + (int) scrollAmount + i * 50 - 3);
                 installButtons[i].active = !INFO[i].isInstalled();

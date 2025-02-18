@@ -7,11 +7,9 @@ import neelesh.easy_install.*;
 import neelesh.easy_install.gui.tab.DescriptionTab;
 import neelesh.easy_install.gui.tab.GalleryTab;
 import neelesh.easy_install.gui.tab.VersionsTab;
+import neelesh.easy_install.gui.tab.TabNavigationMixinInterface;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.Drawable;
-import net.minecraft.client.gui.Element;
-import net.minecraft.client.gui.Selectable;
+import net.minecraft.client.gui.*;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.tab.Tab;
 import net.minecraft.client.gui.tab.TabManager;
@@ -19,6 +17,8 @@ import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.client.gui.widget.TabButtonWidget;
 import net.minecraft.client.gui.widget.TabNavigationWidget;
 import net.minecraft.client.render.RenderLayer;
+import net.minecraft.client.texture.NativeImage;
+import net.minecraft.client.texture.NativeImageBackedTexture;
 import net.minecraft.text.StringVisitable;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
@@ -91,7 +91,7 @@ public class ProjectScreen extends Screen {
     private DescriptionTab descriptionTab;
     private Tab prevTab;
 
-    private final TabManager tabManager = new TabManager(this::addDrawableChild, child -> this.remove(child));
+    private TabManager tabManager;
     private TabNavigationWidget tabNavigationWidget;
     private int scrollAmount = 15;
     public static final Identifier VERTICAL_SEPARATOR_TEXTURE = Identifier.of(EasyInstall.MOD_ID,"textures/gui/vertical_separator.png");
@@ -117,18 +117,19 @@ public class ProjectScreen extends Screen {
         descriptionTab.setLinksActive(tabManager.getCurrentTab() instanceof DescriptionTab);
         versionsTab.setActive(tabManager.getCurrentTab() instanceof VersionsTab);
         for (int i = 0; i < tabNavigationWidget.children().size(); i++) {
-            ((TabButtonWidget) tabNavigationWidget.children().get(i)).setWidth((this.width - 130)/(tabNavigationWidget.children().size()));
-            ((TabButtonWidget) tabNavigationWidget.children().get(i)).setY(scrollAmount-10);
-            ((TabButtonWidget) tabNavigationWidget.children().get(i)).setX(131 + i * ((TabButtonWidget) tabNavigationWidget.children().get(i)).getWidth());
+            if (tabNavigationWidget instanceof TabNavigationMixinInterface) {
+                ((TabNavigationMixinInterface) tabNavigationWidget).setX(131);
+                ((TabNavigationMixinInterface) tabNavigationWidget).setY(scrollAmount - 10);
+            }
             ((TabButtonWidget) tabNavigationWidget.children().get(i)).render(context, mouseX, mouseY, delta);
         }
         float titleSize = 1.4f;
         context.getMatrices().scale(titleSize, titleSize, 1.0f);
-        context.drawTextWrapped(textRenderer, StringVisitable.plain(projectInfo.getTitle()), (int) (10 /titleSize), 40, (int) (110/titleSize),0xFFFFFF);
+        context.drawWrappedText(textRenderer, StringVisitable.plain(projectInfo.getTitle()), (int) (10 /titleSize), 40, (int) (110/titleSize),0xFFFFFF, false);
         int wrappedHeight =  textRenderer.getWrappedLinesHeight(StringVisitable.plain(projectInfo.getTitle()), (int) (110/titleSize));
         context.getMatrices().scale(1/titleSize, 1/titleSize, 1.0f);
         context.drawTexture(RenderLayer::getGuiTextured, iconTextureId, 10, 0, 0, 0, 50, 50, 50, 50);
-        context.drawTextWrapped(textRenderer, StringVisitable.plain(projectInfo.getDescription()), 10, (int) (65 + wrappedHeight*titleSize), 110, 0xFFFFFF);
+        context.drawWrappedText(textRenderer, StringVisitable.plain(projectInfo.getDescription()), 10, (int) (65 + wrappedHeight*titleSize), 110, 0xFFFFFF, false);
         installButton.active = !projectInfo.isInstalled();
         installButton.setPosition(10, (int) ((65 + textRenderer.getWrappedLinesHeight(StringVisitable.plain(projectInfo.getDescription()), 110) + wrappedHeight * titleSize + 10)));
         siteButton.setPosition(65, (int) ((65 + textRenderer.getWrappedLinesHeight(StringVisitable.plain(projectInfo.getDescription()), 110) + wrappedHeight * titleSize + 10)));
@@ -159,6 +160,12 @@ public class ProjectScreen extends Screen {
         this.addSelectableChild(installButton);
         this.addSelectableChild(siteButton);
         Thread thread = new Thread(() -> {
+            if (!initialized) {
+                client.execute(() -> {
+                    NativeImageBackedTexture texture = new NativeImageBackedTexture(new NativeImage(1, 1, false));
+                    client.getTextureManager().registerTexture(iconTextureId, texture);
+                });
+            }
             ImageLoader.loadIcon(projectInfo, iconTextureId, Thread.currentThread());
         });
         thread.start();
@@ -201,13 +208,17 @@ public class ProjectScreen extends Screen {
         descriptionTab.refreshLinkPositions();
         GalleryTab galleryTab = new GalleryTab(Text.of("Gallery"), this);
         this.versionsTab = new VersionsTab(Text.of("Versions"), this);
+        tabManager = new TabManager(this::addSelectableChild, this::remove);
         if (!galleryImages.isEmpty()) {
-            tabNavigationWidget = TabNavigationWidget.builder(this.tabManager, this.width-131).tabs(descriptionTab, galleryTab, versionsTab).build();
+            tabNavigationWidget = TabNavigationWidget.builder(this.tabManager, width - 131).tabs(descriptionTab, galleryTab, versionsTab).build(); //width - 131
         } else {
-            tabNavigationWidget = TabNavigationWidget.builder(this.tabManager, (this.width-131)).tabs(descriptionTab, versionsTab).build();
+            tabNavigationWidget = TabNavigationWidget.builder(this.tabManager, width - 131).tabs(descriptionTab, versionsTab).build(); // width - 131
 
         }
         tabNavigationWidget.init();
+        if (tabNavigationWidget instanceof TabNavigationMixinInterface) {
+            ((TabNavigationMixinInterface) tabNavigationWidget).setButtonWidth((this.width - 130)/(tabNavigationWidget.children().size()));
+        }
         tabNavigationWidget.selectTab(0, false);
         this.addSelectableChild(tabNavigationWidget);
     }

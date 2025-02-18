@@ -12,18 +12,6 @@ import java.nio.file.Paths;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class EasyInstallClientTest {
-    //private static final String GAME_VERSION = SharedConstants.getGameVersion().getName();
-
-    /*@BeforeAll
-    public static void setup() {
-        SharedConstants.getGameVersion().getName();
-    }*/
-
-
-    @BeforeAll
-    public static void setup() {
-
-    }
 
     @Test
     public void test1() throws IOException, URISyntaxException {

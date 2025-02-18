@@ -6,7 +6,8 @@
 		"TitleScreenMixin",
 		"ResourceScreenMixin",
 		"ShaderPackScreenMixin",
-		"GameMenuScreenMixin"
+		"GameMenuScreenMixin",
+		"TabNavigationMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

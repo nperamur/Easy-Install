@@ -193,7 +193,7 @@ public class DescriptionTab extends GridScreenTab implements Drawable {
                 if (count == 0) {
                     putLinkButtons(text, x, y, (int) ((projectScreen.width-x-10) / scale), scale);
                 }
-                context.drawTextWrapped(projectScreen.getTextRenderer(), text, (int) (x/scale), (int) (y/scale + projectScreen.getScrollAmount() / scale), (int) ((projectScreen.width-x-10) / scale), 0xFFFFFF);
+                context.drawWrappedText(projectScreen.getTextRenderer(), text, (int) (x/scale), (int) (y/scale + projectScreen.getScrollAmount() / scale), (int) ((projectScreen.width-x-10) / scale), 0xFFFFFF, false);
                 int wrappedSize = projectScreen.getTextRenderer().getWrappedLinesHeight(text, (int) ((projectScreen.width-x-10) / scale));
                 if (scale == 1) {
                     scale = 1.4f;
@@ -217,7 +217,7 @@ public class DescriptionTab extends GridScreenTab implements Drawable {
                 if (count == 0) {
                     putLinkButtons(text, x, y, (int) ((projectScreen.width-x-10) / scale), scale);
                 }
-                context.drawTextWrapped(projectScreen.getTextRenderer(), text, (int) (x/(scale)), (int) (y/scale + projectScreen.getScrollAmount() / scale), (int) ((projectScreen.width-x-10) / scale), 0xFFFFFF);
+                context.drawWrappedText(projectScreen.getTextRenderer(), text, (int) (x/(scale)), (int) (y/scale + projectScreen.getScrollAmount() / scale), (int) ((projectScreen.width-x-10) / scale), 0xFFFFFF, false);
                 if (scale > 1) {
                     context.getMatrices().scale(1/scale, 1/scale, 1.0f);
                 }
