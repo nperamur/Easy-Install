@@ -230,6 +230,7 @@ public class ProjectBrowser extends Screen {
         for (int i = 0; i < 100; i++) {
             int finalI = i;
             ButtonWidget buttonWidget = ButtonWidget.builder(Text.of("Install"), button -> {
+                INFO[finalI].setInstalling(true);
                 Thread thread = new Thread(() -> {
                     if (!INFO[finalI].isUpdated()) {
                         Thread thread2 = new Thread(() -> {
@@ -251,8 +252,9 @@ public class ProjectBrowser extends Screen {
                         });
                         thread2.start();
                     }
-                    INFO[finalI].setInstalled(true);
                     EasyInstallClient.downloadVersion(INFO[finalI].getSlug(), projectType);
+                    INFO[finalI].setInstalling(false);
+                    INFO[finalI].setInstalled(true);
                     t = new Thread(() -> {
                         EasyInstallClient.checkStatus(projectType);
                     });
@@ -297,14 +299,16 @@ public class ProjectBrowser extends Screen {
                 context.drawWrappedText(textRenderer, StringVisitable.plain(INFO[i].getDescription().replace("\n", "")), 60, firstRowY + (int) scrollAmount + i * 50 + 15, width - 70, 0xFFFFFF, false);
                 installButtons[i].render(context, mouseX, mouseY, delta);
                 installButtons[i].setY(firstRowY + (int) scrollAmount + i * 50 - 3);
-                installButtons[i].active = !INFO[i].isInstalled();
-                if (!installButtons[i].active) {
+                if (INFO[i].isInstalling()) {
+                    installButtons[i].setMessage(Text.of("Installing"));
+                } else if (INFO[i].isInstalled()) {
                     installButtons[i].setMessage(Text.of("Installed"));
                 } else if (INFO[i].isUpdated()) {
                     installButtons[i].setMessage(Text.of("Install"));
                 } else {
                     installButtons[i].setMessage(Text.of("Update"));
                 }
+                installButtons[i].active = !INFO[i].isInstalled() && !INFO[i].isInstalling();
 
                 projectScreenButtons[i].render(context, mouseX, mouseY, delta);
                 projectScreenButtons[i].setY(firstRowY + (int) scrollAmount + i * 50 - 2);

@@ -170,12 +170,12 @@ public class EasyInstallClient implements ClientModInitializer {
 
 	public static void checkStatus(ProjectType projectType) {
 		HashSet<String> hashes = getFileHashes(projectType);
-		if (Thread.currentThread().isInterrupted()) {
+		if (Thread.currentThread().isInterrupted() || hashes == null) {
 			return;
 		}
         String response = getUpdates(hashes, projectType);
         assert response != null;
-		if (Thread.currentThread().isInterrupted() || hashes == null) {
+		if (Thread.currentThread().isInterrupted()) {
 			return;
 		}
         JsonObject jsonObject = JsonParser.parseString(response).getAsJsonObject();

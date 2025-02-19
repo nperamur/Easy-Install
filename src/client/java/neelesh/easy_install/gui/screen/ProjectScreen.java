@@ -48,6 +48,7 @@ public class ProjectScreen extends Screen {
     private boolean initialized;
     private final ButtonWidget installButton = ButtonWidget.builder(Text.of("Install"), button -> {
         Thread thread = new Thread(() -> {
+            projectInfo.setInstalling(true);
             if (!projectInfo.isUpdated()) {
                 Thread thread2 = new Thread(() -> {
                     HashMap<String, String> oldHashes = EasyInstallClient.getOldHashes();
@@ -68,9 +69,9 @@ public class ProjectScreen extends Screen {
                 });
                 thread2.start();
             }
-            projectInfo.setInstalled(true);
-            versionsTab.setFirstVersionActive(false);
             EasyInstallClient.downloadVersion(projectInfo.getSlug(), projectInfo.getProjectType());
+            projectInfo.setInstalled(true);
+            projectInfo.setInstalling(false);
             versionsTab.setInitialized(false);
         });
         thread.start();
@@ -130,19 +131,21 @@ public class ProjectScreen extends Screen {
         context.getMatrices().scale(1/titleSize, 1/titleSize, 1.0f);
         context.drawTexture(RenderLayer::getGuiTextured, iconTextureId, 10, 0, 0, 0, 50, 50, 50, 50);
         context.drawWrappedText(textRenderer, StringVisitable.plain(projectInfo.getDescription()), 10, (int) (65 + wrappedHeight*titleSize), 110, 0xFFFFFF, false);
-        installButton.active = !projectInfo.isInstalled();
         installButton.setPosition(10, (int) ((65 + textRenderer.getWrappedLinesHeight(StringVisitable.plain(projectInfo.getDescription()), 110) + wrappedHeight * titleSize + 10)));
         siteButton.setPosition(65, (int) ((65 + textRenderer.getWrappedLinesHeight(StringVisitable.plain(projectInfo.getDescription()), 110) + wrappedHeight * titleSize + 10)));
         installButton.render(context, mouseX, mouseY, delta);
         siteButton.render(context, mouseX, mouseY, delta);
 
-        if (!installButton.active) {
+        if (projectInfo.isInstalling()) {
+            installButton.setMessage(Text.of("Installing"));
+        } else if (projectInfo.isInstalled()) {
             installButton.setMessage(Text.of("Installed"));
         } else if (projectInfo.isUpdated()) {
             installButton.setMessage(Text.of("Install"));
         } else {
             installButton.setMessage(Text.of("Update"));
         }
+        installButton.active = !projectInfo.isInstalled() && !projectInfo.isInstalling();
         if (scrollAmount < - maxY + height - 10 && maxY > height - 10) {
             scrollAmount = - maxY + height - 10;
         } else if (scrollAmount < - maxY + height - 10 && maxY <= height - 10) {

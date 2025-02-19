@@ -15,6 +15,7 @@ public class ProjectInfo {
     private boolean updated;
     private String id;
     private String latestHash;
+    private boolean installing;
 
     public ProjectInfo(URL iconUrl, String title, String description, String author, String slug, String id, boolean installed, ProjectType projectType) {
         this.iconUrl = iconUrl;
@@ -104,5 +105,13 @@ public class ProjectInfo {
 
     public String getLatestHash() {
         return latestHash;
+    }
+
+    public void setInstalling(boolean installing) {
+        this.installing = installing;
+    }
+
+    public boolean isInstalling() {
+        return this.installing;
     }
 }

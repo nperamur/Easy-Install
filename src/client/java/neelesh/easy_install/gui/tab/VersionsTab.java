@@ -49,9 +49,16 @@ public class VersionsTab extends GridScreenTab implements Drawable {
                         versionButtons[finalI].active = false;
                         versionButtons[finalI].setMessage(Text.of("Installed"));
                         if (finalI == 0) {
+                            projectScreen.getProjectInfo().setInstalling(true);
+                        }
+                        versionButtons[finalI].setMessage(Text.of("Installing"));
+                        versions[finalI].download();
+                        if (finalI == 0) {
+                            projectScreen.getProjectInfo().setInstalling(false);
                             projectScreen.getProjectInfo().setInstalled(true);
                         }
-                        versions[finalI].download();
+                        versionButtons[finalI].active = false;
+                        versionButtons[finalI].setMessage(Text.of("Installed"));
                         initialized = false;
                         EasyInstallClient.checkStatus(projectScreen.getProjectInfo().getProjectType());
                     });
@@ -69,6 +76,11 @@ public class VersionsTab extends GridScreenTab implements Drawable {
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
         if (versions == null) {
             return;
+        }
+
+        if (projectScreen.getProjectInfo().isInstalling()) {
+            versionButtons[0].active = false;
+            versionButtons[0].setMessage(Text.of("Installing"));
         }
         for (int i = 0; i < versions.length; i++) {
             if (versions[i] == null) {
@@ -89,7 +101,6 @@ public class VersionsTab extends GridScreenTab implements Drawable {
 
 
             File file = new File(EasyInstallClient.getSavePath(projectScreen.getProjectInfo().getProjectType(), versions[i].getFilename()).toString());
-
 
             if (file.exists() && projectScreen.getTabManager().getCurrentTab() == this && !initialized) {
                 String hash;
@@ -124,12 +135,19 @@ public class VersionsTab extends GridScreenTab implements Drawable {
         this.initialized = initialized;
     }
 
-    public void setFirstVersionActive(boolean active) {
-        if (versionButtons.length > 0) {
-            versionButtons[0].active = active;
-            versionButtons[0].setMessage(Text.of("Installed"));
-        }
-    }
+//    public void setFirstVersionInstalled() {
+//        if (versionButtons.length > 0) {
+//            versionButtons[0].active = false;
+//            versionButtons[0].setMessage(Text.of("Installed"));
+//        }
+//    }
+//
+//    public void setFirstVersionInstalling() {
+//        if (versionButtons.length > 0) {
+//            versionButtons[0].active = false;
+//            versionButtons[0].setMessage(Text.of("Installing"));
+//        }
+//    }
 
     public void setActive(boolean active) {
         if (versionButtons == null) {
@@ -139,11 +157,7 @@ public class VersionsTab extends GridScreenTab implements Drawable {
             if (versionButton == null) {
                 continue;
             }
-            if (!active) {
-                versionButton.active = active;
-            } else {
-                versionButton.active = !versionButton.getMessage().getString().equals("Installed");
-            }
+            versionButton.active = !versionButton.getMessage().getString().equals("Installed") && !versionButton.getMessage().getString().equals("Installing") && active;
         }
     }
 }

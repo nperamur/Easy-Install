@@ -501,7 +501,4 @@ public class DescriptionTab extends GridScreenTab implements Drawable {
 
     }
 
-    public ArrayList<ButtonWidget> getLinkButtons() {
-        return linkButtons;
-    }
 }
