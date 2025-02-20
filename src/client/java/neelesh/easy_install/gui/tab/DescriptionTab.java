@@ -53,7 +53,7 @@ public class DescriptionTab extends GridScreenTab implements Drawable {
         projectScreen.getProjectInfo().setBody(extractMarkdownFromHtml(projectScreen.getProjectInfo().getBody()).getString());
         count = -1;
         this.projectScreen = projectScreen;
-        this.projectImages = new ArrayList<ProjectImage>();
+        this.projectImages = new ArrayList<>();
         if (thread != null) {
             thread.interrupt();
         }
@@ -90,6 +90,10 @@ public class DescriptionTab extends GridScreenTab implements Drawable {
                         projectScreen.getProjectInfo().setBody(projectScreen.getProjectInfo().getBody().substring(0, i + 1) + " " + projectScreen.getProjectInfo().getBody().substring(i + 2));
                     }
                     try {
+                        if (str.substring(1).contains(" ")) {
+                            str = str.substring(0, str.indexOf(" ", 1));
+                        }
+
                         url = new URL(str); //UrlEscapers.urlFragmentEscaper().escape(str)
                         Identifier id = Identifier.of(EasyInstall.MOD_ID, "project_image_" + i);
                         TextureManager textureManager = MinecraftClient.getInstance().getTextureManager();
@@ -185,7 +189,7 @@ public class DescriptionTab extends GridScreenTab implements Drawable {
                 }
                 imageIndex++;
             }
-            if (body.charAt(i) == '#' && s.toString().trim().isEmpty() || i == body.length() - 1) {
+            if (body.charAt(i) == '#' && s.toString().replaceAll("\\s+", "").isEmpty() || i == body.length() - 1) {
                 if (i == body.length() - 1) {
                     s.append(body.charAt(i));
                 }
@@ -206,7 +210,7 @@ public class DescriptionTab extends GridScreenTab implements Drawable {
                 y += (int) (wrappedSize * scale);
             } else if ((body.charAt(i) == '\n')) {
                 MutableText text = extractTextFromHtml(convertMarkdownToHtml(s.toString()));
-                if (!text.getString().trim().isEmpty()) {
+                if (!text.getString().replaceAll("\\s+", "").isEmpty()) {
                     y += imageHeight;
                     if (imageHeight > 0) {
                         x = 140;
@@ -222,7 +226,7 @@ public class DescriptionTab extends GridScreenTab implements Drawable {
                     context.getMatrices().scale(1/scale, 1/scale, 1.0f);
                 }
                 int wrappedSize = projectScreen.getTextRenderer().getWrappedLinesHeight(text, (int) ((projectScreen.width-x-10) / scale));
-                if (!s.toString().trim().isEmpty()) {
+                if (!s.toString().replaceAll("\\s+", "").isEmpty()) {
                     y += (int) (wrappedSize * scale);
                     if (scale > 1) {
                         y -= 10;
@@ -238,7 +242,7 @@ public class DescriptionTab extends GridScreenTab implements Drawable {
                 imageHeight = 0;
             }
 
-            if (body.charAt(i) != '#' || !s.toString().trim().isEmpty()) {
+            if (body.charAt(i) != '#' || !s.toString().replaceAll("\\s+", "").isEmpty()) {
                 s.append(body.charAt(i));
             }
         }
@@ -345,8 +349,7 @@ public class DescriptionTab extends GridScreenTab implements Drawable {
         Elements images = document.select("img");
         MutableText finalText;
         for (Element img : images) {
-            String altText = img.attr("alt");
-            String imgUrl = img.attr("src");
+            String imgUrl = img.attr("src").replaceAll("\\s+", "");
             int width;
             String markdownImage;
             try {
@@ -357,7 +360,7 @@ public class DescriptionTab extends GridScreenTab implements Drawable {
                 }
                 markdownImage = String.format("![width=%d](%s)", width, imgUrl);
             } catch (NumberFormatException e) {
-                markdownImage = String.format("![%s](%s)", altText, imgUrl);
+                markdownImage = String.format("![](%s)", imgUrl);
             }
             img.html(markdownImage);
         }
@@ -371,7 +374,7 @@ public class DescriptionTab extends GridScreenTab implements Drawable {
 
         Elements links = document.select("a");
         for (Element link : links) {
-            String str = String.format("[%s](%s)", link.text(), link.attr("href"));
+            String str = String.format("[%s](%s)", link.text().replaceAll("\\s+", ""), link.attr("href").replaceAll("\\s+", ""));
             link.html(str);
         }
 
@@ -382,9 +385,9 @@ public class DescriptionTab extends GridScreenTab implements Drawable {
             if (!e.tagName().equals("a") && document.wholeText().indexOf(text) - 1 > 0 && !(Character.getType(document.wholeText().charAt(document.wholeText().indexOf(text) - 1)) == Character.SPACE_SEPARATOR)) {
                 t = " ";
             }
-            if ((e.tagName().equals("b") || e.tagName().equals("strong")) && e.select("img").isEmpty() && !text.trim().isEmpty()) {
+            if ((e.tagName().equals("b") || e.tagName().equals("strong")) && e.select("img").isEmpty() && !text.replaceAll("\\s+", "").isEmpty()) {
                 t += String.format("__%s__", text);
-            } else if ((e.tagName().equals("i") || e.tagName().equals("em")) && e.select("img").isEmpty() && !text.trim().isEmpty()) {
+            } else if ((e.tagName().equals("i") || e.tagName().equals("em")) && e.select("img").isEmpty() && !text.replaceAll("\\s+", "").isEmpty()) {
                 t += String.format("_%s_", text);
             } else {
                 t = text;
@@ -394,9 +397,12 @@ public class DescriptionTab extends GridScreenTab implements Drawable {
             }
             e.html(t);
         }
-        String text = document.wholeText();
         String wholeText = document.wholeText();
-        for (int i = 0; i < wholeText.length(); i++) {
+        int i = 0;
+        while (i < wholeText.length()) {
+            if (wholeText.substring(i).startsWith("](\n") && i + 3 < wholeText.length()) {
+                wholeText = wholeText.substring(0, i + 2) + wholeText.substring(i + 3);
+            }
             if ((i == 0 || (wholeText.charAt(i - 1) != '(' && wholeText.charAt(i - 1) != '[' && wholeText.charAt(i - 1) != '"' && wholeText.charAt(i - 1) != '=')) && ((wholeText.startsWith("https://", i) || wholeText.startsWith("http://", i)))) {
                 String url;
                 try {
@@ -408,10 +414,11 @@ public class DescriptionTab extends GridScreenTab implements Drawable {
                 } catch (IndexOutOfBoundsException e) {
                     url = wholeText.substring(i);
                 }
-                text = text.substring(0, text.indexOf(url, i)) + String.format("[%s](%s)", url, url) + text.substring(text.indexOf(url, i) + url.length());
+                wholeText = wholeText.substring(0, wholeText.indexOf(url, i)) + String.format("[%s](%s)", url, url) + wholeText.substring(wholeText.indexOf(url, i) + url.length());
             }
+            i++;
         }
-        finalText = Text.literal(text);
+        finalText = Text.literal(wholeText);
         return finalText;
     }
 
