@@ -90,7 +90,7 @@ public class DescriptionTab extends GridScreenTab implements Drawable {
                         projectScreen.getProjectInfo().setBody(projectScreen.getProjectInfo().getBody().substring(0, i + 1) + " " + projectScreen.getProjectInfo().getBody().substring(i + 2));
                     }
                     try {
-                        if (str.substring(1).contains(" ")) {
+                        if (!str.isEmpty() && str.substring(1).contains(" ")) {
                             str = str.substring(0, str.indexOf(" ", 1));
                         }
 
