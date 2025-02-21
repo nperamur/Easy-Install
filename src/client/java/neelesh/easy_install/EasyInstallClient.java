@@ -484,5 +484,24 @@ public class EasyInstallClient implements ClientModInitializer {
 		}
 		return new JsonArray();
 	}
+
+
+	public static JsonObject getUserProfile(String name) {
+		try {
+			URL url = URI.create("https://api.modrinth.com/v2/user/" + name).toURL();
+			HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+			connection.setRequestMethod("GET");
+			if (connection.getResponseCode() == HttpURLConnection.HTTP_OK) {
+				try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
+					String response = reader.lines().collect(Collectors.joining("\n"));
+					return JsonParser.parseString(response).getAsJsonObject();
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+    }
+
 }
 

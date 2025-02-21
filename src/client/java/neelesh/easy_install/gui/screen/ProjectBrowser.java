@@ -1,6 +1,7 @@
 package neelesh.easy_install.gui.screen;
 
 import neelesh.easy_install.*;
+import neelesh.easy_install.gui.widget.PressableTextWidgetShadowless;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
@@ -8,12 +9,14 @@ import net.minecraft.client.gui.screen.world.CreateWorldScreen;
 import net.minecraft.client.gui.tooltip.Tooltip;
 import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.client.gui.widget.CyclingButtonWidget;
+import net.minecraft.client.gui.widget.PressableTextWidget;
 import net.minecraft.client.gui.widget.TextFieldWidget;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.texture.NativeImage;
 import net.minecraft.client.texture.NativeImageBackedTexture;
 import net.minecraft.text.StringVisitable;
 import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.StringHelper;
 
@@ -41,6 +44,7 @@ public class ProjectBrowser extends Screen {
     private TextFieldWidget searchBox;
     private ButtonWidget[] installButtons = new ButtonWidget[100];
     private ButtonWidget[] projectScreenButtons = new ButtonWidget[100];
+    private PressableTextWidgetShadowless[] authors = new PressableTextWidgetShadowless[100];
     private Screen prevScreen;
     private static Thread t;
     private static Thread searchThread;
@@ -178,7 +182,6 @@ public class ProjectBrowser extends Screen {
 
 
         }
-
         doneButton.setPosition(width / 3 + 70, 0);
         doneButton.setWidth(130);
         backButton = ButtonWidget.builder(Text.of("<"), button -> {
@@ -263,17 +266,16 @@ public class ProjectBrowser extends Screen {
                 thread.start();
             }).build();
             buttonWidget.setDimensions(52, 14);
+
             installButtons[i] = buttonWidget;
             installButtons[i].setX(width - 70);
             ButtonWidget projectButtonWidget = ButtonWidget.builder(Text.of("More Info"), button -> {
-
                 client.setScreen(new ProjectScreen(this, INFO[finalI]));
-
             }).build();
-
             projectButtonWidget.setDimensions(60, 14);
             projectScreenButtons[i] = projectButtonWidget;
             projectScreenButtons[i].setX(width - 150);
+
             this.addSelectableChild(buttonWidget);
             this.addSelectableChild(projectButtonWidget);
 
@@ -295,8 +297,19 @@ public class ProjectBrowser extends Screen {
             try {
                 context.drawTexture(RenderLayer::getGuiTextured, ICON_TEXTURE_ID[i], 0, firstRowY + (int) scrollAmount + i * 50, 0, 0, 40, 40, 40, 40);
                 context.drawText(textRenderer, INFO[i].getTitle(), 60, firstRowY + (int) scrollAmount + i * 50, 0xFFFFFF, false);
-                context.drawText(textRenderer, "by " + INFO[i].getAuthor(), 60 + textRenderer.getWidth(INFO[i].getTitle()) + 20, firstRowY + (int) scrollAmount + i * 50, 0xFFFFFF, false);
+                context.drawText(textRenderer, "by " + INFO[i].getAuthor(), 80 + textRenderer.getWidth(INFO[i].getTitle()), firstRowY + (int) scrollAmount + i * 50, 0xFFFFFF, false);
+                int finalI = i;
+                if (children().contains(authors[i])) {
+                    remove(authors[i]);
+                }
+                authors[i] = new PressableTextWidgetShadowless(0, 0, textRenderer.getWidth(Text.of(Text.of(INFO[i].getAuthor()))), 10, Text.literal(INFO[i].getAuthor()),button -> {
+                    client.setScreen(new ProfileScreen(INFO[finalI].getAuthor(), this));
+                }, textRenderer);
+                authors[i].setPosition(80 + textRenderer.getWidth(INFO[i].getTitle() + "by "), firstRowY + (int) scrollAmount + i * 50);
+                authors[i].render(context, mouseX, mouseY, delta);
+                this.addSelectableChild(authors[i]);
                 context.drawWrappedText(textRenderer, StringVisitable.plain(INFO[i].getDescription().replace("\n", "")), 60, firstRowY + (int) scrollAmount + i * 50 + 15, width - 70, 0xFFFFFF, false);
+                context.getMatrices().translate(0, 0, 1);
                 installButtons[i].render(context, mouseX, mouseY, delta);
                 installButtons[i].setY(firstRowY + (int) scrollAmount + i * 50 - 3);
                 if (INFO[i].isInstalling()) {
@@ -312,6 +325,8 @@ public class ProjectBrowser extends Screen {
 
                 projectScreenButtons[i].render(context, mouseX, mouseY, delta);
                 projectScreenButtons[i].setY(firstRowY + (int) scrollAmount + i * 50 - 2);
+                context.getMatrices().translate(0, 0, -1);
+
             } catch (NullPointerException ignored) {
 
             }
@@ -328,6 +343,9 @@ public class ProjectBrowser extends Screen {
         for (int i = 0; i < 100; i++) {
             projectScreenButtons[i].visible = i < showPerPage.getValue() && projectScreenButtons[i].getY() > firstRowY - 26;
             installButtons[i].visible = i < showPerPage.getValue() && installButtons[i].getY() > firstRowY - 26;
+            if (authors[i] != null) {
+                authors[i].visible = i < showPerPage.getValue() && authors[i].getY() > firstRowY - 26;
+            }
         }
         backButton.render(context, mouseX, mouseY, delta);
         backButton.active = pageNumber != 0;
@@ -425,12 +443,7 @@ public class ProjectBrowser extends Screen {
                     break;
                 }
                 if (!Thread.currentThread().isInterrupted()) {
-                    client.execute(() -> {
-                        NativeImageBackedTexture texture = new NativeImageBackedTexture(new NativeImage(1, 1, false));
-                        texture.getImage().setColorArgb(0, 0, 0x00000000);
-                        texture.upload();
-                        client.getTextureManager().registerTexture(ICON_TEXTURE_ID[finalI], texture);
-                    });
+                    ImageLoader.loadPlaceholder(ICON_TEXTURE_ID[i]);
                     Thread thread = Thread.currentThread();
                     executorService.submit(() -> ImageLoader.loadIcon(INFO[finalI], ICON_TEXTURE_ID[finalI], thread));
                 } else {
