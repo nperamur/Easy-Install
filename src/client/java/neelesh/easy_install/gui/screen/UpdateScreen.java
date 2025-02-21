@@ -99,12 +99,7 @@ public class UpdateScreen extends Screen {
                         int finalI = i;
                         Thread thread = new Thread(() -> {
                             try {
-                                client.execute(() -> {
-                                    NativeImageBackedTexture texture = new NativeImageBackedTexture(new NativeImage(1, 1, false));
-                                    texture.getImage().setColorArgb(0, 0, 0x00000000);
-                                    texture.upload();
-                                    client.getTextureManager().registerTexture(ICON_TEXTURE_ID.get(finalI), texture);
-                                });
+                                ImageLoader.loadPlaceholder(ICON_TEXTURE_ID.get(finalI));
                                 ImageLoader.loadImage(URI.create(jsonArray.get(finalX).getAsJsonObject().get("icon_url").getAsString()).toURL(), ICON_TEXTURE_ID.get(finalI), client);
                             } catch (MalformedURLException e) {
                                 throw new RuntimeException(e);

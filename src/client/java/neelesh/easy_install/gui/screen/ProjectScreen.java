@@ -164,10 +164,7 @@ public class ProjectScreen extends Screen {
         this.addSelectableChild(siteButton);
         Thread thread = new Thread(() -> {
             if (!initialized) {
-                client.execute(() -> {
-                    NativeImageBackedTexture texture = new NativeImageBackedTexture(new NativeImage(1, 1, false));
-                    client.getTextureManager().registerTexture(iconTextureId, texture);
-                });
+                ImageLoader.loadPlaceholder(iconTextureId);
             }
             ImageLoader.loadIcon(projectInfo, iconTextureId, Thread.currentThread());
         });

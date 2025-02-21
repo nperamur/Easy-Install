@@ -199,4 +199,13 @@ public class ImageLoader {
             return null;
         }
     }
+
+    public static void loadPlaceholder(Identifier id) {
+        TextureManager textureManager = MinecraftClient.getInstance().getTextureManager();
+        MinecraftClient.getInstance().execute(() -> {
+            NativeImage image = new NativeImage(1, 1, false);
+            NativeImageBackedTexture texture = new NativeImageBackedTexture(image);
+            textureManager.registerTexture(id, texture);
+        });
+    }
 }
