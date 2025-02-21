@@ -194,7 +194,10 @@ public class UpdateScreen extends Screen {
                 try {
                     String hash = EasyInstallClient.createFileHash(file.toPath());
                     if (oldHashes.containsKey(hash) && oldHashes.get(hash).equals(versions.get(index).getHash())) {
-                        file.delete();
+                        boolean deleted = file.delete();
+                        if (!deleted) {
+                            EasyInstallJsonHandler.addDeletedFile(String.valueOf(file.toPath()));
+                        }
                     }
                 } catch (IOException e) {
                     e.printStackTrace();

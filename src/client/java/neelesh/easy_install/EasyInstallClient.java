@@ -55,6 +55,12 @@ public class EasyInstallClient implements ClientModInitializer {
 	@Override
 	public void onInitializeClient() {
 		GAME_VERSION = SharedConstants.getGameVersion().getName();
+		JsonArray deletedFiles = EasyInstallJsonHandler.getDeletedFiles();
+		for (int i = 0; i < deletedFiles.size(); i++) {
+			File file = new File(deletedFiles.get(i).getAsString());
+			file.delete();
+		}
+		EasyInstallJsonHandler.clearDeletedFiles();
 	}
 
 	public static int getRowsOnPage() {
