@@ -237,24 +237,7 @@ public class ProjectBrowser extends Screen {
                 Thread thread = new Thread(() -> {
                     if (!INFO[finalI].isUpdated()) {
                         Thread thread2 = new Thread(() -> {
-                            HashMap<String, String> oldHashes = EasyInstallClient.getOldHashes();
-                            File dir = new File(EasyInstallClient.getDir(projectType));
-                            File[] files = dir.listFiles();
-                            if (files != null) {
-                                for (File file : files) {
-                                    try {
-                                        String hash = EasyInstallClient.createFileHash(file.toPath());
-                                        if (oldHashes.containsKey(hash) && oldHashes.get(hash).equals(INFO[finalI].getLatestHash())) {
-                                            boolean deleted = file.delete();
-                                            if (!deleted) {
-                                                EasyInstallJsonHandler.addDeletedFile(String.valueOf(file.toPath()));
-                                            }
-                                        }
-                                    } catch (IOException e) {
-                                        e.printStackTrace();
-                                    }
-                                }
-                            }
+                            EasyInstallClient.deleteOldFiles(projectType, INFO[finalI].getLatestHash());
                         });
                         thread2.start();
                     }

@@ -186,24 +186,7 @@ public class UpdateScreen extends Screen {
             EasyInstallClient.checkStatus(projectType);
         });
         thread.start();
-        HashMap<String, String> oldHashes = EasyInstallClient.getOldHashes();
-        File dir = new File(EasyInstallClient.getDir(projectType));
-        File[] files = dir.listFiles();
-        if (files != null) {
-            for (File file : files) {
-                try {
-                    String hash = EasyInstallClient.createFileHash(file.toPath());
-                    if (oldHashes.containsKey(hash) && oldHashes.get(hash).equals(versions.get(index).getHash())) {
-                        boolean deleted = file.delete();
-                        if (!deleted) {
-                            EasyInstallJsonHandler.addDeletedFile(String.valueOf(file.toPath()));
-                        }
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
+        EasyInstallClient.deleteOldFiles(projectType, versions.get(index).getHash());
     }
 
     @Override

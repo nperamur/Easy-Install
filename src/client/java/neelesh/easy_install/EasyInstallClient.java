@@ -29,8 +29,8 @@ public class EasyInstallClient implements ClientModInitializer {
 	private static int numRows = 20;
 	private static HashMap<String, String> oldHashes = new HashMap<>();
 	private static int numUpdates;
-	private static HashSet<String> updatesNeeded = new HashSet<>();
-	private static HashSet<String> installedProjects = new HashSet<>();
+	private static HashMap<ProjectType, HashSet<String>> updatesNeeded = new HashMap<>();
+	private static HashMap<ProjectType, HashSet<String>> installedProjects = new HashMap<>();
 
     public static String getSortMethod() {
         return sortMethod;
@@ -40,9 +40,6 @@ public class EasyInstallClient implements ClientModInitializer {
         EasyInstallClient.sortMethod = sortMethod;
     }
 
-	public static HashMap<String, String> getOldHashes() {
-		return oldHashes;
-	}
 
 	public static int getNumUpdates() {
 		return numUpdates;
@@ -61,6 +58,13 @@ public class EasyInstallClient implements ClientModInitializer {
 			file.delete();
 		}
 		EasyInstallJsonHandler.clearDeletedFiles();
+		for (ProjectType projectType : ProjectType.values()) {
+			if (projectType != ProjectType.DATA_PACK) {
+				checkStatus(projectType);
+			}
+		}
+		installedProjects.put(ProjectType.DATA_PACK, new HashSet<>());
+		updatesNeeded.put(ProjectType.DATA_PACK, new HashSet<>());
 	}
 
 	public static int getRowsOnPage() {
@@ -204,8 +208,8 @@ public class EasyInstallClient implements ClientModInitializer {
 		}
 
 		numUpdates = updateNeededProjectIds.size();
-		updatesNeeded = updateNeededProjectIds;
-		installedProjects = installedProjectIds;
+		updatesNeeded.put(projectType, updateNeededProjectIds);
+		installedProjects.put(projectType, installedProjectIds);
 		for (ProjectInfo info : projectInfo) {
 			if (info != null) {
 				info.setInstalled(installedProjectIds.contains(info.getId()));
@@ -282,8 +286,8 @@ public class EasyInstallClient implements ClientModInitializer {
 							false, projectType);
 
 				}
-				projectInfo[x].setInstalled(installedProjects.contains(projectInfo[x].getId()));
-				projectInfo[x].setUpdated(!updatesNeeded.contains(projectInfo[x].getId()));
+				projectInfo[x].setInstalled(installedProjects.get(projectType).contains(projectInfo[x].getId()));
+				projectInfo[x].setUpdated(!updatesNeeded.get(projectType).contains(projectInfo[x].getId()));
 				rows++;
 			}
 			totalPages = (JsonParser.parseString(response).getAsJsonObject().get("total_hits").getAsInt() - 1) / rowsOnPage + 1;
@@ -508,6 +512,26 @@ public class EasyInstallClient implements ClientModInitializer {
 		}
 		return null;
     }
+
+	public static void deleteOldFiles(ProjectType projectType, String latestHash) {
+		File dir = new File(EasyInstallClient.getDir(projectType));
+		File[] files = dir.listFiles();
+		if (files != null) {
+			for (File file : files) {
+				try {
+					String hash = EasyInstallClient.createFileHash(file.toPath());
+					if (oldHashes.containsKey(hash) && oldHashes.get(hash).equals(latestHash)) {
+						boolean deleted = file.delete();
+						if (!deleted) {
+							EasyInstallJsonHandler.addDeletedFile(String.valueOf(file.toPath()));
+						}
+					}
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+	}
 
 }
 

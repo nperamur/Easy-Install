@@ -11,7 +11,6 @@ import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.client.render.RenderLayer;
-import net.minecraft.client.texture.NativeImage;
 import net.minecraft.text.Text;
 import net.minecraft.util.Colors;
 import net.minecraft.util.Identifier;
@@ -25,7 +24,6 @@ public class ProfileScreen extends Screen {
     private String userName;
     private String bio;
     private ButtonWidget doneButton;
-    private Identifier[] projectIconIds;
 
     protected ProfileScreen(String name, Screen parent) {
         super(Text.of("Profile Screen"));
@@ -38,7 +36,7 @@ public class ProfileScreen extends Screen {
             JsonObject userProfile = EasyInstallClient.getUserProfile(name);
             if (userProfile != null) {
                 try {
-                    this.bio = userProfile.get("bio").getAsString().replace("\n", "");
+                    this.bio = userProfile.get("bio").getAsString().replace("\n", " ");
                 } catch (Exception e) {
                     this.bio = "A Modrinth creator";
                 }
@@ -71,13 +69,5 @@ public class ProfileScreen extends Screen {
         }
         doneButton.setPosition(width / 2 - doneButton.getWidth() / 2, height - 25);
         doneButton.render(context, mouseX, mouseY, delta);
-
-        if (projectIconIds != null) {
-            for (int i = 0; i < projectIconIds.length; i++) {
-                if (projectIconIds[i] != null) {
-                    context.drawTexture(RenderLayer::getGuiTextured, projectIconIds[i], 10, 65 + 50 * i, 0, 0, 45, 45, 45, 45, Colors.WHITE);
-                }
-            }
-        }
     }
 }
