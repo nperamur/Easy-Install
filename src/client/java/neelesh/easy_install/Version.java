@@ -3,7 +3,6 @@ package neelesh.easy_install;
 import com.google.gson.JsonArray;
 
 import java.net.URL;
-import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -19,8 +18,9 @@ public class Version {
     private final String id;
     private final String filename;
     private final String hash;
+    private final String changelog;
 
-    public Version(String name, String versionNumber, String versionType, URL downloadUrl, int numDownloads, ProjectType projectType, String filename, JsonArray dependencies, String hash, String id) {
+    public Version(String name, String versionNumber, String versionType, URL downloadUrl, int numDownloads, ProjectType projectType, String filename, JsonArray dependencies, String hash, String id, String changelog) {
         this.name = name;
         this.versionNumber = versionNumber;
         this.versionType = versionType;
@@ -31,6 +31,7 @@ public class Version {
         this.dependencies = dependencies;
         this.hash = hash;
         this.id = id;
+        this.changelog = changelog;
     }
 
     public String getVersionNumber() {
@@ -96,8 +97,15 @@ public class Version {
                 ", id='" + id + '\'' +
                 ", filename='" + filename + '\'' +
                 ", hash='" + hash + '\'' +
+                ", changelog='" + changelog + '\'' +
                 '}';
     }
 
+    public String getChangelog() {
+        return changelog;
+    }
 
+    public JsonArray getDependencies() {
+        return dependencies;
+    }
 }

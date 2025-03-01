@@ -6,10 +6,13 @@ import com.google.gson.JsonParser;
 import neelesh.easy_install.EasyInstallClient;
 import neelesh.easy_install.gui.screen.ProjectScreen;
 import neelesh.easy_install.Version;
+import neelesh.easy_install.gui.screen.VersionDetailsScreen;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.Drawable;
 import net.minecraft.client.gui.tab.GridScreenTab;
 import net.minecraft.client.gui.widget.ButtonWidget;
+import net.minecraft.client.gui.widget.PressableTextWidget;
 import net.minecraft.client.gui.widget.TabButtonWidget;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.text.Text;
@@ -25,6 +28,7 @@ public class VersionsTab extends GridScreenTab implements Drawable {
     private ButtonWidget[] versionButtons;
     private boolean initialized;
     private ProjectScreen projectScreen;
+    private PressableTextWidget[] versionDetailButtons;
 
     public VersionsTab(Text title, ProjectScreen projectScreen) {
         super(title);
@@ -34,6 +38,7 @@ public class VersionsTab extends GridScreenTab implements Drawable {
             JsonArray jsonArray = JsonParser.parseString(response).getAsJsonArray();
             versions = new Version[jsonArray.size()];
             versionButtons = new ButtonWidget[jsonArray.size()];
+            versionDetailButtons = new PressableTextWidget[jsonArray.size()];
             for (int i = 0; i < jsonArray.size(); i++) {
                 JsonObject versionInfo = jsonArray.get(i).getAsJsonObject();
                 Version version;
@@ -66,6 +71,11 @@ public class VersionsTab extends GridScreenTab implements Drawable {
                 }).build();
                 versionButtons[i].setDimensions(55, 14);
                 projectScreen.addSelectableChild(versionButtons[i]);
+
+                versionDetailButtons[i] = new PressableTextWidget(140, i * 40 + projectScreen.getScrollAmount(), projectScreen.getTextRenderer().getWidth(versions[i].getName()), 9, Text.of(versions[i].getName()), button -> {
+                    MinecraftClient.getInstance().setScreen(new VersionDetailsScreen(versions[finalI], projectScreen));
+                }, projectScreen.getTextRenderer());
+                projectScreen.addSelectableChild(versionDetailButtons[i]);
             }
         });
         thread.start();
@@ -77,7 +87,6 @@ public class VersionsTab extends GridScreenTab implements Drawable {
         if (versions == null) {
             return;
         }
-
         if (projectScreen.getProjectInfo().isInstalling()) {
             versionButtons[0].active = false;
             versionButtons[0].setMessage(Text.of("Installing"));
@@ -86,7 +95,9 @@ public class VersionsTab extends GridScreenTab implements Drawable {
             if (versions[i] == null) {
                 break;
             }
-            context.drawText(projectScreen.getTextRenderer(), Text.of(versions[i].getName()), 140, i * 40 + projectScreen.getScrollAmount() + 20, 0xFFFFFF, true);
+            versionDetailButtons[i].setPosition(140, i * 40 + projectScreen.getScrollAmount() + 20);
+            versionDetailButtons[i].render(context, mouseX, mouseY, delta);
+            //context.drawText(projectScreen.getTextRenderer(), Text.of(versions[i].getName()), 140, i * 40 + projectScreen.getScrollAmount() + 20, 0xFFFFFF, true);
             Formatting formatting;
             formatting = switch(versions[i].getVersionType()) {
                 case "release" -> Formatting.GREEN;
@@ -96,7 +107,6 @@ public class VersionsTab extends GridScreenTab implements Drawable {
             };
             context.drawText(projectScreen.getTextRenderer(), Text.literal("•" + versions[i].getVersionType()).formatted(formatting), 140, i * 40 + projectScreen.getScrollAmount() + 30, 0xFFFFFF, true);
             context.drawText(projectScreen.getTextRenderer(), Text.of(versions[i].getVersionNumber()), 140 + projectScreen.getTextRenderer().getWidth("•" + versions[i].getVersionType()) + 8, i * 40 + projectScreen.getScrollAmount() + 30, 0xFFFFFF, true);
-//            context.drawText(projectScreen.getTextRenderer(), Text.of(String.format("%,d", versions[i].getNumDownloads()) + " downloads"), projectScreen.width, - projectScreen.getTextRenderer().getWidth(String.format("%,d", versions[i].getNumDownloads()) + " downloads") - 8, i * 40 + projectScreen.getScrollAmount() + 36, 0xFFFFFF, true);
             context.drawText(projectScreen.getTextRenderer(), Text.of(String.format("%,d", versions[i].getNumDownloads()) + " downloads"), projectScreen.width - projectScreen.getTextRenderer().getWidth(String.format("%,d", versions[i].getNumDownloads()) + " downloads") - 8, i * 40 + projectScreen.getScrollAmount() + 36, 0xFFFFFF, true);
 
 
