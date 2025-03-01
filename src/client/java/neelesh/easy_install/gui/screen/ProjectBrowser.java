@@ -282,19 +282,19 @@ public class ProjectBrowser extends Screen {
         for (int i = 0; i < EasyInstallClient.getNumRows(); i++) {
             try {
                 context.drawTexture(RenderLayer::getGuiTextured, ICON_TEXTURE_ID[i], 0, firstRowY + (int) scrollAmount + i * 50, 0, 0, 40, 40, 40, 40);
-                context.drawText(textRenderer, INFO[i].getTitle(), 60, firstRowY + (int) scrollAmount + i * 50, 0xFFFFFF, false);
-                context.drawText(textRenderer, "by " + INFO[i].getAuthor(), 80 + textRenderer.getWidth(INFO[i].getTitle()), firstRowY + (int) scrollAmount + i * 50, 0xFFFFFF, false);
+                context.drawText(textRenderer, INFO[i].getTitle(), 55, firstRowY + (int) scrollAmount + i * 50, 0xFFFFFF, false);
+                context.drawText(textRenderer, "by ", 75 + textRenderer.getWidth(INFO[i].getTitle()), firstRowY + (int) scrollAmount + i * 50, 0xFFFFFF, false);
                 int finalI = i;
                 if (children().contains(authors[i])) {
                     remove(authors[i]);
                 }
-                authors[i] = new PressableTextWidgetShadowless(0, 0, textRenderer.getWidth(Text.of(Text.of(INFO[i].getAuthor()))), 10, Text.literal(INFO[i].getAuthor()),button -> {
+                authors[i] = new PressableTextWidgetShadowless(0, 0, textRenderer.getWidth(Text.of(Text.of(INFO[i].getAuthor()))), 9, Text.literal(INFO[i].getAuthor()),button -> {
                     client.setScreen(new ProfileScreen(INFO[finalI].getAuthor(), this));
                 }, textRenderer);
-                authors[i].setPosition(80 + textRenderer.getWidth(INFO[i].getTitle() + "by "), firstRowY + (int) scrollAmount + i * 50);
+                authors[i].setPosition(75 + textRenderer.getWidth(INFO[i].getTitle() + "by "), firstRowY + (int) scrollAmount + i * 50);
                 authors[i].render(context, mouseX, mouseY, delta);
                 this.addSelectableChild(authors[i]);
-                context.drawWrappedText(textRenderer, StringVisitable.plain(INFO[i].getDescription().replace("\n", "")), 60, firstRowY + (int) scrollAmount + i * 50 + 15, width - 70, 0xFFFFFF, false);
+                context.drawWrappedText(textRenderer, StringVisitable.plain(INFO[i].getDescription().replace("\n", "")), 55, firstRowY + (int) scrollAmount + i * 50 + 15, width - 65, 0xFFFFFF, false);
                 context.getMatrices().translate(0, 0, 1);
                 installButtons[i].render(context, mouseX, mouseY, delta);
                 installButtons[i].setY(firstRowY + (int) scrollAmount + i * 50 - 3);

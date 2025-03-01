@@ -413,11 +413,31 @@ public class EasyInstallClient implements ClientModInitializer {
 				versionInfo.get("files").getAsJsonArray().get(0).getAsJsonObject().get("filename").getAsString(),
 				versionInfo.get("dependencies").getAsJsonArray(),
 				versionInfo.get("files").getAsJsonArray().get(0).getAsJsonObject().get("hashes").getAsJsonObject().get("sha1").getAsString(),
-				versionInfo.get("project_id").getAsString()
+				versionInfo.get("project_id").getAsString(),
+				versionInfo.get("changelog").getAsString()
 		);
 	}
 
-
+	public static JsonObject getProject(String slug) {
+		String urlString = "https://api.modrinth.com/v2/project/" + slug;
+		String response = null;
+		try {
+			URL url = URI.create(urlString).toURL();
+			HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
+			httpURLConnection.setRequestMethod("GET");
+			int responseCode = httpURLConnection.getResponseCode();
+			if (responseCode == httpURLConnection.HTTP_OK) {
+				try (BufferedReader reader = new BufferedReader(new InputStreamReader(httpURLConnection.getInputStream()))) {
+					response = reader.lines().collect(Collectors.joining("\n"));
+				}
+			}
+			httpURLConnection.disconnect();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+        assert response != null;
+        return JsonParser.parseString(response).getAsJsonObject();
+	}
 
 	public static Path getSavePath(ProjectType projectType, String fileName) {
 		return Paths.get(getDir(projectType), fileName);

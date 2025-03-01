@@ -30,7 +30,6 @@ public class ProfileScreen extends Screen {
         doneButton = ButtonWidget.builder(Text.of("Done"), button -> {
             client.setScreen(parent);
         }).build();
-        this.addSelectableChild(doneButton);
         this.userName = name;
         Thread thread = new Thread(() -> {
             JsonObject userProfile = EasyInstallClient.getUserProfile(name);
@@ -69,5 +68,11 @@ public class ProfileScreen extends Screen {
         }
         doneButton.setPosition(width / 2 - doneButton.getWidth() / 2, height - 25);
         doneButton.render(context, mouseX, mouseY, delta);
+    }
+
+    @Override
+    protected void init() {
+        super.init();
+        this.addSelectableChild(doneButton);
     }
 }

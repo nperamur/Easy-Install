@@ -39,9 +39,8 @@ public class EasyInstallJsonHandler {
             return new JsonArray();
         }
         JsonArray jsonArray = null;
-        try {
-            BufferedReader bufferedReader = Files.newBufferedReader(PATH);
-            jsonArray = new JsonParser().parse(bufferedReader).getAsJsonArray();;
+        try (BufferedReader bufferedReader = Files.newBufferedReader(PATH)) {
+            jsonArray = new JsonParser().parse(bufferedReader).getAsJsonArray();
         } catch (IOException e) {
             e.printStackTrace();
         }

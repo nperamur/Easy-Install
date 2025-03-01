@@ -28,10 +28,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
+import java.net.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.stream.Collectors;
@@ -39,7 +36,7 @@ import java.util.stream.Collectors;
 import static net.minecraft.client.gui.screen.world.CreateWorldScreen.TAB_HEADER_BACKGROUND_TEXTURE;
 
 
-public class ProjectScreen extends Screen {
+public class ProjectScreen extends Screen implements MarkdownScreenInterface {
     private ProjectInfo projectInfo;
     private final Identifier iconTextureId;
     private int maxY;
@@ -156,37 +153,27 @@ public class ProjectScreen extends Screen {
         });
         thread.start();
         if (!initialized) {
-            String urlString = "https://api.modrinth.com/v2/project/" + projectInfo.getSlug();
-            try {
-                URL url = URI.create(urlString).toURL();
-                HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
-                httpURLConnection.setRequestMethod("GET");
-                int responseCode = httpURLConnection.getResponseCode();
-                if (responseCode == httpURLConnection.HTTP_OK) {
-                    String response;
-                    try (BufferedReader reader = new BufferedReader(new InputStreamReader(httpURLConnection.getInputStream()))) {
-                        response = reader.lines().collect(Collectors.joining("\n"));
+            JsonObject jsonObject = EasyInstallClient.getProject(this.projectInfo.getSlug());
+            String body = jsonObject.get("body").getAsString();
+            projectInfo.setBody(body);
+            JsonArray gallery = jsonObject.get("gallery").getAsJsonArray();
+            for (int i = 0; i < gallery.size(); i++) {
+                try {
+                    galleryImages.add(new GalleryImage(Identifier.of(EasyInstall.MOD_ID, "gallery_image_" + i), URI.create(gallery.get(i).getAsJsonObject().get("url").getAsString()).toURL(), gallery.get(i).getAsJsonObject().get("description").getAsString()));
+                } catch (UnsupportedOperationException e) {
+                    try {
+                        galleryImages.add(new GalleryImage(Identifier.of(EasyInstall.MOD_ID, "gallery_image__" + i), URI.create(gallery.get(i).getAsJsonObject().get("url").getAsString()).toURL()));
+                    } catch (MalformedURLException exception) {
+                        throw new RuntimeException(exception);
                     }
-                    JsonObject jsonObject = (JsonObject) JsonParser.parseString(response);
-                    String body = jsonObject.get("body").getAsString();
-                    projectInfo.setBody(body);
-                    JsonArray gallery = jsonObject.get("gallery").getAsJsonArray();
-                    for (int i = 0; i < gallery.size(); i++) {
-                        try {
-                            galleryImages.add(new GalleryImage(Identifier.of(EasyInstall.MOD_ID, "gallery_image_" + i), URI.create(gallery.get(i).getAsJsonObject().get("url").getAsString()).toURL(), gallery.get(i).getAsJsonObject().get("description").getAsString()));
-                        } catch (UnsupportedOperationException e) {
-                            galleryImages.add(new GalleryImage(Identifier.of(EasyInstall.MOD_ID, "gallery_image__" + i), URI.create(gallery.get(i).getAsJsonObject().get("url").getAsString()).toURL()));
-                        }
-                        try {
-                            galleryImages.get(i).setTitle(gallery.get(i).getAsJsonObject().get("title").getAsString());
-                        } catch (UnsupportedOperationException ignored) {
-
-                        }
-                    }
+                } catch (MalformedURLException e) {
+                    e.printStackTrace();
                 }
-                httpURLConnection.disconnect();
-            } catch (IOException e) {
-                e.printStackTrace();
+                try {
+                    galleryImages.get(i).setTitle(gallery.get(i).getAsJsonObject().get("title").getAsString());
+                } catch (UnsupportedOperationException ignored) {
+
+                }
             }
             this.descriptionTab = new DescriptionTab(Text.of("Description"), this);
             initialized = true;
@@ -251,6 +238,7 @@ public class ProjectScreen extends Screen {
         return this.projectInfo;
     }
 
+    @Override
     public <T extends net.minecraft.client.gui.Element & Selectable> T addSelectableChild(T child) {
         return super.addSelectableChild(child);
     }
@@ -267,6 +255,7 @@ public class ProjectScreen extends Screen {
         return galleryImages;
     }
 
+    @Override
     public void removeChild(Element c) {
         this.remove(c);
     }
