@@ -456,6 +456,9 @@ public class EasyInstallClient implements ClientModInitializer {
 	private static HashSet<String> getFileHashes(ProjectType projectType) {
 		File dir = new File(getDir(projectType));
 		File[] files = dir.listFiles();
+		if (files == null) {
+			return new HashSet<>();
+		}
 		Set<String> hashes = ConcurrentHashMap.newKeySet();
 		int numberOfThreads;
 		numberOfThreads = Math.max(1, Runtime.getRuntime().availableProcessors() / 2 - 2);
