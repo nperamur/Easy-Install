@@ -42,7 +42,9 @@ subprojects {
             url "https://api.modrinth.com/maven"
         }
     }
-
+    test {
+        useJUnitPlatform()
+    }
     dependencies {
         minecraft "net.minecraft:minecraft:$rootProject.minecraft_version"
         mappings loom.layered {
