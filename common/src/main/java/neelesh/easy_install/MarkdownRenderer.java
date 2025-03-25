@@ -26,6 +26,7 @@ import org.jsoup.select.Elements;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.regex.Pattern;
 
 
 public class MarkdownRenderer {
@@ -373,10 +374,12 @@ public class MarkdownRenderer {
         }
 
         Elements formatting = document.select("i, em, b, strong, a");
+        String s = document.wholeText();
         for (Element e : formatting) {
             String text = e.text();
+            String wholeText = e.wholeText();
             String t = "";
-            if (!e.tagName().equals("a") && document.wholeText().indexOf(text) - 1 > 0 && !(Character.getType(document.wholeText().charAt(document.wholeText().indexOf(text) - 1)) == Character.SPACE_SEPARATOR)) {
+            if (!e.tagName().equals("a") && s.indexOf(wholeText) - 1 > 0 && (Character.getType(s.charAt(s.indexOf(wholeText) - 1)) != Character.SPACE_SEPARATOR)) {
                 t = " ";
             }
             if ((e.tagName().equals("b") || e.tagName().equals("strong")) && e.select("img").isEmpty() && !text.replaceAll("\\s+", "").isEmpty()) {
@@ -386,7 +389,7 @@ public class MarkdownRenderer {
             } else {
                 t = text;
             }
-            if (!e.tagName().equals("a") && document.wholeText().indexOf(text) + 1 < document.wholeText().length() - 1 && (Character.getType(document.wholeText().charAt(document.wholeText().indexOf(text) + 1)) != Character.SPACE_SEPARATOR)) {
+            if (!e.tagName().equals("a") && s.indexOf(wholeText) + wholeText.length() < s.length() && (Character.getType(s.charAt(s.indexOf(wholeText) + wholeText.length())) != Character.SPACE_SEPARATOR) && (!Pattern.compile("\\p{P}").matcher(String.valueOf(s.charAt(s.indexOf(wholeText) + wholeText.length()))).matches())) {
                 t += " ";
             }
             e.html(t);
@@ -438,7 +441,7 @@ public class MarkdownRenderer {
 
                     for (Element link : e.select("a")) {
                         newText.append(Text.literal(text.getString().substring(lastIndex2, text.getString().indexOf(link.text()))));
-                        newText.append(Text.literal(text.getString().substring(text.getString().indexOf(link.text()), text.getString().indexOf(link.text()) + link.text().length())).setStyle(text.getStyle().withColor(0x257DE6)));
+                        newText.append(Text.literal(text.getString().substring(text.getString().indexOf(link.text()), text.getString().indexOf(link.text()) + link.text().length())).setStyle(text.getStyle()).withColor(0x257DE6));
                         if (!link.text().isEmpty()) {
                             linkUrls.add(link.attr("href"));
                             linkIndexes.add(finalText.getString().length() + text.getString().indexOf(link.text()));

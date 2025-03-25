@@ -128,7 +128,9 @@ public class VersionsTab extends GridScreenTab implements Drawable {
                 }
             } else if (!initialized) {
                 versionButtons[i].active = true;
+                versionDetailButtons[i].active = true;
                 versionButtons[i].setMessage(Text.of("Install"));
+
             }
             versionButtons[i].setPosition(projectScreen.width - versionButtons[i].getWidth() - 10, i * 40 + 20 + projectScreen.getScrollAmount());
             versionButtons[i].render(context, mouseX, mouseY, delta);
@@ -155,6 +157,13 @@ public class VersionsTab extends GridScreenTab implements Drawable {
                 continue;
             }
             versionButton.active = !versionButton.getMessage().getString().equals("Installed") && !versionButton.getMessage().getString().equals("Installing") && active;
+        }
+
+        for (ButtonWidget versionDetailsButton : versionDetailButtons) {
+            if (versionDetailsButton == null) {
+                continue;
+            }
+            versionDetailsButton.active = active;
         }
     }
 }
