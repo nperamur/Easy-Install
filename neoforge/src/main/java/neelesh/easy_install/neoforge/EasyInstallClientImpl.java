@@ -2,6 +2,7 @@ package neelesh.easy_install.neoforge;
 
 
 import net.minecraft.client.MinecraftClient;
+import net.neoforged.fml.loading.FMLPaths;
 
 import java.io.File;
 
@@ -11,10 +12,10 @@ public class EasyInstallClientImpl {
     }
 
     public static String getGameDir() {
-        return MinecraftClient.getInstance().runDirectory.toString();
+        return FMLPaths.GAMEDIR.get().toFile().toString();
     }
 
     public static File getGameDirAsFile() {
-        return MinecraftClient.getInstance().runDirectory;
+        return FMLPaths.GAMEDIR.get().toFile();
     }
 }

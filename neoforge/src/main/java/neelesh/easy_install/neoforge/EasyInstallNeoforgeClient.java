@@ -15,7 +15,6 @@ import static neelesh.easy_install.EasyInstallClient.initializeDatapacks;
 @Mod(EasyInstall.MOD_ID)
 public class EasyInstallNeoforgeClient {
 	public EasyInstallNeoforgeClient() {
-		System.out.println("Initialized");
 		JsonArray deletedFiles = EasyInstallJsonHandler.getDeletedFiles();
 		for (int i = 0; i < deletedFiles.size(); i++) {
 			File file = new File(deletedFiles.get(i).getAsString());

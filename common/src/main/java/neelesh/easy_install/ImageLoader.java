@@ -28,7 +28,7 @@ public class ImageLoader {
             URL url = info.getIconUrl();
             if (url == null) {
                 client.execute(() -> {
-                    NativeImageBackedTexture texture = new NativeImageBackedTexture(new NativeImage(64, 64, false));
+                    NativeImageBackedTexture texture = new NativeImageBackedTexture(() -> "", new NativeImage(64, 64, false));
                     for (int x = 0; x < 64; x++) {
                         for (int j = 0; j < 64; j++) {
                             texture.getImage().setColorArgb(x, j, 0xFF000000);
@@ -61,7 +61,7 @@ public class ImageLoader {
                 NativeImage finalImage = image;
                 client.execute(() -> {
                     NativeImageBackedTexture texture;
-                    texture = new NativeImageBackedTexture(finalImage);
+                    texture = new NativeImageBackedTexture(() -> "", finalImage);
                     texture.upload();
                     if (!thread.isInterrupted()) {
                         textureManager.registerTexture(textureId, texture);
@@ -122,7 +122,7 @@ public class ImageLoader {
         try {
             if (url == null) {
                 client.execute(() -> {
-                    NativeImageBackedTexture texture = new NativeImageBackedTexture(new NativeImage(1, 1, false));
+                    NativeImageBackedTexture texture = new NativeImageBackedTexture(() -> "", new NativeImage(1, 1, false));
                     texture.getImage().setColorArgb(0, 0, 0xFF000000);
                     texture.upload();
                     client.getTextureManager().registerTexture(textureId, texture);
@@ -156,7 +156,7 @@ public class ImageLoader {
         NativeImage finalImage = image;
         client.execute(() -> {
             NativeImageBackedTexture texture;
-            texture = new NativeImageBackedTexture(finalImage);
+            texture = new NativeImageBackedTexture(() -> "", finalImage);
             texture.upload();
             textureManager.registerTexture(textureId, texture);
             finalImage.close();
@@ -204,7 +204,7 @@ public class ImageLoader {
         TextureManager textureManager = MinecraftClient.getInstance().getTextureManager();
         MinecraftClient.getInstance().execute(() -> {
             NativeImage image = new NativeImage(1, 1, false);
-            NativeImageBackedTexture texture = new NativeImageBackedTexture(image);
+            NativeImageBackedTexture texture = new NativeImageBackedTexture(() -> "", image);
             textureManager.registerTexture(id, texture);
         });
     }

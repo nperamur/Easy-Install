@@ -98,7 +98,7 @@ public class MarkdownRenderer {
                         TextureManager textureManager = MinecraftClient.getInstance().getTextureManager();
                         MinecraftClient.getInstance().execute(() -> {
                             NativeImage image = new NativeImage(1, 1, false);
-                            NativeImageBackedTexture texture = new NativeImageBackedTexture(image);
+                            NativeImageBackedTexture texture = new NativeImageBackedTexture(() -> "", image);
                             textureManager.registerTexture(id, texture);
                         });
                         NativeImage image = ImageLoader.loadImage(url, id, MinecraftClient.getInstance());

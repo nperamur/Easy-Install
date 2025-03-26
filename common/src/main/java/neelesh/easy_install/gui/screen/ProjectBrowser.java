@@ -118,7 +118,7 @@ public class ProjectBrowser extends Screen {
         for (int i = 0; i < EasyInstallClient.getRowsOnPage(); i++) {
             int finalI = i;
             client.execute(() -> {
-                NativeImageBackedTexture texture = new NativeImageBackedTexture(new NativeImage(1, 1, false));
+                NativeImageBackedTexture texture = new NativeImageBackedTexture(() -> "", new NativeImage(1, 1, false));
                 texture.getImage().setColorArgb(0, 0, 0x00000000);
                 texture.upload();
                 client.getTextureManager().registerTexture(ICON_TEXTURE_ID[finalI], texture);
