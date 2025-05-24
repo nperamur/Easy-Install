@@ -5,6 +5,7 @@ import neelesh.easy_install.*;
 import net.fabricmc.api.ClientModInitializer;
 
 import java.io.*;
+import java.util.ArrayList;
 import java.util.HashSet;
 
 import static neelesh.easy_install.EasyInstallClient.checkStatus;
@@ -25,6 +26,10 @@ public class EasyInstallFabricClient implements ClientModInitializer {
 			}
 		}
 		initializeDatapacks();
+
+
+
+
 	}
 
 }
