@@ -4,13 +4,16 @@ import com.google.gson.JsonArray;
 import neelesh.easy_install.EasyInstallClient;
 import neelesh.easy_install.ProjectType;
 import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.gui.screen.ConfirmScreen;
 import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.gui.tooltip.Tooltip;
 import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.client.gui.widget.CheckboxWidget;
 import net.minecraft.text.Text;
 import net.minecraft.util.Colors;
 import org.apache.commons.lang3.StringUtils;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.TreeMap;
 
@@ -24,6 +27,7 @@ public class CategoryScreen extends Screen {
     private int maxY;
     private ButtonWidget clearButton;
     private JsonArray tags;
+    private CheckboxWidget disableGameVersionFilter;
 
     public CategoryScreen(ProjectBrowser browser, ProjectType projectType) {
         super(Text.of("Filter Categories"));
@@ -36,6 +40,24 @@ public class CategoryScreen extends Screen {
     @Override
     protected void init() {
         super.init();
+        disableGameVersionFilter = CheckboxWidget.builder(Text.of("Disable Game Version Filter"), textRenderer)
+                        .tooltip(Tooltip.of(Text.literal("- Warning: Disabling the game version filter may allow you to install incompatible content.\n\n").withColor(0xFFA500)
+                        .append(Text.literal("- By default, the search results are automatically filtered for this version of Minecraft. If these filters are disabled, it will display all results regardless of the version of Minecraft you are playing on.").withColor(Colors.WHITE))))
+                        .checked(!browser.isFilteredByGameVersion()).pos(width / 2 - 70, 25).callback(((box, checked) -> {
+
+
+            if (checked) {
+                ConfirmScreen confirmScreen = new ConfirmScreen(bool -> {
+                    browser.setFilteredByGameVersion(!bool);
+                    client.setScreen(this);
+                }, Text.of("Are you sure you want to disable the game version filter?"), Text.literal("Disabling the game version filter may allow you to install incompatible content.").withColor(0xFFA500));
+                client.setScreen(confirmScreen);
+            } else {
+                browser.setFilteredByGameVersion(true);
+            }
+        })).build();
+        disableGameVersionFilter.setTooltipDelay(Duration.ofMillis(500));
+        this.addSelectableChild(disableGameVersionFilter);
         checkBoxes = new TreeMap<>();
         doneButton = ButtonWidget.builder(Text.of("Done"), button -> {
             browser.setPage(0);
@@ -61,8 +83,10 @@ public class CategoryScreen extends Screen {
         }
         clearButton = ButtonWidget.builder(Text.of("Clear All"), button -> {
             browser.clearCategories();
+            browser.setFilteredByGameVersion(true);
             refreshWidgetPositions();
         }).build();
+        
         clearButton.setDimensions(100, 20);
         this.addSelectableChild(clearButton);
         if (projectType == ProjectType.RESOURCE_PACK) {
@@ -101,6 +125,16 @@ public class CategoryScreen extends Screen {
             }
             maxY = i * 25 + offset;
         }
+        context.getMatrices().scale(1.4f, 1.4f, 1);
+        context.drawText(textRenderer, "Game Version", (int)(20 /1.4f), (int) ((maxY + scrollAmount)/1.4f), Colors.WHITE, true);
+        context.getMatrices().scale(1/1.4f,1/1.4f, 1f);
+        disableGameVersionFilter.setPosition(20, (int) (maxY + scrollAmount + 20));
+        maxY += 45;
+
+        if (disableGameVersionFilter.isChecked()) {
+            clearButton.active = true;
+        }
+        disableGameVersionFilter.render(context, mouseX, mouseY, delta);
         doneButton.render(context, mouseX, mouseY, delta);
         clearButton.render(context, mouseX, mouseY, delta);
     }

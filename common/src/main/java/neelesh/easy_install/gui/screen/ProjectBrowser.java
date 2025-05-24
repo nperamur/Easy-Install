@@ -60,16 +60,15 @@ public class ProjectBrowser extends Screen {
     private boolean isScrolling;
     private HashSet<String> categories = new HashSet<String>();
     private boolean initialized;
-//    private boolean displayingCurrentVersion;
     //    private ButtonWidget versionButton;
     private final Identifier FILTER_TEXTURE = Identifier.of(EasyInstall.MOD_ID, "textures/gui/filter_icon.png");
     private final Identifier UPDATE_TEXTURE = Identifier.of(EasyInstall.MOD_ID, "textures/gui/update_icon.png");
     private final ButtonWidget filtersButton = ButtonWidget.builder(Text.of(""), button -> {
         showingFilterOptions = !showingFilterOptions;
-        //versionButton.visible = showingFilterOptions;
     }).build();
     private ButtonWidget updateScreenButton;
     private ButtonWidget categoriesButton;
+    private boolean filteredByGameVersion;
 
 
     public ProjectBrowser(Screen parent, ProjectType projectType) {
@@ -83,6 +82,7 @@ public class ProjectBrowser extends Screen {
             ICON_TEXTURE_ID[i] = Identifier.of(EasyInstall.MOD_ID, "icon" + i);
         }
         this.pageNumber = 0;
+        this.filteredByGameVersion = true;
 
     }
 
@@ -124,36 +124,6 @@ public class ProjectBrowser extends Screen {
                 client.getTextureManager().registerTexture(ICON_TEXTURE_ID[finalI], texture);
             });
         }
-
-        //        }
-
-
-
-        //        versionButton = ButtonWidget.builder(Text.of("Versions: 1.21.3"), button -> {
-        //            if (displayingCurrentVersion) {
-        //                button.setMessage(Text.of("Versions: All"));
-        //                displayingCurrentVersion = false;
-        //            } else {
-        //                button.setMessage(Text.of("Versions: 1.21.3"));
-        //                displayingCurrentVersion = true;
-        //            }
-        //            Thread thread = new Thread(() -> {
-        //                TestingClient.search(searchBox.getText(), projectType);
-        //                if (t != null) {
-        //                    t.interrupt();
-        //                }
-        //                t = new Thread(() -> {
-        //                    TestingClient.updateInstalled(this.projectType);
-        //                });
-        //                t.start();
-        //                loadIcons();
-        //            });
-        //            thread.start();
-        //
-        //        }).build();
-        //        displayingCurrentVersion = true;
-        //        this.addSelectableChild(versionButton);
-        //        versionButton.setDimensions(90, 20);
         this.addSelectableChild(updateScreenButton);
         this.addSelectableChild(showPerPage);
         this.addSelectableChild(sortButton);
@@ -236,7 +206,7 @@ public class ProjectBrowser extends Screen {
                         });
                         thread2.start();
                     }
-                    EasyInstallClient.downloadVersion(INFO[finalI].getSlug(), projectType);
+                    EasyInstallClient.downloadVersion(INFO[finalI].getSlug(), projectType, filteredByGameVersion);
                     INFO[finalI].setInstalling(false);
                     INFO[finalI].setInstalled(true);
                     t = new Thread(() -> {
@@ -381,9 +351,6 @@ public class ProjectBrowser extends Screen {
         lastPage.render(context, mouseX, mouseY, delta);
         firstPage.active = pageNumber != 0;
         firstPage.render(context, mouseX, mouseY, delta);
-        //        if (showingFilterOptions) {
-        //            //versionButton.render(context, mouseX, mouseY, delta);
-        //        }
         context.disableScissor();
         context.drawTexture(RenderLayer::getGuiTextured, CreateWorldScreen.HEADER_SEPARATOR_TEXTURE, 0, firstRowY - 15, 0, 0, width, 2, width, 2);
         showPerPage.visible = showingFilterOptions;
@@ -465,7 +432,7 @@ public class ProjectBrowser extends Screen {
             t.interrupt();
         }
         searchThread = new Thread(() -> {
-            EasyInstallClient.search(query, projectType, pageNumber * EasyInstallClient.getRowsOnPage(), categories);
+            EasyInstallClient.search(query, projectType, pageNumber * EasyInstallClient.getRowsOnPage(), categories, filteredByGameVersion);
             if (scrollAmount >= 0 || -50 * EasyInstallClient.getNumRows() - firstRowY + height - 35 >= 0) {
                 scrollAmount = 0;
             } else if (scrollAmount < -50 * EasyInstallClient.getNumRows() - firstRowY + height - 35) {
@@ -545,5 +512,13 @@ public class ProjectBrowser extends Screen {
 
     public void setInitialized(boolean initialized) {
         this.initialized = initialized;
+    }
+
+    public boolean isFilteredByGameVersion() {
+        return filteredByGameVersion;
+    }
+
+    public void setFilteredByGameVersion(boolean isFiltered) {
+        this.filteredByGameVersion = isFiltered;
     }
 }

@@ -1,7 +1,9 @@
 package neelesh.easy_install.gui.screen;
 
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 import neelesh.easy_install.*;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
@@ -18,10 +20,12 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.Collections;
 
 import static neelesh.easy_install.gui.screen.ProjectScreen.VERTICAL_SEPARATOR_TEXTURE;
 
-public class VersionDetailsScreen extends Screen implements MarkdownScreenInterface{
+public class VersionDetailsScreen extends Screen implements MarkdownScreenInterface {
     private Version version;
     private MarkdownRenderer markdownRenderer;
     private double scrollAmount = 0;
@@ -29,6 +33,7 @@ public class VersionDetailsScreen extends Screen implements MarkdownScreenInterf
     private String[] dependencyNames;
     private String[] dependencyTypes;
     private ButtonWidget doneButton;
+    private JsonArray gameVersions;
 
     public VersionDetailsScreen(Version version, Screen parent) {
         super(Text.of("Version Details"));
@@ -37,6 +42,62 @@ public class VersionDetailsScreen extends Screen implements MarkdownScreenInterf
             MinecraftClient.getInstance().setScreen(parent);
         }).build();
         this.addSelectableChild(doneButton);
+        JsonArray gameVersions = version.getGameVersions();
+        ArrayList<String> versionNumbers = EasyInstallClient.getReleaseVersionNumbers();
+        Collections.reverse(versionNumbers);
+        int n = 0;
+        int j = 0;
+        int blockSize = 0;
+        while (n < gameVersions.size() && j < versionNumbers.size()) {
+            int cmp;
+            try {
+                cmp = compareMinecraftVersions(gameVersions.get(n).getAsString(), versionNumbers.get(j));
+            } catch (NumberFormatException e) {
+                if (blockSize > 1) {
+                    String str = gameVersions.get(n - 1).getAsString();
+                    for (int i = 1; i < blockSize; i++) {
+                        gameVersions.remove(n - i);
+                    }
+                    gameVersions.set(n - blockSize, new JsonPrimitive(gameVersions.get(n - blockSize).getAsString() + " - " + str));
+                    n -= blockSize - 1;
+                }
+                n++;
+                blockSize = 0;
+                continue;
+            }
+            if (cmp != 0 || (n == gameVersions.size() - 1)) {
+                if (cmp == 0 && n == gameVersions.size() - 1) {
+                    blockSize++;
+                }
+                if (blockSize > 1 && n == gameVersions.size() - 1) {
+                    String str = gameVersions.get(n).getAsString();
+                    for (int i = 0; i < blockSize - 1; i++) {
+                        gameVersions.remove(n - i);
+                    }
+                    gameVersions.set(n - blockSize + 1, new JsonPrimitive(gameVersions.get(n - blockSize + 1).getAsString() + " - " + str));
+                    n -= blockSize - 1;
+                } else if (blockSize > 1){
+                    String str = gameVersions.get(n - 1).getAsString();
+                    for (int i = 1; i < blockSize; i++) {
+                        gameVersions.remove(n - i);
+                    }
+                    gameVersions.set(n - blockSize, new JsonPrimitive(gameVersions.get(n - blockSize).getAsString() + " - " + str));
+                    n -= blockSize - 1;
+                }
+                blockSize = 0;
+            }
+            if (cmp < 0) {
+                n++;
+            } else if (cmp > 0) {
+                j++;
+            } else {
+                blockSize++;
+                n++;
+                j++;
+            }
+        }
+
+        this.gameVersions = gameVersions;
         Thread thread = new Thread(() -> {
             JsonArray dependencies = version.getDependencies();
             dependencyIconIds = new Identifier[dependencies.size()];
@@ -88,7 +149,9 @@ public class VersionDetailsScreen extends Screen implements MarkdownScreenInterf
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
         super.render(context, mouseX, mouseY, delta);
         renderDarkening(context);
+        context.getMatrices().translate(0, 0, 1);
         doneButton.render(context, mouseX, mouseY, delta);
+        context.getMatrices().translate(0, 0, -1);
         context.getMatrices().scale(1.5f, 1.5f, 1);
         context.drawWrappedText(textRenderer, Text.of(version.getName()), 3, 5 + (int) (scrollAmount / 1.5), (int) (width * 2 / (3 * 1.5)), Colors.WHITE, true);
         context.getMatrices().scale(1 / 1.5f, 1 / 1.5f, 1);
@@ -119,6 +182,23 @@ public class VersionDetailsScreen extends Screen implements MarkdownScreenInterf
 
             context.drawText(textRenderer, Text.of("Downloads:"), width * 2 / 3 + 20, 60, Colors.WHITE, false);
             context.drawText(textRenderer, Text.of(String.format("%,d", version.getNumDownloads())), width * 2 / 3 + 20, 70, Colors.WHITE, true);
+
+            context.drawText(textRenderer, Text.of("File Size:"), width * 2 / 3 + 20, 85, Colors.WHITE, false);
+            String text = formatFileSize();
+            context.drawText(textRenderer, Text.of(text), width * 2 / 3 + 20, 95, Colors.WHITE, true);
+
+
+            context.drawText(textRenderer, Text.of("Game Versions:"), width * 2 / 3 + 20, 110, Colors.WHITE, false);
+            for (int i = 0; i < gameVersions.size(); i++) {
+                JsonElement gameVersion = gameVersions.get(i);
+                String str = gameVersion.getAsString();
+                if (!gameVersion.equals(gameVersions.get(gameVersions.size() - 1))) {
+                    str += ",";
+                }
+                context.drawText(textRenderer, Text.of(str), width * 2 / 3 + 20, 120 + 10 * i, Colors.WHITE, true);
+
+            }
+
         }
         if (dependencyIconIds != null) {
             if (dependencyIconIds.length > 0) {
@@ -136,6 +216,20 @@ public class VersionDetailsScreen extends Screen implements MarkdownScreenInterf
         }
     }
 
+    private String formatFileSize() {
+        String text;
+        if (version.getFileSize() > 1000000000) {
+            text = String.format("%.2f", (double) version.getFileSize() / 1000000000) + " GB";
+        } else if (version.getFileSize() > 1000000) {
+            text = String.format("%.2f", (double) version.getFileSize() / 1000000) + " MB";
+        } else if (version.getFileSize() > 1000) {
+            text = String.format("%.2f", (double) version.getFileSize() / 1000) + " KB";
+        } else {
+            text = (double) version.getFileSize() + " bytes";
+        }
+        return text;
+    }
+
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
         if (scrollAmount + verticalAmount * 13 < 0 && scrollAmount + verticalAmount * 13 > -markdownRenderer.getMaxY() + height - dependencyNames.length * 40 - 30) {
@@ -147,4 +241,22 @@ public class VersionDetailsScreen extends Screen implements MarkdownScreenInterf
         }
         return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount);
     }
+
+
+    private int compareMinecraftVersions(String v1, String v2) throws NumberFormatException {
+        String[] parts1 = v1.split("\\.");
+        String[] parts2 = v2.split("\\.");
+
+        int maxLength = Math.max(parts1.length, parts2.length);
+        for (int i = 0; i < maxLength; i++) {
+            int num1 = i < parts1.length ? Integer.parseInt(parts1[i]) : 0;
+            int num2 = i < parts2.length ? Integer.parseInt(parts2[i]) : 0;
+
+            if (num1 != num2) {
+                return Integer.compare(num1, num2);
+            }
+        }
+        return 0;
+    }
+
 }

@@ -39,6 +39,8 @@ public class ProjectScreen extends Screen implements MarkdownScreenInterface {
     private ArrayList<GalleryImage> galleryImages = new ArrayList<>();
     private VersionsTab versionsTab;
     private boolean initialized;
+    private Screen prevScreen;
+    private boolean filteredByGameVersion;
     private final ButtonWidget installButton = ButtonWidget.builder(Text.of("Install"), button -> {
         Thread thread = new Thread(() -> {
             projectInfo.setInstalling(true);
@@ -48,7 +50,7 @@ public class ProjectScreen extends Screen implements MarkdownScreenInterface {
                 });
                 thread2.start();
             }
-            EasyInstallClient.downloadVersion(projectInfo.getSlug(), projectInfo.getProjectType());
+            EasyInstallClient.downloadVersion(projectInfo.getSlug(), projectInfo.getProjectType(), ((ProjectBrowser) prevScreen).isFilteredByGameVersion());
             projectInfo.setInstalled(true);
             projectInfo.setInstalling(false);
             versionsTab.setInitialized(false);
@@ -64,7 +66,6 @@ public class ProjectScreen extends Screen implements MarkdownScreenInterface {
         }
     }).build();
 
-    private Screen prevScreen;
     private final ButtonWidget doneButton = ButtonWidget.builder(Text.of("Done"), button -> {
         MinecraftClient.getInstance().setScreen(this.prevScreen);
     }).build();
@@ -80,6 +81,7 @@ public class ProjectScreen extends Screen implements MarkdownScreenInterface {
         this.projectInfo = projectInfo;
         iconTextureId = Identifier.of("project_texture_id");
         this.prevScreen = parent;
+        this.filteredByGameVersion = ((ProjectBrowser) parent).isFilteredByGameVersion();
     }
 
     @Override
@@ -256,5 +258,7 @@ public class ProjectScreen extends Screen implements MarkdownScreenInterface {
         this.remove(c);
     }
 
-
+    public boolean isFilteredByGameVersion() {
+        return filteredByGameVersion;
+    }
 }

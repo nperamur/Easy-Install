@@ -34,7 +34,7 @@ public class VersionsTab extends GridScreenTab implements Drawable {
         super(title);
         this.projectScreen = projectScreen;
         Thread thread = new Thread(() -> {
-            String response = EasyInstallClient.getVersions(projectScreen.getProjectInfo().getSlug(), projectScreen.getProjectInfo().getProjectType());
+            String response = EasyInstallClient.getVersions(projectScreen.getProjectInfo().getSlug(), projectScreen.getProjectInfo().getProjectType(), projectScreen.isFilteredByGameVersion());
             JsonArray jsonArray = JsonParser.parseString(response).getAsJsonArray();
             versions = new Version[jsonArray.size()];
             versionButtons = new ButtonWidget[jsonArray.size()];
@@ -87,7 +87,7 @@ public class VersionsTab extends GridScreenTab implements Drawable {
         if (versions == null) {
             return;
         }
-        if (projectScreen.getProjectInfo().isInstalling()) {
+        if (projectScreen.getProjectInfo().isInstalling() && versionButtons.length != 0) {
             versionButtons[0].active = false;
             versionButtons[0].setMessage(Text.of("Installing"));
         }

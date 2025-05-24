@@ -19,8 +19,10 @@ public class Version {
     private final String filename;
     private final String hash;
     private final String changelog;
+    private final JsonArray gameVersions;
+    private int fileSize;
 
-    public Version(String name, String versionNumber, String versionType, URL downloadUrl, int numDownloads, ProjectType projectType, String filename, JsonArray dependencies, String hash, String id, String changelog) {
+    public Version(String name, String versionNumber, String versionType, URL downloadUrl, int numDownloads, ProjectType projectType, String filename, JsonArray gameVersions, JsonArray dependencies, String hash, String id, String changelog, int fileSize) {
         this.name = name;
         this.versionNumber = versionNumber;
         this.versionType = versionType;
@@ -32,6 +34,8 @@ public class Version {
         this.hash = hash;
         this.id = id;
         this.changelog = changelog;
+        this.gameVersions = gameVersions;
+        this.fileSize = fileSize;
     }
 
     public String getVersionNumber() {
@@ -72,7 +76,7 @@ public class Version {
             for (int i = 0; i < this.dependencies.size(); i++) {
                 if (this.dependencies.get(i).getAsJsonObject().get("dependency_type").getAsString().equals("required")) {
                     String id = this.dependencies.get(i).getAsJsonObject().get("project_id").getAsString();
-                    executorService.submit(() -> EasyInstallClient.downloadVersion(id, EasyInstallClient.getProjectType(id)));
+                    executorService.submit(() -> EasyInstallClient.downloadVersion(id, EasyInstallClient.getProjectType(id), true));
                 }
             }
             executorService.shutdown();
@@ -107,5 +111,13 @@ public class Version {
 
     public JsonArray getDependencies() {
         return dependencies;
+    }
+
+    public JsonArray getGameVersions() {
+        return gameVersions;
+    }
+
+    public int getFileSize() {
+        return this.fileSize;
     }
 }
