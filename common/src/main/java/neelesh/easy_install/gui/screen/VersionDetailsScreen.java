@@ -214,6 +214,7 @@ public class VersionDetailsScreen extends Screen implements MarkdownScreenInterf
                 }
             }
         }
+
         doneButton.render(context, mouseX, mouseY, delta);
     }
 

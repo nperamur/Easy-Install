@@ -278,6 +278,7 @@ public class ProjectBrowser extends Screen {
                 projectScreenButtons[i].setY(firstRowY + (int) scrollAmount + i * 50 - 3);
                 projectScreenButtons[i].render(context, mouseX, mouseY, delta);
 
+
             } catch (NullPointerException ignored) {
 
             }
