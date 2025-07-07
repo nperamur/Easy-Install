@@ -8,6 +8,7 @@ import neelesh.easy_install.Version;
 import neelesh.easy_install.gui.screen.ProjectScreen;
 import neelesh.easy_install.gui.screen.VersionDetailsScreen;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gl.RenderPipelines;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.Drawable;
 import net.minecraft.client.gui.tab.GridScreenTab;
@@ -16,6 +17,7 @@ import net.minecraft.client.gui.widget.PressableTextWidget;
 import net.minecraft.client.gui.widget.TabButtonWidget;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.text.Text;
+import net.minecraft.util.Colors;
 import net.minecraft.util.Formatting;
 
 import java.io.File;
@@ -87,6 +89,8 @@ public class VersionsTab extends GridScreenTab implements Drawable {
         if (versions == null) {
             return;
         }
+        projectScreen.renderDarkening(context, 131, projectScreen.getScrollAmount() + ((TabButtonWidget) projectScreen.getTabNavigationWidget().children().get(0)).getHeight()-10, projectScreen.width, versions.length * 40 + 10);
+
         if (projectScreen.getProjectInfo().isInstalling() && versionButtons.length != 0) {
             versionButtons[0].active = false;
             versionButtons[0].setMessage(Text.of("Installing"));
@@ -97,7 +101,7 @@ public class VersionsTab extends GridScreenTab implements Drawable {
             }
             versionDetailButtons[i].setPosition(140, i * 40 + projectScreen.getScrollAmount() + 20);
             versionDetailButtons[i].render(context, mouseX, mouseY, delta);
-            //context.drawText(projectScreen.getTextRenderer(), Text.of(versions[i].getName()), 140, i * 40 + projectScreen.getScrollAmount() + 20, 0xFFFFFF, true);
+            //context.drawText(projectScreen.getTextRenderer(), Text.of(versions[i].getName()), 140, i * 40 + projectScreen.getScrollAmount() + 20, Colors.WHITE, true);
             Formatting formatting;
             formatting = switch(versions[i].getVersionType()) {
                 case "release" -> Formatting.GREEN;
@@ -105,9 +109,9 @@ public class VersionsTab extends GridScreenTab implements Drawable {
                 case "alpha" -> Formatting.RED;
                 default -> null;
             };
-            context.drawText(projectScreen.getTextRenderer(), Text.literal("•" + versions[i].getVersionType()).formatted(formatting), 140, i * 40 + projectScreen.getScrollAmount() + 30, 0xFFFFFF, true);
-            context.drawText(projectScreen.getTextRenderer(), Text.of(versions[i].getVersionNumber()), 140 + projectScreen.getTextRenderer().getWidth("•" + versions[i].getVersionType()) + 8, i * 40 + projectScreen.getScrollAmount() + 30, 0xFFFFFF, true);
-            context.drawText(projectScreen.getTextRenderer(), Text.of(String.format("%,d", versions[i].getNumDownloads()) + " downloads"), projectScreen.width - projectScreen.getTextRenderer().getWidth(String.format("%,d", versions[i].getNumDownloads()) + " downloads") - 8, i * 40 + projectScreen.getScrollAmount() + 36, 0xFFFFFF, true);
+            context.drawText(projectScreen.getTextRenderer(), Text.literal("•" + versions[i].getVersionType()).formatted(formatting), 140, i * 40 + projectScreen.getScrollAmount() + 30, Colors.WHITE, true);
+            context.drawText(projectScreen.getTextRenderer(), Text.of(versions[i].getVersionNumber()), 140 + projectScreen.getTextRenderer().getWidth("•" + versions[i].getVersionType()) + 8, i * 40 + projectScreen.getScrollAmount() + 30, Colors.WHITE, true);
+            context.drawText(projectScreen.getTextRenderer(), Text.of(String.format("%,d", versions[i].getNumDownloads()) + " downloads"), projectScreen.width - projectScreen.getTextRenderer().getWidth(String.format("%,d", versions[i].getNumDownloads()) + " downloads") - 8, i * 40 + projectScreen.getScrollAmount() + 36, Colors.WHITE, true);
 
 
             File file = new File(EasyInstallClient.getSavePath(projectScreen.getProjectInfo().getProjectType(), versions[i].getFilename()).toString());
@@ -136,9 +140,8 @@ public class VersionsTab extends GridScreenTab implements Drawable {
             versionButtons[i].render(context, mouseX, mouseY, delta);
         }
         initialized = true;
-        projectScreen.renderDarkening(context, 131, projectScreen.getScrollAmount() + ((TabButtonWidget) projectScreen.getTabNavigationWidget().children().get(0)).getHeight()-10, projectScreen.width, versions.length * 40 + 10);
         context.drawTexture(
-                RenderLayer::getGuiTextured, VERTICAL_SEPARATOR_TEXTURE, 131, projectScreen.getScrollAmount() + ((TabButtonWidget) projectScreen.getTabNavigationWidget().children().getFirst()).getHeight() - 12, 0.0F, 0.0F, 2, versions.length * 40 + 10, 2, 32
+                RenderPipelines.GUI_TEXTURED, VERTICAL_SEPARATOR_TEXTURE, 131, projectScreen.getScrollAmount() + ((TabButtonWidget) projectScreen.getTabNavigationWidget().children().getFirst()).getHeight() - 12, 0.0F, 0.0F, 2, versions.length * 40 + 10, 2, 32
         );
         projectScreen.setMaxY(versions.length * 40 + 10);
     }

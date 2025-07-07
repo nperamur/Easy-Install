@@ -109,9 +109,9 @@ public class CategoryScreen extends Screen {
             int offset = 10;
             for (String header : checkBoxes.sequencedKeySet()) {
                 ArrayList<CheckboxWidget> boxes = checkBoxes.get(header);
-                context.getMatrices().scale(1.4f, 1.4f, 1);
+                context.getMatrices().scale(1.4f, 1.4f);
                 context.drawText(textRenderer, StringUtils.capitalize(header), (int)(20 /1.4f), (int) ((i * 25 + offset + scrollAmount)/1.4f), Colors.WHITE, true);
-                context.getMatrices().scale(1/1.4f,1/1.4f, 1f);
+                context.getMatrices().scale(1/1.4f,1/1.4f);
                 offset += 20;
                 for (CheckboxWidget box : boxes) {
                     box.setPosition(20, i * 25 + offset + (int) scrollAmount);
@@ -125,9 +125,9 @@ public class CategoryScreen extends Screen {
             }
             maxY = i * 25 + offset;
         }
-        context.getMatrices().scale(1.4f, 1.4f, 1);
+        context.getMatrices().scale(1.4f, 1.4f);
         context.drawText(textRenderer, "Game Version", (int)(20 /1.4f), (int) ((maxY + scrollAmount)/1.4f), Colors.WHITE, true);
-        context.getMatrices().scale(1/1.4f,1/1.4f, 1f);
+        context.getMatrices().scale(1/1.4f,1/1.4f);
         disableGameVersionFilter.setPosition(20, (int) (maxY + scrollAmount + 20));
         maxY += 45;
 

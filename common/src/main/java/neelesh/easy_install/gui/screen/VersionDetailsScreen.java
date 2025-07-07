@@ -6,6 +6,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import neelesh.easy_install.*;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gl.RenderPipelines;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.Element;
 import net.minecraft.client.gui.Selectable;
@@ -149,21 +150,21 @@ public class VersionDetailsScreen extends Screen implements MarkdownScreenInterf
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
         super.render(context, mouseX, mouseY, delta);
         renderDarkening(context);
-        context.getMatrices().translate(0, 0, 1);
+//        context.getMatrices().translate(0, 0, 1);
         doneButton.render(context, mouseX, mouseY, delta);
-        context.getMatrices().translate(0, 0, -1);
-        context.getMatrices().scale(1.5f, 1.5f, 1);
+//        context.getMatrices().translate(0, 0, -1);
+        context.getMatrices().scale(1.5f, 1.5f);
         context.drawWrappedText(textRenderer, Text.of(version.getName()), 3, 5 + (int) (scrollAmount / 1.5), (int) (width * 2 / (3 * 1.5)), Colors.WHITE, true);
-        context.getMatrices().scale(1 / 1.5f, 1 / 1.5f, 1);
+        context.getMatrices().scale(1 / 1.5f, 1 / 1.5f);
         if (markdownRenderer != null) {
-            context.getMatrices().scale(1.2f, 1.2f, 1);
+            context.getMatrices().scale(1.2f, 1.2f);
             int height = (int) (textRenderer.getWrappedLinesHeight(Text.of(version.getName()), (int) (width * 2 / (3 * 1.5))) * 1.5);
             context.drawText(textRenderer, Text.of("Changelog"), 4, 15 + (int) (height / 1.2) + (int) (scrollAmount / 1.2), Colors.WHITE, true);
-            context.getMatrices().scale(1 / 1.2f, 1 / 1.2f, 1);
+            context.getMatrices().scale(1 / 1.2f, 1 / 1.2f);
             markdownRenderer.render(context, + (int) scrollAmount);
 
             context.drawTexture(
-                    RenderLayer::getGuiTextured, VERTICAL_SEPARATOR_TEXTURE, width * 2 / 3 + 10, 0, 0.0F, 0.0F, 2, this.height, 2, 32
+                    RenderPipelines.GUI_TEXTURED, VERTICAL_SEPARATOR_TEXTURE, width * 2 / 3 + 10, 0, 0.0F, 0.0F, 2, this.height, 2, 32
             );
 
 
@@ -175,7 +176,7 @@ public class VersionDetailsScreen extends Screen implements MarkdownScreenInterf
                 default -> null;
             };
             context.drawText(textRenderer, Text.of("Release Type:"), width * 2 / 3 + 20, 10, Colors.WHITE, false);
-            context.drawText(textRenderer, Text.literal("•" + version.getVersionType()).formatted(formatting), width * 2 / 3 + 20, 20, 0xFFFFFF, true);
+            context.drawText(textRenderer, Text.literal("•" + version.getVersionType()).formatted(formatting), width * 2 / 3 + 20, 20, Colors.WHITE, true);
 
             context.drawText(textRenderer, Text.of("Version Number:"), width * 2 / 3 + 20, 35, Colors.WHITE, false);
             context.drawText(textRenderer, version.getVersionNumber(), width * 2 / 3 + 20, 45, Colors.WHITE, true);
@@ -202,13 +203,13 @@ public class VersionDetailsScreen extends Screen implements MarkdownScreenInterf
         }
         if (dependencyIconIds != null) {
             if (dependencyIconIds.length > 0) {
-                context.getMatrices().scale(1.2f, 1.2f, 1);
+                context.getMatrices().scale(1.2f, 1.2f);
                 context.drawText(textRenderer, Text.of("Dependencies"), 4, (int) (markdownRenderer.getMaxY() / 1.2 + scrollAmount / 1.2), Colors.WHITE, true);
-                context.getMatrices().scale(1 / 1.2f, 1 / 1.2f, 1);
+                context.getMatrices().scale(1 / 1.2f, 1 / 1.2f);
             }
             for (int i = 0; i < dependencyIconIds.length; i++) {
                 if (dependencyIconIds[i] != null) {
-                    context.drawTexture(RenderLayer::getGuiTextured, dependencyIconIds[i], 4, i * 40 + 20 + (int) scrollAmount + markdownRenderer.getMaxY(), 0, 0, 30, 30, 30, 30);
+                    context.drawTexture(RenderPipelines.GUI_TEXTURED, dependencyIconIds[i], 4, i * 40 + 20 + (int) scrollAmount + markdownRenderer.getMaxY(), 0, 0, 30, 30, 30, 30);
                     context.drawText(textRenderer, Text.of(dependencyNames[i]), 40, i * 40 + 20 + (int) scrollAmount + markdownRenderer.getMaxY(), Colors.WHITE, true);
                     context.drawText(textRenderer, Text.of(StringUtils.capitalize(dependencyTypes[i])), 40, i * 40 + 32 + (int) scrollAmount + markdownRenderer.getMaxY(), Colors.ALTERNATE_WHITE, true);
                 }
