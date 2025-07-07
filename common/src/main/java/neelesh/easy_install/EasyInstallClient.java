@@ -36,7 +36,7 @@ public class EasyInstallClient {
     private static int numUpdates;
     private static HashMap<ProjectType, HashSet<String>> updatesNeeded = new HashMap<>();
     private static HashMap<ProjectType, HashSet<String>> installedProjects = new HashMap<>();
-    private static String GAME_VERSION = SharedConstants.getGameVersion().getName();
+    private static String GAME_VERSION = SharedConstants.getGameVersion().name();
 
 
     public static String getSortMethod() {

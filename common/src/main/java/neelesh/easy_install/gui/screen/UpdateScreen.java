@@ -4,12 +4,14 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonParser;
 import neelesh.easy_install.*;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gl.RenderPipelines;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.client.gui.widget.PressableTextWidget;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.text.Text;
+import net.minecraft.util.Colors;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
 
@@ -139,33 +141,35 @@ public class UpdateScreen extends Screen {
         } else {
             updateText = versions.size() + " Update Available!";
         }
-        context.drawText(textRenderer, updateText, width / 2 - textRenderer.getWidth(updateText)/2, 10 + (int) scrollAmount, 0xFFFFFF, true);
+        context.drawText(textRenderer, updateText, width / 2 - textRenderer.getWidth(updateText)/2, 10 + (int) scrollAmount, Colors.WHITE, true);
         int i = 0;
         while(i < versions.size()) {
-            context.drawTexture(RenderLayer::getGuiTextured, ICON_TEXTURE_ID.get(i), 0, i * 50 + 30 + (int) scrollAmount, 0, 0, 40, 40, 40, 40);
-            context.getMatrices().scale(1.5f, 1.5f, 1.5f);
-            context.drawText(textRenderer, titles.get(i), (int) (50 / 1.5), (int) ((i * 50 + 30) / 1.5 + scrollAmount/1.5), 0xFFFFFF, true);
-            context.getMatrices().scale((float) 2 / 3, (float) 2 / 3, (float) 2 / 3);
-            //context.drawText(textRenderer, versions.get(i).getName(), 50, i * 50 + 45 +  (int) scrollAmount, 0xFFFFFF, true);
+            context.drawTexture(RenderPipelines.GUI_TEXTURED, ICON_TEXTURE_ID.get(i), 0, i * 50 + 30 + (int) scrollAmount, 0, 0, 40, 40, 40, 40);
+//            context.getMatrices().scale(1.5f, 1.5f, 1.5f);
+            context.getMatrices().scale(1.5f, 1.5f);
+            context.drawText(textRenderer, titles.get(i), (int) (50 / 1.5), (int) ((i * 50 + 30) / 1.5 + scrollAmount / 1.5), Colors.WHITE, true);
+//            context.getMatrices().scale((float) 2 / 3, (float) 2 / 3, (float) 2 / 3);
+            context.getMatrices().scale((float) 2 / 3, (float) 2 / 3);
+            //context.drawText(textRenderer, versions.get(i).getName(), 50, i * 50 + 45 +  (int) scrollAmount, Colors.WHITE, true);
             int finalI = i;
             this.remove(versionDetailButtons.get(i));
             versionDetailButtons.set(i, new PressableTextWidget(140, (int) (i * 40 + scrollAmount), textRenderer.getWidth(versions.get(i).getName()), 9, Text.of(versions.get(i).getName()), button -> {
                 MinecraftClient.getInstance().setScreen(new VersionDetailsScreen(versions.get(finalI), this));
             }, textRenderer));
             this.addSelectableChild(versionDetailButtons.get(i));
-            versionDetailButtons.get(i).setPosition(50, i * 50 + 45 +  (int) scrollAmount);
+            versionDetailButtons.get(i).setPosition(50, i * 50 + 45 + (int) scrollAmount);
             versionDetailButtons.get(i).render(context, mouseX, mouseY, delta);
             Formatting formatting;
 
-            formatting = switch(versions.get(i).getVersionType()) {
+            formatting = switch (versions.get(i).getVersionType()) {
                 case "release" -> Formatting.GREEN;
                 case "beta" -> Formatting.GOLD;
                 case "alpha" -> Formatting.RED;
                 default -> null;
             };
-            context.drawText(textRenderer, Text.literal("•" + versions.get(i).getVersionType()).formatted(formatting), 50, i * 50 + 55 + (int) scrollAmount, 0xFFFFFF, true);
-            context.drawText(textRenderer, Text.of(versions.get(i).getVersionNumber()), 50 + textRenderer.getWidth("•" + versions.get(i).getVersionType()) + 8, i * 50 + 55 + (int) scrollAmount, 0xFFFFFF, true);
-            context.drawText(textRenderer, Text.of(String.format("%,d", versions.get(i).getNumDownloads()) + " downloads"), width - textRenderer.getWidth(String.format("%,d", versions.get(i).getNumDownloads()) + " downloads") - 8, installButtons.get(i).getY() + installButtons.get(i).getHeight() + 2, 0xFFFFFF, true);
+            context.drawText(textRenderer, Text.literal("•" + versions.get(i).getVersionType()).formatted(formatting), 50, i * 50 + 55 + (int) scrollAmount, Colors.WHITE, true);
+            context.drawText(textRenderer, Text.of(versions.get(i).getVersionNumber()), 50 + textRenderer.getWidth("•" + versions.get(i).getVersionType()) + 8, i * 50 + 55 + (int) scrollAmount, Colors.WHITE, true);
+            context.drawText(textRenderer, Text.of(String.format("%,d", versions.get(i).getNumDownloads()) + " downloads"), width - textRenderer.getWidth(String.format("%,d", versions.get(i).getNumDownloads()) + " downloads") - 8, installButtons.get(i).getY() + installButtons.get(i).getHeight() + 2, Colors.WHITE, true);
 
             installButtons.get(i).render(context, mouseX, mouseY, delta);
             if (!installButtons.get(i).visible) {
@@ -189,7 +193,7 @@ public class UpdateScreen extends Screen {
                 i++;
             }
         }
-        context.getMatrices().translate(0, 0, 10);
+//        context.getMatrices().translate(0, 0, 10);
         updateAll.render(context, mouseX, mouseY, delta);
         doneButton.render(context, mouseX, mouseY, delta);
 

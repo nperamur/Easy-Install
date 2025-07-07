@@ -2,6 +2,7 @@ package neelesh.easy_install;
 
 import neelesh.easy_install.gui.screen.MarkdownScreenInterface;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gl.RenderPipelines;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.ConfirmLinkScreen;
 import net.minecraft.client.gui.screen.Screen;
@@ -14,6 +15,7 @@ import net.minecraft.text.MutableText;
 import net.minecraft.text.StringVisitable;
 import net.minecraft.text.Style;
 import net.minecraft.text.Text;
+import net.minecraft.util.Colors;
 import net.minecraft.util.Identifier;
 import org.commonmark.node.Node;
 import org.commonmark.parser.Parser;
@@ -152,7 +154,7 @@ public class MarkdownRenderer {
                 int imageWidth;
                 if (!(image.getWidth() == -1) && (image.getWidth() * (endX - 150)/1000) < endX - x - 10) {
                     imageWidth = (int) (image.getWidth() * (endX - 150)/(1000 * scale));
-                    context.drawTexture(RenderLayer::getGuiTextured, image.getId(), (int)(x/scale), (int)((y+scrollAmount)/scale), 0, 0, imageWidth, image.getImage().getHeight() * imageWidth/image.getImage().getWidth(), imageWidth, image.getImage().getHeight() * imageWidth/image.getImage().getWidth());
+                    context.drawTexture(RenderPipelines.GUI_TEXTURED, image.getId(), (int)(x/scale), (int)((y+scrollAmount)/scale), 0, 0, imageWidth, image.getImage().getHeight() * imageWidth/image.getImage().getWidth(), imageWidth, image.getImage().getHeight() * imageWidth/image.getImage().getWidth());
                     imageHeight = Math.max(imageHeight, image.getImage().getHeight() * imageWidth/image.getImage().getWidth() + 10);
                     if (image.isClickable() && count == 0) {
                         createClickableImageButtons(x, y, imageWidth, image.getImage().getHeight() * imageWidth/image.getImage().getWidth(), image.getLink());
@@ -164,7 +166,7 @@ public class MarkdownRenderer {
                         y += imageHeight;
                         imageHeight = 0;
                     }
-                    context.drawTexture(RenderLayer::getGuiTextured, image.getId(), (int)(x/scale), (int)((y+scrollAmount)/scale), 0, 0, (int)(image.getImage().getWidth()/(2 * scale)), (int)(image.getImage().getHeight()/(2 * scale)), (int)(image.getImage().getWidth()/(2 * scale)), (int) (image.getImage().getHeight()/(2 * scale)));
+                    context.drawTexture(RenderPipelines.GUI_TEXTURED, image.getId(), (int)(x/scale), (int)((y+scrollAmount)/scale), 0, 0, (int)(image.getImage().getWidth()/(2 * scale)), (int)(image.getImage().getHeight()/(2 * scale)), (int)(image.getImage().getWidth()/(2 * scale)), (int) (image.getImage().getHeight()/(2 * scale)));
                     imageWidth = image.getImage().getWidth()/2;
                     imageHeight = Math.max(imageHeight, image.getImage().getHeight()/2 + 10);
                     if (image.isClickable() && count == 0) {
@@ -181,7 +183,7 @@ public class MarkdownRenderer {
                     if (image.isClickable() && count == 0) {
                         createClickableImageButtons(x, y, imageWidth, image.getImage().getHeight() * imageWidth/image.getImage().getWidth() + 10, image.getLink());
                     }
-                    context.drawTexture(RenderLayer::getGuiTextured, image.getId(), (int)(x/scale), (int)((y+scrollAmount)/scale), 0, 0, (endX - x - 10), image.getImage().getHeight() * (int)((endX-x-10)/scale)/image.getImage().getWidth(), (int)((endX-x-10)/scale), image.getImage().getHeight() * (int)((endX-x-10)/scale)/image.getImage().getWidth());
+                    context.drawTexture(RenderPipelines.GUI_TEXTURED, image.getId(), (int)(x/scale), (int)((y+scrollAmount)/scale), 0, 0, (endX - x - 10), image.getImage().getHeight() * (int)((endX-x-10)/scale)/image.getImage().getWidth(), (int)((endX-x-10)/scale), image.getImage().getHeight() * (int)((endX-x-10)/scale)/image.getImage().getWidth());
                     y+=image.getImage().getHeight() * imageWidth/image.getImage().getWidth() + 10;
                 }
                 imageIndex++;
@@ -194,11 +196,11 @@ public class MarkdownRenderer {
                 if (count == 0) {
                     putLinkButtons(text, x, y, (int) ((endX-x-10) / scale), scale);
                 }
-                context.drawWrappedText(screen.getTextRenderer(), text, (int) (x/scale), (int) (y/scale + scrollAmount / scale), (int) ((endX-x-10) / scale), 0xFFFFFF, false);
+                context.drawWrappedText(screen.getTextRenderer(), text, (int) (x/scale), (int) (y/scale + scrollAmount / scale), (int) ((endX-x-10) / scale), Colors.WHITE, false);
                 int wrappedSize = screen.getTextRenderer().getWrappedLinesHeight(text, (int) ((endX-x-10) / scale));
                 if (scale == 1) {
                     scale = 1.4f;
-                    context.getMatrices().scale(scale, scale, 1.0f);
+                    context.getMatrices().scale(scale, scale);
                 }
                 s = new StringBuilder();
                 x = startX;
@@ -218,9 +220,9 @@ public class MarkdownRenderer {
                 if (count == 0) {
                     putLinkButtons(text, x, y, (int) ((endX-x-10) / scale), scale);
                 }
-                context.drawWrappedText(screen.getTextRenderer(), text, (int) (x/(scale)), (int) (y/scale + scrollAmount / scale), (int) ((endX-x-10) / scale), 0xFFFFFF, false);
+                context.drawWrappedText(screen.getTextRenderer(), text, (int) (x/(scale)), (int) (y/scale + scrollAmount / scale), (int) ((endX-x-10) / scale), Colors.WHITE, false);
                 if (scale > 1) {
-                    context.getMatrices().scale(1/scale, 1/scale, 1.0f);
+                    context.getMatrices().scale(1/scale, 1/scale);
                 }
                 int wrappedSize = screen.getTextRenderer().getWrappedLinesHeight(text, (int) ((endX-x-10) / scale));
                 if (!s.toString().replaceAll("\\s+", "").isEmpty()) {
@@ -243,7 +245,7 @@ public class MarkdownRenderer {
                 s.append(body.charAt(i));
             }
         }
-        context.getMatrices().scale(1/scale, 1/scale, 1.0f);
+        context.getMatrices().scale(1/scale, 1/scale);
         maxY = y + imageHeight;
         if (count != -1) {
             count++;

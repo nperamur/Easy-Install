@@ -8,6 +8,7 @@ import neelesh.easy_install.gui.tab.GalleryTab;
 import neelesh.easy_install.gui.tab.TabNavigationMixinInterface;
 import neelesh.easy_install.gui.tab.VersionsTab;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gl.RenderPipelines;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.Drawable;
 import net.minecraft.client.gui.Element;
@@ -21,6 +22,7 @@ import net.minecraft.client.gui.widget.TabNavigationWidget;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.text.StringVisitable;
 import net.minecraft.text.Text;
+import net.minecraft.util.Colors;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.Util;
 
@@ -106,12 +108,12 @@ public class ProjectScreen extends Screen implements MarkdownScreenInterface {
             ((TabButtonWidget) tabNavigationWidget.children().get(i)).render(context, mouseX, mouseY, delta);
         }
         float titleSize = 1.4f;
-        context.getMatrices().scale(titleSize, titleSize, 1.0f);
-        context.drawWrappedText(textRenderer, StringVisitable.plain(projectInfo.getTitle()), (int) (10 /titleSize), 40, (int) (110/titleSize),0xFFFFFF, false);
+        context.getMatrices().scale(titleSize, titleSize);
+        context.drawWrappedText(textRenderer, StringVisitable.plain(projectInfo.getTitle()), (int) (10 /titleSize), 40, (int) (110/titleSize), Colors.WHITE, false);
         int wrappedHeight =  textRenderer.getWrappedLinesHeight(StringVisitable.plain(projectInfo.getTitle()), (int) (110/titleSize));
-        context.getMatrices().scale(1/titleSize, 1/titleSize, 1.0f);
-        context.drawTexture(RenderLayer::getGuiTextured, iconTextureId, 10, 0, 0, 0, 50, 50, 50, 50);
-        context.drawWrappedText(textRenderer, StringVisitable.plain(projectInfo.getDescription()), 10, (int) (65 + wrappedHeight*titleSize), 110, 0xFFFFFF, false);
+        context.getMatrices().scale(1/titleSize, 1/titleSize);
+        context.drawTexture(RenderPipelines.GUI_TEXTURED, iconTextureId, 10, 0, 0, 0, 50, 50, 50, 50);
+        context.drawWrappedText(textRenderer, StringVisitable.plain(projectInfo.getDescription()), 10, (int) (65 + wrappedHeight*titleSize), 110, Colors.WHITE, false);
         installButton.setPosition(10, (int) ((65 + textRenderer.getWrappedLinesHeight(StringVisitable.plain(projectInfo.getDescription()), 110) + wrappedHeight * titleSize + 10)));
         siteButton.setPosition(65, (int) ((65 + textRenderer.getWrappedLinesHeight(StringVisitable.plain(projectInfo.getDescription()), 110) + wrappedHeight * titleSize + 10)));
         installButton.render(context, mouseX, mouseY, delta);
@@ -209,7 +211,7 @@ public class ProjectScreen extends Screen implements MarkdownScreenInterface {
 
     @Override
     protected void renderDarkening(DrawContext context) {
-        context.drawTexture(RenderLayer::getGuiTextured, TAB_HEADER_BACKGROUND_TEXTURE, 0, 0, 0.0F, 0.0F, this.width, ((TabButtonWidget) this.tabNavigationWidget.children().getFirst()).getHeight(), 16, 16);
+        context.drawTexture(RenderPipelines.GUI_TEXTURED, TAB_HEADER_BACKGROUND_TEXTURE, 0, 0, 0.0F, 0.0F, this.width, ((TabButtonWidget) this.tabNavigationWidget.children().getFirst()).getHeight(), 16, 16);
     }
 
     @Override
@@ -260,5 +262,9 @@ public class ProjectScreen extends Screen implements MarkdownScreenInterface {
 
     public boolean isFilteredByGameVersion() {
         return filteredByGameVersion;
+    }
+
+    public int getMaxY() {
+        return this.maxY;
     }
 }
