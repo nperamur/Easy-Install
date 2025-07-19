@@ -55,6 +55,7 @@ public class UpdateScreen extends Screen {
                 updateVersion(projectType, version);
             }
             button.visible = false;
+            button.setFocused(false);
         }).build();
 
     }
@@ -127,6 +128,7 @@ public class UpdateScreen extends Screen {
     @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
         super.render(context, mouseX, mouseY, delta);
+        this.setFocused(null);
         renderDarkening(context);
         doneButton.setDimensions(80, 18);
         doneButton.setPosition(0, 0);
@@ -145,7 +147,6 @@ public class UpdateScreen extends Screen {
         int i = 0;
         while(i < versions.size()) {
             context.drawTexture(RenderPipelines.GUI_TEXTURED, ICON_TEXTURE_ID.get(i), 0, i * 50 + 30 + (int) scrollAmount, 0, 0, 40, 40, 40, 40);
-//            context.getMatrices().scale(1.5f, 1.5f, 1.5f);
             context.getMatrices().scale(1.5f, 1.5f);
             context.drawText(textRenderer, titles.get(i), (int) (50 / 1.5), (int) ((i * 50 + 30) / 1.5 + scrollAmount / 1.5), Colors.WHITE, true);
 //            context.getMatrices().scale((float) 2 / 3, (float) 2 / 3, (float) 2 / 3);
@@ -192,8 +193,14 @@ public class UpdateScreen extends Screen {
             } else {
                 i++;
             }
+
+            if (-EasyInstallClient.getNumUpdates() * 50 - 45 + height > 0) {
+                scrollAmount = 0;
+            } else if (scrollAmount != 0 && scrollAmount < -EasyInstallClient.getNumUpdates() * 50 - 45 + height) {
+                scrollAmount = -EasyInstallClient.getNumUpdates() * 50 - 45 + height;
+            }
+
         }
-//        context.getMatrices().translate(0, 0, 10);
         updateAll.render(context, mouseX, mouseY, delta);
         doneButton.render(context, mouseX, mouseY, delta);
 
@@ -209,12 +216,17 @@ public class UpdateScreen extends Screen {
         thread.start();
         Thread thread2 = new Thread(() -> EasyInstallClient.deleteOldFiles(projectType, version.getHash()));
         thread2.start();
+        EasyInstallClient.setNumUpdates(EasyInstallClient.getNumUpdates() - 1);
     }
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
         if (scrollAmount + verticalAmount * 13 <= 0 && scrollAmount + verticalAmount * 13 >= -EasyInstallClient.getNumUpdates() * 50 - 45 + height) {
             scrollAmount += verticalAmount * 13;
+        } else if (scrollAmount + verticalAmount * 13 < -EasyInstallClient.getNumUpdates() * 50 - 45 + height && scrollAmount != 0) {
+            scrollAmount = -EasyInstallClient.getNumUpdates() * 50 - 45 + height;
+        } else if (scrollAmount + verticalAmount * 13 > 0) {
+            scrollAmount = 0;
         }
         return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount);
     }
