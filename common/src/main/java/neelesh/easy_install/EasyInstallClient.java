@@ -540,6 +540,11 @@ public class EasyInstallClient {
     }
 
     @ExpectPlatform
+    public static String getModLoaderDisplayText() {
+        throw new AssertionError();
+    }
+
+    @ExpectPlatform
     public static String getGameDir() {
         throw new AssertionError();
     }

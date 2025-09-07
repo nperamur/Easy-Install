@@ -1,6 +1,8 @@
 package neelesh.easy_install.mixin;
 
 
+import dev.architectury.injectables.annotations.ExpectPlatform;
+import neelesh.easy_install.EasyInstallClient;
 import neelesh.easy_install.ProjectType;
 import neelesh.easy_install.gui.screen.ProjectBrowser;
 import net.minecraft.client.MinecraftClient;
@@ -37,7 +39,7 @@ public class TitleScreenMixin extends Screen {
 		if (buttonWidget != null) {
 			buttonWidget.setHeight(15);
 			buttonWidget.setWidth(80);
-			buttonWidget.setPosition(175, height-15);
+			buttonWidget.setPosition(textRenderer.getWidth(EasyInstallClient.getModLoaderDisplayText()) + 10, height-15);
 			buttonWidget.render(context, mouseX, mouseY, delta);
 			this.addSelectableChild(buttonWidget);
 		}
