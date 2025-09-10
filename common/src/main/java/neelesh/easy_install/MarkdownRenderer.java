@@ -1,8 +1,8 @@
 package neelesh.easy_install;
 
 import neelesh.easy_install.gui.screen.MarkdownScreenInterface;
+import neelesh.easy_install.gui.widget.ButtonWidgetInterface;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gl.RenderPipelines;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.ConfirmLinkScreen;
 import net.minecraft.client.gui.screen.Screen;
@@ -100,7 +100,7 @@ public class MarkdownRenderer {
                         TextureManager textureManager = MinecraftClient.getInstance().getTextureManager();
                         MinecraftClient.getInstance().execute(() -> {
                             NativeImage image = new NativeImage(1, 1, false);
-                            NativeImageBackedTexture texture = new NativeImageBackedTexture(() -> "", image);
+                            NativeImageBackedTexture texture = new NativeImageBackedTexture(image);
                             textureManager.registerTexture(id, texture);
                         });
                         NativeImage image = ImageLoader.loadImage(url, id, MinecraftClient.getInstance());
@@ -154,7 +154,7 @@ public class MarkdownRenderer {
                 int imageWidth;
                 if (!(image.getWidth() == -1) && (image.getWidth() * (endX - 150)/1000) < endX - x - 10) {
                     imageWidth = (int) (image.getWidth() * (endX - 150)/(1000 * scale));
-                    context.drawTexture(RenderPipelines.GUI_TEXTURED, image.getId(), (int)(x/scale), (int)((y+scrollAmount)/scale), 0, 0, imageWidth, image.getImage().getHeight() * imageWidth/image.getImage().getWidth(), imageWidth, image.getImage().getHeight() * imageWidth/image.getImage().getWidth());
+                    context.drawTexture(image.getId(), (int)(x/scale), (int)((y+scrollAmount)/scale), 0, 0, imageWidth, image.getImage().getHeight() * imageWidth/image.getImage().getWidth(), imageWidth, image.getImage().getHeight() * imageWidth/image.getImage().getWidth());
                     imageHeight = Math.max(imageHeight, image.getImage().getHeight() * imageWidth/image.getImage().getWidth() + 10);
                     if (image.isClickable() && count == 0) {
                         createClickableImageButtons(x, y, imageWidth, image.getImage().getHeight() * imageWidth/image.getImage().getWidth(), image.getLink());
@@ -166,7 +166,7 @@ public class MarkdownRenderer {
                         y += imageHeight;
                         imageHeight = 0;
                     }
-                    context.drawTexture(RenderPipelines.GUI_TEXTURED, image.getId(), (int)(x/scale), (int)((y+scrollAmount)/scale), 0, 0, (int)(image.getImage().getWidth()/(2 * scale)), (int)(image.getImage().getHeight()/(2 * scale)), (int)(image.getImage().getWidth()/(2 * scale)), (int) (image.getImage().getHeight()/(2 * scale)));
+                    context.drawTexture(image.getId(), (int)(x/scale), (int)((y+scrollAmount)/scale), 0, 0, (int)(image.getImage().getWidth()/(2 * scale)), (int)(image.getImage().getHeight()/(2 * scale)), (int)(image.getImage().getWidth()/(2 * scale)), (int) (image.getImage().getHeight()/(2 * scale)));
                     imageWidth = image.getImage().getWidth()/2;
                     imageHeight = Math.max(imageHeight, image.getImage().getHeight()/2 + 10);
                     if (image.isClickable() && count == 0) {
@@ -183,7 +183,7 @@ public class MarkdownRenderer {
                     if (image.isClickable() && count == 0) {
                         createClickableImageButtons(x, y, imageWidth, image.getImage().getHeight() * imageWidth/image.getImage().getWidth() + 10, image.getLink());
                     }
-                    context.drawTexture(RenderPipelines.GUI_TEXTURED, image.getId(), (int)(x/scale), (int)((y+scrollAmount)/scale), 0, 0, (endX - x - 10), image.getImage().getHeight() * (int)((endX-x-10)/scale)/image.getImage().getWidth(), (int)((endX-x-10)/scale), image.getImage().getHeight() * (int)((endX-x-10)/scale)/image.getImage().getWidth());
+                    context.drawTexture(image.getId(), (int)(x/scale), (int)((y+scrollAmount)/scale), 0, 0, (endX - x - 10), image.getImage().getHeight() * (int)((endX-x-10)/scale)/image.getImage().getWidth(), (int)((endX-x-10)/scale), image.getImage().getHeight() * (int)((endX-x-10)/scale)/image.getImage().getWidth());
                     y+=image.getImage().getHeight() * imageWidth/image.getImage().getWidth() + 10;
                 }
                 imageIndex++;
@@ -196,11 +196,11 @@ public class MarkdownRenderer {
                 if (count == 0) {
                     putLinkButtons(text, x, y, (int) ((endX-x-10) / scale), scale);
                 }
-                context.drawWrappedText(screen.getTextRenderer(), text, (int) (x/scale), (int) (y/scale + scrollAmount / scale), (int) ((endX-x-10) / scale), Colors.WHITE, false);
-                int wrappedSize = screen.getTextRenderer().getWrappedLinesHeight(text, (int) ((endX-x-10) / scale));
+                context.drawTextWrapped(((MarkdownScreenInterface) screen).getTextRenderer(), text, (int) (x/scale), (int) (y/scale + scrollAmount / scale), (int) ((endX-x-10) / scale), Colors.WHITE);
+                int wrappedSize = ((MarkdownScreenInterface) screen).getTextRenderer().getWrappedLinesHeight(text, (int) ((endX-x-10) / scale));
                 if (scale == 1) {
                     scale = 1.4f;
-                    context.getMatrices().scale(scale, scale);
+                    context.getMatrices().scale(scale, scale, 1);
                 }
                 s = new StringBuilder();
                 x = startX;
@@ -220,11 +220,11 @@ public class MarkdownRenderer {
                 if (count == 0) {
                     putLinkButtons(text, x, y, (int) ((endX-x-10) / scale), scale);
                 }
-                context.drawWrappedText(screen.getTextRenderer(), text, (int) (x/(scale)), (int) (y/scale + scrollAmount / scale), (int) ((endX-x-10) / scale), Colors.WHITE, false);
+                context.drawTextWrapped(((MarkdownScreenInterface) screen).getTextRenderer(), text, (int) (x/(scale)), (int) (y/scale + scrollAmount / scale), (int) ((endX-x-10) / scale), Colors.WHITE);
                 if (scale > 1) {
-                    context.getMatrices().scale(1/scale, 1/scale);
+                    context.getMatrices().scale(1/scale, 1/scale, 1);
                 }
-                int wrappedSize = screen.getTextRenderer().getWrappedLinesHeight(text, (int) ((endX-x-10) / scale));
+                int wrappedSize = ((MarkdownScreenInterface) screen).getTextRenderer().getWrappedLinesHeight(text, (int) ((endX-x-10) / scale));
                 if (!s.toString().replaceAll("\\s+", "").isEmpty()) {
                     y += (int) (wrappedSize * scale);
                     if (scale > 1) {
@@ -245,7 +245,7 @@ public class MarkdownRenderer {
                 s.append(body.charAt(i));
             }
         }
-        context.getMatrices().scale(1/scale, 1/scale);
+        context.getMatrices().scale(1/scale, 1/scale, 1);
         maxY = y + imageHeight;
         if (count != -1) {
             count++;
@@ -260,7 +260,7 @@ public class MarkdownRenderer {
         int numLines = 0;
         int siblingIndex = 0;
         int m = 1;
-        for (StringVisitable visitableText : screen.getTextRenderer().getTextHandler().wrapLines(text, width, Style.EMPTY)) {
+        for (StringVisitable visitableText : ((MarkdownScreenInterface) screen).getTextRenderer().getTextHandler().wrapLines(text, width, Style.EMPTY)) {
             String textString = visitableText.getString();
             String s = "";
             MutableText t = Text.literal("");
@@ -271,7 +271,7 @@ public class MarkdownRenderer {
                 } else if (isLink && (linkLengths.get(l) == j || i == textString.length() - 1)) {
                     String link = linkUrls.get(l);
                     ButtonWidget buttonWidget = ButtonWidget.builder(Text.empty(), button -> {
-                        ConfirmLinkScreen.open(screen, link, false);
+                        ConfirmLinkScreen.open(link, screen, false);
                     }).build();
                     MutableText prevText = Text.literal("");
                     MutableText currentText = Text.literal("");
@@ -291,10 +291,10 @@ public class MarkdownRenderer {
                         currentText.append(Text.literal(s));
                     }
 
-                    buttonWidget.setPosition((int) (x + screen.getTextRenderer().getWidth(prevText) * scale), y + 9 * numLines);
+                    buttonWidget.setPosition((int) (x + ((MarkdownScreenInterface) screen).getTextRenderer().getWidth(prevText) * scale), y + 9 * numLines);
                     originalY.add(y + 9 * numLines);
                     ((MarkdownScreenInterface) screen).addSelectableChild(buttonWidget);
-                    buttonWidget.setDimensions((int) (screen.getTextRenderer().getWidth(currentText) * scale), (int) (9 * scale));
+                    ((ButtonWidgetInterface) buttonWidget).setDimensions((int) (((MarkdownScreenInterface) screen).getTextRenderer().getWidth(currentText) * scale), (int) (9 * scale));
                     linkButtons.add(buttonWidget);
                     if (linkLengths.get(l) == j) {
                         isLink = false;
@@ -443,7 +443,7 @@ public class MarkdownRenderer {
 
                     for (Element link : e.select("a")) {
                         newText.append(Text.literal(text.getString().substring(lastIndex2, text.getString().indexOf(link.text()))));
-                        newText.append(Text.literal(text.getString().substring(text.getString().indexOf(link.text()), text.getString().indexOf(link.text()) + link.text().length())).setStyle(text.getStyle()).withColor(0x257DE6));
+                        newText.append(Text.literal(text.getString().substring(text.getString().indexOf(link.text()), text.getString().indexOf(link.text()) + link.text().length())).setStyle(text.getStyle().withColor(0x257DE6)));
                         if (!link.text().isEmpty()) {
                             linkUrls.add(link.attr("href"));
                             linkIndexes.add(finalText.getString().length() + text.getString().indexOf(link.text()));
@@ -476,9 +476,9 @@ public class MarkdownRenderer {
 
     private void createClickableImageButtons(int x, int y, int width, int height, String link) {
         ButtonWidget button = ButtonWidget.builder(Text.of(""), button1 -> {
-            ConfirmLinkScreen.open(screen, link, false);
+            ConfirmLinkScreen.open(link, screen, false);
         }).build();
-        button.setDimensions(width, height);
+        ((ButtonWidgetInterface) button).setDimensions(width, height);
         ((MarkdownScreenInterface) screen).addSelectableChild(button);
         button.setPosition(x, y);
         linkButtons.add(button);

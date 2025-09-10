@@ -7,8 +7,9 @@ import neelesh.easy_install.EasyInstallClient;
 import neelesh.easy_install.Version;
 import neelesh.easy_install.gui.screen.ProjectScreen;
 import neelesh.easy_install.gui.screen.VersionDetailsScreen;
+import neelesh.easy_install.gui.widget.ButtonWidgetInterface;
+import neelesh.easy_install.gui.widget.CustomTabWidget;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gl.RenderPipelines;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.Drawable;
 import net.minecraft.client.gui.tab.GridScreenTab;
@@ -71,7 +72,7 @@ public class VersionsTab extends GridScreenTab implements Drawable {
                     });
                     t.start();
                 }).build();
-                versionButtons[i].setDimensions(55, 14);
+                ((ButtonWidgetInterface) versionButtons[i]).setDimensions(55, 14);
                 projectScreen.addSelectableChild(versionButtons[i]);
 
                 versionDetailButtons[i] = new PressableTextWidget(140, i * 40 + projectScreen.getScrollAmount(), projectScreen.getTextRenderer().getWidth(versions[i].getName()), 9, Text.of(versions[i].getName()), button -> {
@@ -89,7 +90,7 @@ public class VersionsTab extends GridScreenTab implements Drawable {
         if (versions == null) {
             return;
         }
-        projectScreen.renderDarkening(context, 131, projectScreen.getScrollAmount() + ((TabButtonWidget) projectScreen.getTabNavigationWidget().children().get(0)).getHeight()-10, projectScreen.width, versions.length * 40 + 10);
+        projectScreen.renderDarkening(context, 131, projectScreen.getScrollAmount() + ((CustomTabWidget) projectScreen.getTabNavigationWidget().children().get(0)).getHeight()-30, projectScreen.width, versions.length * 40 + 40);
 
         if (projectScreen.getProjectInfo().isInstalling() && versionButtons.length != 0) {
             versionButtons[0].active = false;
@@ -141,7 +142,7 @@ public class VersionsTab extends GridScreenTab implements Drawable {
         }
         initialized = true;
         context.drawTexture(
-                RenderPipelines.GUI_TEXTURED, VERTICAL_SEPARATOR_TEXTURE, 131, projectScreen.getScrollAmount() + ((TabButtonWidget) projectScreen.getTabNavigationWidget().children().getFirst()).getHeight() - 12, 0.0F, 0.0F, 2, versions.length * 40 + 10, 2, 32
+                VERTICAL_SEPARATOR_TEXTURE, 131, projectScreen.getScrollAmount() + ((CustomTabWidget) projectScreen.getTabNavigationWidget().children().get(0)).getHeight() - 15, 0.0F, 0.0F, 2, versions.length * 40 + 10, 2, 32
         );
         projectScreen.setMaxY(versions.length * 40 + 10);
     }

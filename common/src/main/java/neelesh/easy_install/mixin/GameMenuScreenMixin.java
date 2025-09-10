@@ -27,7 +27,7 @@ public class GameMenuScreenMixin extends Screen {
 
     @Inject(method = "render", at = @At("TAIL"))
     private void addButton(DrawContext context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
-        buttonWidget.setDimensions(65, 20);
+        buttonWidget.setWidth(65);
         buttonWidget.setPosition(width/2 + 115, height / 4 + 56);
         buttonWidget.render(context, mouseX, mouseY, delta);
         this.addSelectableChild(buttonWidget);

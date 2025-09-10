@@ -5,8 +5,9 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import neelesh.easy_install.*;
+import neelesh.easy_install.gui.widget.ButtonWidgetInterface;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gl.RenderPipelines;
+import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.Element;
 import net.minecraft.client.gui.Selectable;
@@ -126,7 +127,7 @@ public class VersionDetailsScreen extends Screen implements MarkdownScreenInterf
     protected void init() {
         super.init();
         this.addSelectableChild(doneButton);
-        doneButton.setDimensions(width / 3 - 20, 20);
+        ((ButtonWidgetInterface) doneButton).setDimensions(width / 3 - 20, 20);
         doneButton.setPosition(width * 2 / 3 + 17, height - 20);
         if (version.getChangelog() != null) {
             int height = (int) (textRenderer.getWrappedLinesHeight(Text.of(version.getName()), (int) (width * 2 / (3 * 1.5))) * 1.5);
@@ -147,23 +148,26 @@ public class VersionDetailsScreen extends Screen implements MarkdownScreenInterf
     }
 
     @Override
+    public TextRenderer getTextRenderer() {
+        return this.textRenderer;
+    }
+
+    @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
         super.render(context, mouseX, mouseY, delta);
-        renderDarkening(context);
-//        context.getMatrices().translate(0, 0, 1);
-//        context.getMatrices().translate(0, 0, -1);
-        context.getMatrices().scale(1.5f, 1.5f);
-        context.drawWrappedText(textRenderer, Text.of(version.getName()), 3, 5 + (int) (scrollAmount / 1.5), (int) (width * 2 / (3 * 1.5)), Colors.WHITE, true);
-        context.getMatrices().scale(1 / 1.5f, 1 / 1.5f);
+        renderBackground(context);
+        context.getMatrices().scale(1.5f, 1.5f, 1);
+        context.drawTextWrapped(textRenderer, Text.of(version.getName()), 3, 5 + (int) (scrollAmount / 1.5), (int) (width * 2 / (3 * 1.5)), Colors.WHITE);
+        context.getMatrices().scale(1 / 1.5f, 1 / 1.5f, 1);
         if (markdownRenderer != null) {
-            context.getMatrices().scale(1.2f, 1.2f);
+            context.getMatrices().scale(1.2f, 1.2f, 1);
             int height = (int) (textRenderer.getWrappedLinesHeight(Text.of(version.getName()), (int) (width * 2 / (3 * 1.5))) * 1.5);
             context.drawText(textRenderer, Text.of("Changelog"), 4, 15 + (int) (height / 1.2) + (int) (scrollAmount / 1.2), Colors.WHITE, true);
-            context.getMatrices().scale(1 / 1.2f, 1 / 1.2f);
+            context.getMatrices().scale(1 / 1.2f, 1 / 1.2f, 1);
             markdownRenderer.render(context, + (int) scrollAmount);
 
             context.drawTexture(
-                    RenderPipelines.GUI_TEXTURED, VERTICAL_SEPARATOR_TEXTURE, width * 2 / 3 + 10, 0, 0.0F, 0.0F, 2, this.height, 2, 32
+                    VERTICAL_SEPARATOR_TEXTURE, width * 2 / 3 + 10, 0, 0.0F, 0.0F, 2, this.height, 2, 32
             );
 
 
@@ -202,15 +206,15 @@ public class VersionDetailsScreen extends Screen implements MarkdownScreenInterf
         }
         if (dependencyIconIds != null) {
             if (dependencyIconIds.length > 0) {
-                context.getMatrices().scale(1.2f, 1.2f);
+                context.getMatrices().scale(1.2f, 1.2f, 1);
                 context.drawText(textRenderer, Text.of("Dependencies"), 4, (int) (markdownRenderer.getMaxY() / 1.2 + scrollAmount / 1.2), Colors.WHITE, true);
-                context.getMatrices().scale(1 / 1.2f, 1 / 1.2f);
+                context.getMatrices().scale(1 / 1.2f, 1 / 1.2f, 1);
             }
             for (int i = 0; i < dependencyIconIds.length; i++) {
                 if (dependencyIconIds[i] != null) {
-                    context.drawTexture(RenderPipelines.GUI_TEXTURED, dependencyIconIds[i], 4, i * 40 + 20 + (int) scrollAmount + markdownRenderer.getMaxY(), 0, 0, 30, 30, 30, 30);
+                    context.drawTexture(dependencyIconIds[i], 4, i * 40 + 20 + (int) scrollAmount + markdownRenderer.getMaxY(), 0, 0, 30, 30, 30, 30);
                     context.drawText(textRenderer, Text.of(dependencyNames[i]), 40, i * 40 + 20 + (int) scrollAmount + markdownRenderer.getMaxY(), Colors.WHITE, true);
-                    context.drawText(textRenderer, Text.of(StringUtils.capitalize(dependencyTypes[i])), 40, i * 40 + 32 + (int) scrollAmount + markdownRenderer.getMaxY(), Colors.ALTERNATE_WHITE, true);
+                    context.drawText(textRenderer, Text.of(StringUtils.capitalize(dependencyTypes[i])), 40, i * 40 + 32 + (int) scrollAmount + markdownRenderer.getMaxY(), Colors.WHITE, true);
                 }
             }
         }
@@ -233,15 +237,15 @@ public class VersionDetailsScreen extends Screen implements MarkdownScreenInterf
     }
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
-        if (scrollAmount + verticalAmount * 13 < 0 && scrollAmount + verticalAmount * 13 > -markdownRenderer.getMaxY() + height - dependencyNames.length * 40 - 30) {
-            scrollAmount += verticalAmount * 13;
-        } else if (scrollAmount + verticalAmount * 13 >= 0) {
+    public boolean mouseScrolled(double mouseX, double mouseY, double amount) {
+        if (scrollAmount + amount * 13 < 0 && scrollAmount + amount * 13 > -markdownRenderer.getMaxY() + height - dependencyNames.length * 40 - 30) {
+            scrollAmount += amount * 13;
+        } else if (scrollAmount + amount * 13 >= 0) {
             scrollAmount = 0;
-        } else if (scrollAmount + verticalAmount * 13 <= -markdownRenderer.getMaxY() + height - dependencyNames.length * 40 - 30 && scrollAmount != 0) {
+        } else if (scrollAmount + amount * 13 <= -markdownRenderer.getMaxY() + height - dependencyNames.length * 40 - 30 && scrollAmount != 0) {
             scrollAmount = -markdownRenderer.getMaxY() + height - dependencyNames.length * 40 - 30;
         }
-        return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount);
+        return super.mouseScrolled(mouseX, mouseY, amount);
     }
 
 

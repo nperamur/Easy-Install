@@ -3,6 +3,7 @@ package neelesh.easy_install.mixin;
 
 import neelesh.easy_install.ProjectType;
 import neelesh.easy_install.gui.screen.ProjectBrowser;
+import neelesh.easy_install.gui.widget.ButtonWidgetInterface;
 import net.irisshaders.iris.gui.element.ShaderPackOptionList;
 import net.irisshaders.iris.gui.screen.ShaderPackScreen;
 import net.minecraft.client.MinecraftClient;
@@ -40,8 +41,7 @@ public class ShaderPackScreenMixin extends Screen {
 
     @Inject(method = "init", at = @At("TAIL"))
     private void init(CallbackInfo ci) {
-        buttonWidget.setHeight(15);
-        buttonWidget.setWidth(80);
+        ((ButtonWidgetInterface) buttonWidget).setDimensions(80, 15);
         buttonWidget.setPosition(width/2-155, 10);
         addSelectableChild(buttonWidget);
     }

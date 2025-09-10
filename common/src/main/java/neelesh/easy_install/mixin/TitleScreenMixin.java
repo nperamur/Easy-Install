@@ -5,6 +5,7 @@ import dev.architectury.injectables.annotations.ExpectPlatform;
 import neelesh.easy_install.EasyInstallClient;
 import neelesh.easy_install.ProjectType;
 import neelesh.easy_install.gui.screen.ProjectBrowser;
+import neelesh.easy_install.gui.widget.ButtonWidgetInterface;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
@@ -37,8 +38,7 @@ public class TitleScreenMixin extends Screen {
 	@Inject(method = "render", at = @At("TAIL"))
 	private void addCustomButton(DrawContext context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
 		if (buttonWidget != null) {
-			buttonWidget.setHeight(15);
-			buttonWidget.setWidth(80);
+			((ButtonWidgetInterface) buttonWidget).setDimensions(80, 15);
 			buttonWidget.setPosition(textRenderer.getWidth(EasyInstallClient.getModLoaderDisplayText()) + 10, height-15);
 			buttonWidget.render(context, mouseX, mouseY, delta);
 			this.addSelectableChild(buttonWidget);

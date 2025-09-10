@@ -3,8 +3,8 @@ package neelesh.easy_install.gui.tab;
 import neelesh.easy_install.GalleryImage;
 import neelesh.easy_install.ImageLoader;
 import neelesh.easy_install.gui.screen.ProjectScreen;
+import neelesh.easy_install.gui.widget.CustomTabWidget;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gl.RenderPipelines;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.Drawable;
 import net.minecraft.client.gui.tab.GridScreenTab;
@@ -28,14 +28,18 @@ public class GalleryTab extends GridScreenTab implements Drawable {
         this.galleryImages = projectScreen.getGalleryImages();
         int numberOfThreads = 5;
         Thread thread = new Thread(() -> {
-            try (ExecutorService executorService = Executors.newFixedThreadPool(numberOfThreads)) {
-                    for (int i = 0; i < galleryImages.size(); i++) {
-                        int finalI = i;
-                        executorService.submit(() -> galleryImages.get(finalI).setImage(ImageLoader.loadImage(galleryImages.get(finalI).getUrl(), galleryImages.get(finalI).getId(), MinecraftClient.getInstance())));
-                    }
-                    executorService.shutdown();
-                }
-            });
+          ExecutorService executorService = Executors.newFixedThreadPool(numberOfThreads);
+              try {
+                  for (int i = 0; i < galleryImages.size(); i++) {
+                      int finalI = i;
+                      executorService.submit(() -> galleryImages.get(finalI).setImage(ImageLoader.loadImage(galleryImages.get(finalI).getUrl(), galleryImages.get(finalI).getId(), MinecraftClient.getInstance())));
+                  }
+              } catch (RuntimeException e) {
+                  throw new RuntimeException(e);
+              } finally {
+                  executorService.shutdown();
+              }
+        });
         thread.start();
 
         this.projectScreen = projectScreen;
@@ -43,8 +47,7 @@ public class GalleryTab extends GridScreenTab implements Drawable {
 
     @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
-//        context.getMatrices().translate(0, 0, 100);
-        projectScreen.renderDarkening(context, 131, projectScreen.getScrollAmount() + ((TabButtonWidget) projectScreen.getTabNavigationWidget().children().getFirst()).getHeight()-10, projectScreen.width, projectScreen.getMaxY());
+        projectScreen.renderDarkening(context, 131, projectScreen.getScrollAmount() + ((CustomTabWidget) projectScreen.getTabNavigationWidget().children().get(0)).getHeight()-30, projectScreen.width, projectScreen.getMaxY() + 30);
         int y = 30;
         int prevHeight = 0;
         for (int i = 0; i < galleryImages.size(); i++) {
@@ -55,12 +58,12 @@ public class GalleryTab extends GridScreenTab implements Drawable {
             double v = Math.pow(-1, i + 1) * (imageSize / 2 + 4);
             float titleSize = 1.2f;
 
-            context.getMatrices().scale(titleSize, titleSize);
-            context.drawWrappedText(projectScreen.getTextRenderer(), StringVisitable.plain(galleryImages.get(i).getTitle()), (int) ((135 + ((double) (projectScreen.width - 130)/2 + v) - imageSize/2)/titleSize), (int) ((int) (y + 5 + projectScreen.getScrollAmount() + imageSize/galleryImages.get(i).getImage().getWidth() * galleryImages.get(i).getImage().getHeight())/titleSize),(int) (imageSize/titleSize), Colors.WHITE, false);
+            context.getMatrices().scale(titleSize, titleSize, 1);
+            context.drawTextWrapped(projectScreen.getTextRenderer(), StringVisitable.plain(galleryImages.get(i).getTitle()), (int) ((135 + ((double) (projectScreen.width - 130)/2 + v) - imageSize/2)/titleSize), (int) ((int) (y + 5 + projectScreen.getScrollAmount() + imageSize/galleryImages.get(i).getImage().getWidth() * galleryImages.get(i).getImage().getHeight())/titleSize),(int) (imageSize/titleSize), Colors.WHITE);
             float titleHeight = (projectScreen.getTextRenderer().getWrappedLinesHeight(StringVisitable.plain(galleryImages.get(i).getTitle()), (int) (imageSize/titleSize)) * titleSize);
-            context.getMatrices().scale(1.0f/titleSize, 1.0f/titleSize);
-            context.drawWrappedText(projectScreen.getTextRenderer(), StringVisitable.plain(galleryImages.get(i).getDescription()), 135 + ((int)((double) (projectScreen.width - 130)/2 + v)  - (int) imageSize/2), (int) (y + titleHeight + 8 + projectScreen.getScrollAmount() + (imageSize/galleryImages.get(i).getImage().getWidth() * galleryImages.get(i).getImage().getHeight())),(int) imageSize, Colors.WHITE, false);
-            context.drawTexture(RenderPipelines.GUI_TEXTURED, galleryImages.get(i).getId(), 135 + ((int)((double) (projectScreen.width - 130)/2 + v) - (int) imageSize/2), y + projectScreen.getScrollAmount(), 0, 0, (int) imageSize, (int)(imageSize/galleryImages.get(i).getImage().getWidth() * galleryImages.get(i).getImage().getHeight()), (int) imageSize, (int)(imageSize/galleryImages.get(i).getImage().getWidth() * galleryImages.get(i).getImage().getHeight()));
+            context.getMatrices().scale(1.0f/titleSize, 1.0f/titleSize, 1);
+            context.drawTextWrapped(projectScreen.getTextRenderer(), StringVisitable.plain(galleryImages.get(i).getDescription()), 135 + ((int)((double) (projectScreen.width - 130)/2 + v)  - (int) imageSize/2), (int) (y + titleHeight + 8 + projectScreen.getScrollAmount() + (imageSize/galleryImages.get(i).getImage().getWidth() * galleryImages.get(i).getImage().getHeight())),(int) imageSize, Colors.WHITE);
+            context.drawTexture(galleryImages.get(i).getId(), 135 + ((int)((double) (projectScreen.width - 130)/2 + v) - (int) imageSize/2), y + projectScreen.getScrollAmount(), 0, 0, (int) imageSize, (int)(imageSize/galleryImages.get(i).getImage().getWidth() * galleryImages.get(i).getImage().getHeight()), (int) imageSize, (int)(imageSize/galleryImages.get(i).getImage().getWidth() * galleryImages.get(i).getImage().getHeight()));
             float descriptionHeight = (projectScreen.getTextRenderer().getWrappedLinesHeight(StringVisitable.plain(galleryImages.get(i).getDescription()), (int) imageSize));
             if (!galleryImages.get(i).getTitle().trim().isEmpty()) {
                 titleHeight += 8;
@@ -76,9 +79,9 @@ public class GalleryTab extends GridScreenTab implements Drawable {
             }
 
         }
-//        context.getMatrices().translate(0, 0, -100);
+
         context.drawTexture(
-                RenderPipelines.GUI_TEXTURED, VERTICAL_SEPARATOR_TEXTURE, 131, projectScreen.getScrollAmount() + ((TabButtonWidget) projectScreen.getTabNavigationWidget().children().getFirst()).getHeight() - 12, 0.0F, 0.0F, 2, y, 2, 32
+                VERTICAL_SEPARATOR_TEXTURE, 131, projectScreen.getScrollAmount() + ((CustomTabWidget) projectScreen.getTabNavigationWidget().children().get(0)).getHeight() - 15, 0.0F, 0.0F, 2, y, 2, 32
         );
         projectScreen.setMaxY(y);
     }

@@ -2,7 +2,7 @@ package neelesh.easy_install.gui.tab;
 
 import neelesh.easy_install.MarkdownRenderer;
 import neelesh.easy_install.gui.screen.ProjectScreen;
-import net.minecraft.client.gl.RenderPipelines;
+import neelesh.easy_install.gui.widget.CustomTabWidget;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.Drawable;
 import net.minecraft.client.gui.tab.GridScreenTab;
@@ -25,16 +25,18 @@ public class DescriptionTab extends GridScreenTab implements Drawable {
     @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
 
-        projectScreen.renderDarkening(context, 131, projectScreen.getScrollAmount() + ((TabButtonWidget) projectScreen.getTabNavigationWidget().children().get(0)).getHeight()-10, projectScreen.width, markdownRenderer.getMaxY());
+        projectScreen.renderDarkening(context, 131, projectScreen.getScrollAmount() + ((CustomTabWidget) projectScreen.getTabNavigationWidget().children().get(0)).getHeight()-30, projectScreen.width, markdownRenderer.getMaxY() + 30);
+
         projectScreen.setMaxY(markdownRenderer.getMaxY());
 
         markdownRenderer.setEndX(projectScreen.width);
         markdownRenderer.render(context, projectScreen.getScrollAmount());
+
         context.drawTexture(
-                RenderPipelines.GUI_TEXTURED, VERTICAL_SEPARATOR_TEXTURE, 131, projectScreen.getScrollAmount() + ((TabButtonWidget) projectScreen.getTabNavigationWidget().children().getFirst()).getHeight() - 12, 0.0F, 0.0F, 2, markdownRenderer.getMaxY(), 2, 32
+                VERTICAL_SEPARATOR_TEXTURE, 131, projectScreen.getScrollAmount() + ((CustomTabWidget) projectScreen.getTabNavigationWidget().children().get(0)).getHeight() - 15, 0.0F, 0.0F, 2, markdownRenderer.getMaxY(), 2, 32
         );
 
-        }
+    }
 
     public void setLinksActive(boolean active) {
         markdownRenderer.setLinksActive(active);

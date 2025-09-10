@@ -11,4 +11,3 @@ rootProject.name = 'easy-install'
 
 include 'common'
 include 'fabric'
-include 'neoforge'

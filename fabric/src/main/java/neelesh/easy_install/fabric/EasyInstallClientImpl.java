@@ -19,6 +19,6 @@ public class EasyInstallClientImpl {
     }
 
     public static String getModLoaderDisplayText() {
-        return "Minecraft " + SharedConstants.getGameVersion().name() + "/Fabric (Modded)";
+        return "Minecraft " + SharedConstants.getGameVersion().getName() + "/Fabric (Modded)";
     }
 }

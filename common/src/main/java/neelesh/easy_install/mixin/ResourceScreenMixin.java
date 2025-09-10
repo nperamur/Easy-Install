@@ -3,6 +3,7 @@ package neelesh.easy_install.mixin;
 import neelesh.easy_install.EasyInstallClient;
 import neelesh.easy_install.ProjectType;
 import neelesh.easy_install.gui.screen.ProjectBrowser;
+import neelesh.easy_install.gui.widget.ButtonWidgetInterface;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
@@ -43,8 +44,7 @@ public class ResourceScreenMixin extends Screen {
             ProjectBrowser browser = new ProjectBrowser(this, projectType);
             MinecraftClient.getInstance().setScreen(browser);
         }).build();
-        buttonWidget.setHeight(15);
-        buttonWidget.setWidth(110);
+        ((ButtonWidgetInterface) buttonWidget).setDimensions(110, 15);
         buttonWidget.setPosition(width / 2 - 215, 0);
         this.addSelectableChild(buttonWidget);
     }

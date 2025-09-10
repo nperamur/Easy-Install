@@ -1,13 +1,13 @@
 {
   "required": true,
   "package": "neelesh.easy_install.mixin",
-  "compatibilityLevel": "JAVA_21",
+  "compatibilityLevel": "JAVA_17",
   "client": [
     "TitleScreenMixin",
     "ResourceScreenMixin",
     "ShaderPackScreenMixin",
     "GameMenuScreenMixin",
-    "TabNavigationMixin"
+    "ButtonWidgetMixin"
   ],
   "injectors": {
     "defaultRequire": 1

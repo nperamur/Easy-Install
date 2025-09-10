@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.Objects;
 import java.util.logging.Level;
 
 public class ImageLoader {
@@ -28,10 +29,10 @@ public class ImageLoader {
             URL url = info.getIconUrl();
             if (url == null) {
                 client.execute(() -> {
-                    NativeImageBackedTexture texture = new NativeImageBackedTexture(() -> "", new NativeImage(64, 64, false));
+                    NativeImageBackedTexture texture = new NativeImageBackedTexture(new NativeImage(64, 64, false));
                     for (int x = 0; x < 64; x++) {
                         for (int j = 0; j < 64; j++) {
-                            texture.getImage().setColorArgb(x, j, 0xFF000000);
+                            Objects.requireNonNull(texture.getImage()).setColor(x, j, 0xFF000000);
                         }
                     }
                     texture.upload();
@@ -61,7 +62,7 @@ public class ImageLoader {
                 NativeImage finalImage = image;
                 client.execute(() -> {
                     NativeImageBackedTexture texture;
-                    texture = new NativeImageBackedTexture(() -> "", finalImage);
+                    texture = new NativeImageBackedTexture(finalImage);
                     texture.upload();
                     if (!thread.isInterrupted()) {
                         textureManager.registerTexture(textureId, texture);
@@ -104,8 +105,15 @@ public class ImageLoader {
             nativeImage = new NativeImage(bufferedImage.getWidth(), bufferedImage.getHeight(), false);
             for (int x = 0; x < bufferedImage.getWidth(); x++) {
                 for (int y = 0; y < bufferedImage.getHeight(); y++) {
-                    int rgb = bufferedImage.getRGB(x, y);
-                    nativeImage.setColorArgb(x, y, rgb);
+                    int argb = bufferedImage.getRGB(x, y);
+                    int a = (argb >> 24) & 0xFF;
+                    int r = (argb >> 16) & 0xFF;
+                    int g = (argb >> 8) & 0xFF;
+                    int b = argb & 0xFF;
+
+// Swap red and blue
+                    int agbr = (a << 24) | (b << 16) | (g << 8) | r;
+                    nativeImage.setColor(x, y, agbr);
                 }
             }
             return nativeImage;
@@ -122,8 +130,8 @@ public class ImageLoader {
         try {
             if (url == null) {
                 client.execute(() -> {
-                    NativeImageBackedTexture texture = new NativeImageBackedTexture(() -> "", new NativeImage(1, 1, false));
-                    texture.getImage().setColorArgb(0, 0, 0xFF000000);
+                    NativeImageBackedTexture texture = new NativeImageBackedTexture(new NativeImage(1, 1, false));
+                    Objects.requireNonNull(texture.getImage()).setColor(0, 0, 0xFF000000);
                     texture.upload();
                     client.getTextureManager().registerTexture(textureId, texture);
                 });
@@ -156,7 +164,7 @@ public class ImageLoader {
         NativeImage finalImage = image;
         client.execute(() -> {
             NativeImageBackedTexture texture;
-            texture = new NativeImageBackedTexture(() -> "", finalImage);
+            texture = new NativeImageBackedTexture(finalImage);
             texture.upload();
             textureManager.registerTexture(textureId, texture);
             finalImage.close();
@@ -190,8 +198,16 @@ public class ImageLoader {
             NativeImage nativeImage = new NativeImage(bufferedImage.getWidth(), bufferedImage.getHeight(), false);
             for (int x = 0; x < bufferedImage.getWidth(); x++) {
                 for (int y = 0; y < bufferedImage.getHeight(); y++) {
-                    int rgb = bufferedImage.getRGB(x, y);
-                    nativeImage.setColorArgb(x, y, rgb);
+                    int argb = bufferedImage.getRGB(x, y);
+                    int a = (argb >> 24) & 0xFF;
+                    int r = (argb >> 16) & 0xFF;
+                    int g = (argb >> 8) & 0xFF;
+                    int b = argb & 0xFF;
+
+// Swap red and blue
+                    int abgr = (a << 24) | (b << 16) | (g << 8) | r;
+
+                    nativeImage.setColor(x, y, abgr);
                 }
             }
             return nativeImage;
@@ -204,7 +220,7 @@ public class ImageLoader {
         TextureManager textureManager = MinecraftClient.getInstance().getTextureManager();
         MinecraftClient.getInstance().execute(() -> {
             NativeImage image = new NativeImage(1, 1, false);
-            NativeImageBackedTexture texture = new NativeImageBackedTexture(() -> "", image);
+            NativeImageBackedTexture texture = new NativeImageBackedTexture(image);
             textureManager.registerTexture(id, texture);
         });
     }

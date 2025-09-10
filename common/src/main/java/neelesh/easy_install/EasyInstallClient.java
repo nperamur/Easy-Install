@@ -36,7 +36,7 @@ public class EasyInstallClient {
     private static int numUpdates;
     private static HashMap<ProjectType, HashSet<String>> updatesNeeded = new HashMap<>();
     private static HashMap<ProjectType, HashSet<String>> installedProjects = new HashMap<>();
-    private static String GAME_VERSION = SharedConstants.getGameVersion().name();
+    private static String GAME_VERSION = SharedConstants.getGameVersion().getName();
 
 
     public static String getSortMethod() {
@@ -94,7 +94,8 @@ public class EasyInstallClient {
         String filename = jsonObject.get("filename").getAsString();
 
         int numberOfThreads = 5;
-        try(ExecutorService executorService = Executors.newFixedThreadPool(numberOfThreads)) {
+        ExecutorService executorService = Executors.newFixedThreadPool(numberOfThreads);
+        try {
             try {
                 URL versionURL = URI.create(jsonObject.get("url").getAsString()).toURL();
                 executorService.submit(() -> downloadVersion(versionURL, filename, projectType));
@@ -116,6 +117,8 @@ public class EasyInstallClient {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
+        } finally {
+            executorService.shutdown();
         }
     }
 
@@ -564,7 +567,8 @@ public class EasyInstallClient {
         Set<String> hashes = ConcurrentHashMap.newKeySet();
         int numberOfThreads;
         numberOfThreads = Math.max(1, Runtime.getRuntime().availableProcessors() / 2 - 2);
-        try (ExecutorService executorService = Executors.newFixedThreadPool(numberOfThreads)) {
+        ExecutorService executorService = Executors.newFixedThreadPool(numberOfThreads);
+        try {
             assert files != null;
             for (File file : files) {
                 executorService.submit(() -> {
@@ -585,6 +589,8 @@ public class EasyInstallClient {
                 executorService.shutdownNow();
                 return null;
             }
+        } finally {
+            executorService.shutdown();
         }
         return new HashSet<>(hashes);
     }

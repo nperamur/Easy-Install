@@ -3,8 +3,8 @@ package neelesh.easy_install.gui.screen;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonParser;
 import neelesh.easy_install.*;
+import neelesh.easy_install.gui.widget.ButtonWidgetInterface;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gl.RenderPipelines;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
@@ -71,12 +71,12 @@ public class UpdateScreen extends Screen {
         JsonArray projectIds = new JsonArray();
         for (int i = 0; i < versions.size(); i++) {
             projectIds.add(versions.get(i).getId());
-            installButtons.get(i).setDimensions(60, 18);
+            ((ButtonWidgetInterface) installButtons.get(i)).setDimensions(60, 18);
             installButtons.get(i).setPosition(width - 70, i * 50 + 30);
             this.addSelectableChild(installButtons.get(i));
         }
 
-        updateAll.setDimensions(60, 18);
+        ((ButtonWidgetInterface) updateAll).setDimensions(60, 18);
         updateAll.setPosition(width - 70, 2);
         this.addSelectableChild(updateAll);
         try {
@@ -129,8 +129,8 @@ public class UpdateScreen extends Screen {
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
         super.render(context, mouseX, mouseY, delta);
         this.setFocused(null);
-        renderDarkening(context);
-        doneButton.setDimensions(80, 18);
+        renderBackground(context);
+        ((ButtonWidgetInterface) doneButton).setDimensions(80, 18);
         doneButton.setPosition(0, 0);
         updateAll.visible = !versions.isEmpty() && updateAll.visible;
         for (int i = 0; i < installButtons.size(); i++) {
@@ -146,12 +146,10 @@ public class UpdateScreen extends Screen {
         context.drawText(textRenderer, updateText, width / 2 - textRenderer.getWidth(updateText)/2, 10 + (int) scrollAmount, Colors.WHITE, true);
         int i = 0;
         while(i < versions.size()) {
-            context.drawTexture(RenderPipelines.GUI_TEXTURED, ICON_TEXTURE_ID.get(i), 0, i * 50 + 30 + (int) scrollAmount, 0, 0, 40, 40, 40, 40);
-            context.getMatrices().scale(1.5f, 1.5f);
+            context.drawTexture(ICON_TEXTURE_ID.get(i), 0, i * 50 + 30 + (int) scrollAmount, 0, 0, 40, 40, 40, 40);
+            context.getMatrices().scale(1.5f, 1.5f, 1);
             context.drawText(textRenderer, titles.get(i), (int) (50 / 1.5), (int) ((i * 50 + 30) / 1.5 + scrollAmount / 1.5), Colors.WHITE, true);
-//            context.getMatrices().scale((float) 2 / 3, (float) 2 / 3, (float) 2 / 3);
-            context.getMatrices().scale((float) 2 / 3, (float) 2 / 3);
-            //context.drawText(textRenderer, versions.get(i).getName(), 50, i * 50 + 45 +  (int) scrollAmount, Colors.WHITE, true);
+            context.getMatrices().scale((float) 2 / 3, (float) 2 / 3, 1);
             int finalI = i;
             this.remove(versionDetailButtons.get(i));
             versionDetailButtons.set(i, new PressableTextWidget(140, (int) (i * 40 + scrollAmount), textRenderer.getWidth(versions.get(i).getName()), 9, Text.of(versions.get(i).getName()), button -> {
@@ -175,13 +173,13 @@ public class UpdateScreen extends Screen {
             installButtons.get(i).render(context, mouseX, mouseY, delta);
             if (!installButtons.get(i).visible) {
                 installButtons.get(i).visible = true;
-                installButtons.getLast().visible = false;
-                installButtons.removeLast();
+                installButtons.get(installButtons.size() - 1).visible = false;
+                installButtons.remove(installButtons.size() - 1);
                 versions.remove(i);
                 titles.remove(i);
                 ICON_TEXTURE_ID.remove(i);
-                versionDetailButtons.getLast().visible = false;
-                versionDetailButtons.removeLast();
+                versionDetailButtons.get(versionDetailButtons.size() - 1).visible = false;
+                versionDetailButtons.remove(versionDetailButtons.size() - 1);
             } else if (!updateAll.visible) {
                 installButtons.get(i).visible = false;
                 installButtons.remove(i);
@@ -220,14 +218,14 @@ public class UpdateScreen extends Screen {
     }
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
-        if (scrollAmount + verticalAmount * 13 <= 0 && scrollAmount + verticalAmount * 13 >= -EasyInstallClient.getNumUpdates() * 50 - 45 + height) {
-            scrollAmount += verticalAmount * 13;
-        } else if (scrollAmount + verticalAmount * 13 < -EasyInstallClient.getNumUpdates() * 50 - 45 + height && scrollAmount != 0) {
+    public boolean mouseScrolled(double mouseX, double mouseY, double scrollAmount) {
+        if (scrollAmount + scrollAmount * 13 <= 0 && scrollAmount + scrollAmount * 13 >= -EasyInstallClient.getNumUpdates() * 50 - 45 + height) {
+            scrollAmount += scrollAmount * 13;
+        } else if (scrollAmount + scrollAmount * 13 < -EasyInstallClient.getNumUpdates() * 50 - 45 + height && scrollAmount != 0) {
             scrollAmount = -EasyInstallClient.getNumUpdates() * 50 - 45 + height;
-        } else if (scrollAmount + verticalAmount * 13 > 0) {
+        } else if (scrollAmount + scrollAmount * 13 > 0) {
             scrollAmount = 0;
         }
-        return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount);
+        return super.mouseScrolled(mouseX, mouseY, scrollAmount);
     }
 }
