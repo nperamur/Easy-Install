@@ -25,6 +25,7 @@ public class ResourceScreenMixin extends Screen {
     private ProjectType projectType;
     private String buttonText;
     private ButtonWidget buttonWidget;
+
     protected ResourceScreenMixin(Text title, Path file) {
         super(title);
         this.file = file;
@@ -45,13 +46,12 @@ public class ResourceScreenMixin extends Screen {
             MinecraftClient.getInstance().setScreen(browser);
         }).build();
         ((ButtonWidgetInterface) buttonWidget).setDimensions(110, 15);
-        buttonWidget.setPosition(width / 2 - 215, 0);
+        buttonWidget.setPosition(width / 2 - 205, 0);
         this.addSelectableChild(buttonWidget);
     }
 
-    @Override
-    public void render(DrawContext context, int mouseX, int mouseY, float delta) {
-        super.render(context, mouseX, mouseY, delta);
+    @Inject(method = "render", at = @At("TAIL"))
+    public void renderScreen(DrawContext context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
         buttonWidget.render(context, mouseX, mouseY, delta);
     }
 }
