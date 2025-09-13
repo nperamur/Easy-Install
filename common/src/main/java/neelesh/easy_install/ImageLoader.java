@@ -28,7 +28,7 @@ public class ImageLoader {
         try {
             URL url = info.getIconUrl();
             if (url == null) {
-                client.execute(() -> {
+                client.send(() -> {
                     NativeImageBackedTexture texture = new NativeImageBackedTexture(new NativeImage(64, 64, false));
                     for (int x = 0; x < 64; x++) {
                         for (int j = 0; j < 64; j++) {
@@ -60,7 +60,7 @@ public class ImageLoader {
             if (!thread.isInterrupted()) {
                 TextureManager textureManager = client.getTextureManager();
                 NativeImage finalImage = image;
-                client.execute(() -> {
+                client.send(() -> {
                     NativeImageBackedTexture texture;
                     texture = new NativeImageBackedTexture(finalImage);
                     texture.upload();
@@ -129,7 +129,7 @@ public class ImageLoader {
         NativeImage image = null;
         try {
             if (url == null) {
-                client.execute(() -> {
+                client.send(() -> {
                     NativeImageBackedTexture texture = new NativeImageBackedTexture(new NativeImage(1, 1, false));
                     Objects.requireNonNull(texture.getImage()).setColor(0, 0, 0xFF000000);
                     texture.upload();
@@ -162,7 +162,7 @@ public class ImageLoader {
         }
         TextureManager textureManager = client.getTextureManager();
         NativeImage finalImage = image;
-        client.execute(() -> {
+        client.send(() -> {
             NativeImageBackedTexture texture;
             texture = new NativeImageBackedTexture(finalImage);
             texture.upload();
@@ -218,7 +218,7 @@ public class ImageLoader {
 
     public static void loadPlaceholder(Identifier id) {
         TextureManager textureManager = MinecraftClient.getInstance().getTextureManager();
-        MinecraftClient.getInstance().execute(() -> {
+        MinecraftClient.getInstance().send(() -> {
             NativeImage image = new NativeImage(1, 1, false);
             NativeImageBackedTexture texture = new NativeImageBackedTexture(image);
             textureManager.registerTexture(id, texture);

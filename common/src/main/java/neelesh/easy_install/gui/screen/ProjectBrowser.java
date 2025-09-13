@@ -110,7 +110,7 @@ public class ProjectBrowser extends Screen {
         updateScreenButton.setTooltip(Tooltip.of(Text.of("See All Updates")));
         for (int i = 0; i < EasyInstallClient.getRowsOnPage(); i++) {
             int finalI = i;
-            client.execute(() -> {
+            client.send(() -> {
                 NativeImageBackedTexture texture = new NativeImageBackedTexture( new NativeImage(1, 1, false));
                 texture.getImage().setColor(0, 0, 0x00000000);
                 texture.upload();

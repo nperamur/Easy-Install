@@ -98,7 +98,7 @@ public class MarkdownRenderer {
                         url = new URL(str); //UrlEscapers.urlFragmentEscaper().escape(str)
                         Identifier id = Identifier.of(EasyInstall.MOD_ID, "project_image_" + i);
                         TextureManager textureManager = MinecraftClient.getInstance().getTextureManager();
-                        MinecraftClient.getInstance().execute(() -> {
+                        MinecraftClient.getInstance().send(() -> {
                             NativeImage image = new NativeImage(1, 1, false);
                             NativeImageBackedTexture texture = new NativeImageBackedTexture(image);
                             textureManager.registerTexture(id, texture);
@@ -128,7 +128,7 @@ public class MarkdownRenderer {
                     puttingImageUrl = true;
                 }
             }
-            MinecraftClient.getInstance().execute(() -> {
+            MinecraftClient.getInstance().send(() -> {
                 count = 0;
             });
         });

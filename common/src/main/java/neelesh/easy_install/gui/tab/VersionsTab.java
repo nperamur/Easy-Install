@@ -23,6 +23,7 @@ import net.minecraft.util.Formatting;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.concurrent.CompletableFuture;
 
 import static neelesh.easy_install.gui.screen.ProjectScreen.VERTICAL_SEPARATOR_TEXTURE;
 
@@ -54,20 +55,24 @@ public class VersionsTab extends GridScreenTab implements Drawable {
                 int finalI = i;
                 versionButtons[i] = ButtonWidget.builder(Text.of("Install"), buttonWidget -> {
                     Thread t = new Thread(() -> {
-                        versionButtons[finalI].active = false;
-                        versionButtons[finalI].setMessage(Text.of("Installed"));
-                        if (finalI == 0) {
-                            projectScreen.getProjectInfo().setInstalling(true);
-                        }
-                        versionButtons[finalI].setMessage(Text.of("Installing"));
+                        MinecraftClient.getInstance().send(() -> {
+                            versionButtons[finalI].active = false;
+                            versionButtons[finalI].setMessage(Text.of("Installed"));
+                            if (finalI == 0) {
+                                projectScreen.getProjectInfo().setInstalling(true);
+                            }
+                            versionButtons[finalI].setMessage(Text.of("Installing"));
+                        });
                         versions[finalI].download();
-                        if (finalI == 0) {
-                            projectScreen.getProjectInfo().setInstalling(false);
-                            projectScreen.getProjectInfo().setInstalled(true);
-                        }
-                        versionButtons[finalI].active = false;
-                        versionButtons[finalI].setMessage(Text.of("Installed"));
-                        initialized = false;
+                        MinecraftClient.getInstance().send(() -> {
+                            if (finalI == 0) {
+                                projectScreen.getProjectInfo().setInstalling(false);
+                                projectScreen.getProjectInfo().setInstalled(true);
+                            }
+                            versionButtons[finalI].active = false;
+                            versionButtons[finalI].setMessage(Text.of("Installed"));
+                            initialized = false;
+                        });
                         EasyInstallClient.checkStatus(projectScreen.getProjectInfo().getProjectType());
                     });
                     t.start();
@@ -118,19 +123,28 @@ public class VersionsTab extends GridScreenTab implements Drawable {
             File file = new File(EasyInstallClient.getSavePath(projectScreen.getProjectInfo().getProjectType(), versions[i].getFilename()).toString());
 
             if (file.exists() && projectScreen.getTabManager().getCurrentTab() == this && !initialized) {
-                String hash;
-                try {
-                    hash = EasyInstallClient.createFileHash(file.toPath());
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-                if (versions[i].getHash().equals(hash)) {
-                    versionButtons[i].active = false;
-                    versionButtons[i].setMessage(Text.of("Installed"));
-                } else {
-                    versionButtons[i].active = true;
-                    versionButtons[i].setMessage(Text.of("Install"));
-                }
+                int finalI = i;
+                CompletableFuture.supplyAsync(() -> {
+                    try {
+                        return EasyInstallClient.createFileHash(file.toPath());
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                        return null;
+                    }
+                }).thenAcceptAsync(hash -> {
+                    if (hash != null) {
+                        MinecraftClient.getInstance().send(() -> {
+                            if (versions[finalI].getHash().equals(hash)) {
+                                versionButtons[finalI].active = false;
+                                versionButtons[finalI].setMessage(Text.of("Installed"));
+                            } else {
+                                versionButtons[finalI].active = true;
+                                versionButtons[finalI].setMessage(Text.of("Install"));
+                            }
+                        });
+                    }
+                });
+
             } else if (!initialized) {
                 versionButtons[i].active = true;
                 versionDetailButtons[i].active = true;

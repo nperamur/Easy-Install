@@ -52,9 +52,11 @@ public class ProjectScreen extends Screen implements MarkdownScreenInterface {
                 thread2.start();
             }
             EasyInstallClient.downloadVersion(projectInfo.getSlug(), projectInfo.getProjectType(), ((ProjectBrowser) prevScreen).isFilteredByGameVersion());
-            projectInfo.setInstalled(true);
-            projectInfo.setInstalling(false);
-            versionsTab.setInitialized(false);
+            MinecraftClient.getInstance().send(() -> {
+                projectInfo.setInstalled(true);
+                projectInfo.setInstalling(false);
+                versionsTab.setInitialized(false);
+            });
         });
         thread.start();
     }).build();
@@ -79,7 +81,6 @@ public class ProjectScreen extends Screen implements MarkdownScreenInterface {
     public static final Identifier VERTICAL_SEPARATOR_TEXTURE = Identifier.of(EasyInstall.MOD_ID,"textures/gui/vertical_separator.png");
     protected ProjectScreen(Screen parent, ProjectInfo projectInfo) {
         super(Text.literal(projectInfo.getTitle()));
-        parent.close();
         this.projectInfo = projectInfo;
         iconTextureId = new Identifier("project_texture_id");
         this.prevScreen = parent;
