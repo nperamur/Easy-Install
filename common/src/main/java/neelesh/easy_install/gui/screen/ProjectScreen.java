@@ -52,9 +52,11 @@ public class ProjectScreen extends Screen implements MarkdownScreenInterface {
                 thread2.start();
             }
             EasyInstallClient.downloadVersion(projectInfo.getSlug(), projectInfo.getProjectType(), ((ProjectBrowser) prevScreen).isFilteredByGameVersion());
-            projectInfo.setInstalled(true);
-            projectInfo.setInstalling(false);
-            versionsTab.setInitialized(false);
+            MinecraftClient.getInstance().send(() -> {
+                projectInfo.setInstalled(true);
+                projectInfo.setInstalling(false);
+                versionsTab.setInitialized(false);
+            });
         });
         thread.start();
     }).build();
