@@ -5,6 +5,7 @@ import neelesh.easy_install.*;
 import neelesh.easy_install.gui.widget.PressableTextWidgetShadowless;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gl.RenderPipelines;
+import net.minecraft.client.gui.Click;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.world.CreateWorldScreen;
@@ -12,6 +13,8 @@ import net.minecraft.client.gui.tooltip.Tooltip;
 import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.client.gui.widget.CyclingButtonWidget;
 import net.minecraft.client.gui.widget.TextFieldWidget;
+import net.minecraft.client.input.CharInput;
+import net.minecraft.client.input.KeyInput;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.texture.NativeImage;
 import net.minecraft.client.texture.NativeImageBackedTexture;
@@ -405,9 +408,9 @@ public class ProjectBrowser extends Screen {
     }
 
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+    public boolean keyPressed(KeyInput input) {
         String s = searchBox.getText();
-        boolean keyPressed = super.keyPressed(keyCode, scanCode, modifiers);
+        boolean keyPressed = super.keyPressed(input);
         if (!s.equals(searchBox.getText())) {
             pageNumber = 0;
             search(searchBox.getText());
@@ -415,10 +418,11 @@ public class ProjectBrowser extends Screen {
         return keyPressed;
     }
 
+
     @Override
-    public boolean charTyped(char chr, int modifiers) {
-        boolean charTyped = super.charTyped(chr, modifiers);
-        if (searchBox.isSelected() && StringHelper.isValidChar(chr)) {
+    public boolean charTyped(CharInput input) {
+        boolean charTyped = super.charTyped(input);
+        if (searchBox.isSelected() && input.isValidChar()) {
             pageNumber = 0;
             search(searchBox.getText());
         }
@@ -454,7 +458,7 @@ public class ProjectBrowser extends Screen {
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    public boolean mouseClicked(Click click, boolean doubled) {
         int scrollBarHeight = Math.max(35, (int) (Math.pow(height - firstRowY + 13, 2) / (EasyInstallClient.getNumRows() * 50 + 35)));
         double scrollBarY;
         if (-50 * EasyInstallClient.getNumRows() - firstRowY + height - 35 < 0) {
@@ -462,17 +466,18 @@ public class ProjectBrowser extends Screen {
         } else {
             scrollBarY = firstRowY - 13;
         }
-        if (mouseX >= width - 6 && mouseY >= scrollBarY && mouseY <= scrollBarY + scrollBarHeight) {
+        if (click.x() >= width - 6 && click.y() >= scrollBarY && click.y() <= scrollBarY + scrollBarHeight) {
             this.isScrolling = true;
         }
-        return super.mouseClicked(mouseX, mouseY, button);
+        return super.mouseClicked(click, doubled);
     }
 
+
     @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
-        if (this.isScrolling && mouseY > firstRowY - 13) {
+    public boolean mouseDragged(Click click, double offsetX, double offsetY) {
+        if (this.isScrolling && click.y() > firstRowY - 13) {
             double scrollBarHeight = Math.max(35.0, (Math.pow(height - firstRowY + 13, 2) / (EasyInstallClient.getNumRows() * 50 + 35)));
-            double scrollDeltaY = (-50 * EasyInstallClient.getNumRows() - firstRowY + height - 35) * deltaY / (height - firstRowY + 13 - scrollBarHeight);
+            double scrollDeltaY = (-50 * EasyInstallClient.getNumRows() - firstRowY + height - 35) * offsetY / (height - firstRowY + 13 - scrollBarHeight);
 
             if (scrollAmount + scrollDeltaY <= 0 && scrollAmount + scrollDeltaY >= -50 * EasyInstallClient.getNumRows() - firstRowY + height - 35) {
                 scrollAmount += scrollDeltaY;
@@ -482,13 +487,13 @@ public class ProjectBrowser extends Screen {
                 scrollAmount = -50 * EasyInstallClient.getNumRows() - firstRowY + height - 35;
             }
         }
-        return super.mouseDragged(mouseX, mouseY, button, deltaX, deltaY);
+        return super.mouseDragged(click, offsetX, offsetY);
     }
 
     @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+    public boolean mouseReleased(Click click) {
         this.isScrolling = false;
-        return super.mouseReleased(mouseX, mouseY, button);
+        return super.mouseReleased(click);
     }
 
     public void addFilterCategory(String category) {
