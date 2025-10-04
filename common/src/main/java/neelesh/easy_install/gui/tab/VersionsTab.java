@@ -15,13 +15,13 @@ import net.minecraft.client.gui.tab.GridScreenTab;
 import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.client.gui.widget.PressableTextWidget;
 import net.minecraft.client.gui.widget.TabButtonWidget;
-import net.minecraft.client.render.RenderLayer;
 import net.minecraft.text.Text;
 import net.minecraft.util.Colors;
 import net.minecraft.util.Formatting;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.concurrent.CompletableFuture;
 
 import static neelesh.easy_install.gui.screen.ProjectScreen.VERTICAL_SEPARATOR_TEXTURE;
 
@@ -51,33 +51,39 @@ public class VersionsTab extends GridScreenTab implements Drawable {
                     e.printStackTrace();
                 }
                 int finalI = i;
-                versionButtons[i] = ButtonWidget.builder(Text.of("Install"), buttonWidget -> {
-                    Thread t = new Thread(() -> {
-                        versionButtons[finalI].active = false;
-                        versionButtons[finalI].setMessage(Text.of("Installed"));
-                        if (finalI == 0) {
-                            projectScreen.getProjectInfo().setInstalling(true);
-                        }
-                        versionButtons[finalI].setMessage(Text.of("Installing"));
-                        versions[finalI].download();
-                        if (finalI == 0) {
-                            projectScreen.getProjectInfo().setInstalling(false);
-                            projectScreen.getProjectInfo().setInstalled(true);
-                        }
-                        versionButtons[finalI].active = false;
-                        versionButtons[finalI].setMessage(Text.of("Installed"));
-                        initialized = false;
-                        EasyInstallClient.checkStatus(projectScreen.getProjectInfo().getProjectType());
-                    });
-                    t.start();
-                }).build();
-                versionButtons[i].setDimensions(55, 14);
-                projectScreen.addSelectableChild(versionButtons[i]);
+                MinecraftClient.getInstance().submit(() -> {
+                    versionButtons[finalI] = ButtonWidget.builder(Text.of("Install"), buttonWidget -> {
+                        Thread t = new Thread(() -> {
+                            MinecraftClient.getInstance().send(() -> {
+                                versionButtons[finalI].active = false;
+                                versionButtons[finalI].setMessage(Text.of("Installed"));
+                                if (finalI == 0) {
+                                    projectScreen.getProjectInfo().setInstalling(true);
+                                }
+                                versionButtons[finalI].setMessage(Text.of("Installing"));
+                            });
+                            versions[finalI].download();
+                            MinecraftClient.getInstance().send(() -> {
+                                if (finalI == 0) {
+                                    projectScreen.getProjectInfo().setInstalling(false);
+                                    projectScreen.getProjectInfo().setInstalled(true);
+                                }
+                                versionButtons[finalI].active = false;
+                                versionButtons[finalI].setMessage(Text.of("Installed"));
+                                initialized = false;
+                            });
+                            EasyInstallClient.checkStatus(projectScreen.getProjectInfo().getProjectType());
+                        });
+                        t.start();
+                    }).build();
+                    versionButtons[finalI].setDimensions(55, 14);
+                    projectScreen.addSelectableChild(versionButtons[finalI]);
 
-                versionDetailButtons[i] = new PressableTextWidget(140, i * 40 + projectScreen.getScrollAmount(), projectScreen.getTextRenderer().getWidth(versions[i].getName()), 9, Text.of(versions[i].getName()), button -> {
-                    MinecraftClient.getInstance().setScreen(new VersionDetailsScreen(versions[finalI], projectScreen));
-                }, projectScreen.getTextRenderer());
-                projectScreen.addSelectableChild(versionDetailButtons[i]);
+                    versionDetailButtons[finalI] = new PressableTextWidget(140, finalI * 40 + projectScreen.getScrollAmount(), projectScreen.getTextRenderer().getWidth(versions[finalI].getName()), 9, Text.of(versions[finalI].getName()), button -> {
+                        MinecraftClient.getInstance().setScreen(new VersionDetailsScreen(versions[finalI], projectScreen));
+                    }, projectScreen.getTextRenderer());
+                    projectScreen.addSelectableChild(versionDetailButtons[finalI]);
+                });
             }
         });
         thread.start();
@@ -96,7 +102,7 @@ public class VersionsTab extends GridScreenTab implements Drawable {
             versionButtons[0].setMessage(Text.of("Installing"));
         }
         for (int i = 0; i < versions.length; i++) {
-            if (versions[i] == null) {
+            if (versions[i] == null || versionDetailButtons[i] == null) {
                 break;
             }
             versionDetailButtons[i].setPosition(140, i * 40 + projectScreen.getScrollAmount() + 20);
@@ -117,19 +123,28 @@ public class VersionsTab extends GridScreenTab implements Drawable {
             File file = new File(EasyInstallClient.getSavePath(projectScreen.getProjectInfo().getProjectType(), versions[i].getFilename()).toString());
 
             if (file.exists() && projectScreen.getTabManager().getCurrentTab() == this && !initialized) {
-                String hash;
-                try {
-                    hash = EasyInstallClient.createFileHash(file.toPath());
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-                if (versions[i].getHash().equals(hash)) {
-                    versionButtons[i].active = false;
-                    versionButtons[i].setMessage(Text.of("Installed"));
-                } else {
-                    versionButtons[i].active = true;
-                    versionButtons[i].setMessage(Text.of("Install"));
-                }
+                int finalI = i;
+                CompletableFuture.supplyAsync(() -> {
+                    try {
+                        return EasyInstallClient.createFileHash(file.toPath());
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                        return null;
+                    }
+                }).thenAcceptAsync(hash -> {
+                    if (hash != null) {
+                        MinecraftClient.getInstance().send(() -> {
+                            if (versions[finalI].getHash().equals(hash)) {
+                                versionButtons[finalI].active = false;
+                                versionButtons[finalI].setMessage(Text.of("Installed"));
+                            } else {
+                                versionButtons[finalI].active = true;
+                                versionButtons[finalI].setMessage(Text.of("Install"));
+                            }
+                        });
+                    }
+                });
+
             } else if (!initialized) {
                 versionButtons[i].active = true;
                 versionDetailButtons[i].active = true;

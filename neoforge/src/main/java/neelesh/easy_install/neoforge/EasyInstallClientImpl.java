@@ -22,6 +22,6 @@ public class EasyInstallClientImpl {
     }
 
     public static String getModLoaderDisplayText() {
-        return "NeoForge " + FMLLoader.versionInfo().neoForgeVersion() + " (" + ModList.get().size() + " Mods)";
+        return "NeoForge " + FMLLoader.getCurrent().getVersionInfo().neoForgeVersion() + " (" + ModList.get().size() + " Mods)";
     }
 }

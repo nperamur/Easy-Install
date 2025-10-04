@@ -9,7 +9,6 @@ import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.Drawable;
 import net.minecraft.client.gui.tab.GridScreenTab;
 import net.minecraft.client.gui.widget.TabButtonWidget;
-import net.minecraft.client.render.RenderLayer;
 import net.minecraft.text.StringVisitable;
 import net.minecraft.text.Text;
 import net.minecraft.util.Colors;
@@ -43,7 +42,6 @@ public class GalleryTab extends GridScreenTab implements Drawable {
 
     @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
-//        context.getMatrices().translate(0, 0, 100);
         projectScreen.renderDarkening(context, 131, projectScreen.getScrollAmount() + ((TabButtonWidget) projectScreen.getTabNavigationWidget().children().getFirst()).getHeight()-10, projectScreen.width, projectScreen.getMaxY());
         int y = 30;
         int prevHeight = 0;
@@ -76,7 +74,6 @@ public class GalleryTab extends GridScreenTab implements Drawable {
             }
 
         }
-//        context.getMatrices().translate(0, 0, -100);
         context.drawTexture(
                 RenderPipelines.GUI_TEXTURED, VERTICAL_SEPARATOR_TEXTURE, 131, projectScreen.getScrollAmount() + ((TabButtonWidget) projectScreen.getTabNavigationWidget().children().getFirst()).getHeight() - 12, 0.0F, 0.0F, 2, y, 2, 32
         );
