@@ -18,9 +18,12 @@ import net.minecraft.client.gui.widget.TabButtonWidget;
 import net.minecraft.text.Text;
 import net.minecraft.util.Colors;
 import net.minecraft.util.Formatting;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.util.ArrayList;
 import java.util.concurrent.CompletableFuture;
 
 import static neelesh.easy_install.gui.screen.ProjectScreen.VERTICAL_SEPARATOR_TEXTURE;
@@ -32,11 +35,25 @@ public class VersionsTab extends GridScreenTab implements Drawable {
     private ProjectScreen projectScreen;
     private PressableTextWidget[] versionDetailButtons;
 
+    private Version projectInstallVersion;
+
     public VersionsTab(Text title, ProjectScreen projectScreen) {
         super(title);
         this.projectScreen = projectScreen;
         Thread thread = new Thread(() -> {
             String response = EasyInstallClient.getVersions(projectScreen.getProjectInfo().getSlug(), projectScreen.getProjectInfo().getProjectType(), projectScreen.isFilteredByGameVersion());
+            if (!projectScreen.isFilteredByGameVersion()) {
+                Thread thread2 = new Thread(() -> {
+                    String response2 = EasyInstallClient.getVersions(projectScreen.getProjectInfo().getSlug(), projectScreen.getProjectInfo().getProjectType(), true);
+                    JsonObject jsonObject = JsonParser.parseString(response2).getAsJsonArray().get(0).getAsJsonObject();
+                    try {
+                        this.projectInstallVersion = EasyInstallClient.createVersion(jsonObject, projectScreen.getProjectInfo().getProjectType());
+                    } catch (MalformedURLException e) {
+                        e.printStackTrace();
+                    }
+                });
+                thread2.start();
+            }
             JsonArray jsonArray = JsonParser.parseString(response).getAsJsonArray();
             versions = new Version[jsonArray.size()];
             versionButtons = new ButtonWidget[jsonArray.size()];
@@ -54,17 +71,22 @@ public class VersionsTab extends GridScreenTab implements Drawable {
                 MinecraftClient.getInstance().submit(() -> {
                     versionButtons[finalI] = ButtonWidget.builder(Text.of("Install"), buttonWidget -> {
                         Thread t = new Thread(() -> {
+                            @Nullable Version updatedVersion = projectScreen.getUpdatedVersion();
+                            boolean case1 = this.projectInstallVersion != null && this.projectInstallVersion.getHash().equals(versions[finalI].getHash()) && projectScreen.getProjectInfo().isUpdated();
+                            boolean case2 = updatedVersion != null && versions[finalI].getHash().equals(updatedVersion.getHash()) && !projectScreen.getProjectInfo().isUpdated();
+
+
                             MinecraftClient.getInstance().send(() -> {
                                 versionButtons[finalI].active = false;
                                 versionButtons[finalI].setMessage(Text.of("Installed"));
-                                if (finalI == 0) {
+                                if (case1 || case2) {
                                     projectScreen.getProjectInfo().setInstalling(true);
                                 }
                                 versionButtons[finalI].setMessage(Text.of("Installing"));
                             });
                             versions[finalI].download();
                             MinecraftClient.getInstance().send(() -> {
-                                if (finalI == 0) {
+                                if (case1 || case2) {
                                     projectScreen.getProjectInfo().setInstalling(false);
                                     projectScreen.getProjectInfo().setInstalled(true);
                                 }
@@ -97,14 +119,21 @@ public class VersionsTab extends GridScreenTab implements Drawable {
         }
         projectScreen.renderDarkening(context, 131, projectScreen.getScrollAmount() + ((TabButtonWidget) projectScreen.getTabNavigationWidget().children().get(0)).getHeight()-10, projectScreen.width, versions.length * 40 + 10);
 
-        if (projectScreen.getProjectInfo().isInstalling() && versionButtons.length != 0) {
-            versionButtons[0].active = false;
-            versionButtons[0].setMessage(Text.of("Installing"));
-        }
         for (int i = 0; i < versions.length; i++) {
             if (versions[i] == null || versionDetailButtons[i] == null) {
                 break;
             }
+            if (projectScreen.getProjectInfo().isInstalling() && versionButtons.length != 0) {
+                @Nullable Version updatedVersion = projectScreen.getUpdatedVersion();
+                boolean case1 = this.projectInstallVersion != null && this.projectInstallVersion.getHash().equals(versions[i].getHash()) && projectScreen.getProjectInfo().isUpdated();
+                boolean case2 = updatedVersion != null && versions[i].getHash().equals(updatedVersion.getHash()) && !projectScreen.getProjectInfo().isUpdated();
+                if (case1 || case2) {
+                    versionButtons[i].active = false;
+                    versionButtons[i].setMessage(Text.of("Installing"));
+                }
+
+            }
+
             versionDetailButtons[i].setPosition(140, i * 40 + projectScreen.getScrollAmount() + 20);
             versionDetailButtons[i].render(context, mouseX, mouseY, delta);
             //context.drawText(projectScreen.getTextRenderer(), Text.of(versions[i].getName()), 140, i * 40 + projectScreen.getScrollAmount() + 20, Colors.WHITE, true);

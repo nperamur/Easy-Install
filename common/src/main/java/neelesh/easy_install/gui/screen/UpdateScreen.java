@@ -21,109 +21,128 @@ import java.io.InputStreamReader;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 public class UpdateScreen extends Screen {
 
-    private ArrayList<Version> versions;
-    private ArrayList<String> titles;
-    private ArrayList<Identifier> ICON_TEXTURE_ID;
-    private ArrayList<ButtonWidget> installButtons;
-    private ArrayList<PressableTextWidget> versionDetailButtons;
-    private ButtonWidget updateAll;
+    private ArrayList<Version> versions = new ArrayList<>();
+    private ArrayList<String> titles = new ArrayList<>();
+    private ArrayList<Identifier> ICON_TEXTURE_ID = new ArrayList<>();
+    private ArrayList<ButtonWidget> installButtons = new ArrayList<>();
+    private ArrayList<PressableTextWidget> versionDetailButtons = new ArrayList<>();
+    private ButtonWidget updateAll = ButtonWidget.builder(Text.of("Update All"), button -> {}).size(0, 0).build();
     private ButtonWidget doneButton;
     private double scrollAmount;
+    private Screen parent;
+    private ExecutorService fileWriteScheduler = Executors.newSingleThreadExecutor();
+
 
     protected UpdateScreen(ProjectType projectType, Screen parent) {
         super(Text.of("Update Screen"));
-        versions = EasyInstallClient.getUpdatedVersions(projectType);
-        this.scrollAmount = 0;
-        titles = new ArrayList<>();
-        ICON_TEXTURE_ID = new ArrayList<>();
-        doneButton = ButtonWidget.builder(Text.of("Done"), button -> MinecraftClient.getInstance().setScreen(parent)).build();
-        installButtons = new ArrayList<>();
-        for (int i = 0; i < versions.size(); i++) {
-            ICON_TEXTURE_ID.add(Identifier.of(EasyInstall.MOD_ID, "update_icon" + i));
-            int finalI = i;
-            installButtons.add(ButtonWidget.builder(Text.of("Update"), button -> {
-                updateVersion(projectType, versions.get(finalI));
-                button.visible = false;
-            }).build());
-
-        }
-        updateAll = ButtonWidget.builder(Text.of("Update All"), button -> {
-            for (Version version : versions) {
-                updateVersion(projectType, version);
+        this.parent = parent;
+        this.updateAll.visible = false;
+        Thread thread = new Thread(() -> {
+            ArrayList<Version> versionTemp = EasyInstallClient.getUpdatedVersions(projectType);
+            JsonArray projectIds = new JsonArray();
+            for (int i = 0; i < versionTemp.size(); i++) {
+                projectIds.add(versionTemp.get(i).getId());
+                ICON_TEXTURE_ID.add(Identifier.of(EasyInstall.MOD_ID, "update_icon" + i));
+                ImageLoader.loadPlaceholder(ICON_TEXTURE_ID.get(i));
+                titles.add("");
             }
-            button.visible = false;
-            button.setFocused(false);
-        }).build();
+            try {
+                URL url = URI.create("https://api.modrinth.com/v2/projects?ids=" + URLEncoder.encode(projectIds.toString(), StandardCharsets.UTF_8)).toURL();
+                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+                connection.setRequestMethod("GET");
+                int responseCode = connection.getResponseCode();
+                if (responseCode == HttpURLConnection.HTTP_OK) {
+                    try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
+                        String response = reader.lines().collect(Collectors.joining("\n"));
+                        JsonArray jsonArray = JsonParser.parseString(response).getAsJsonArray();
+                        for (int i = 0; i < versionTemp.size(); i++) {
+                            int x = 0;
+                            for (int j = 0; j < jsonArray.size(); j++) {
+                                if (jsonArray.get(j).getAsJsonObject().get("id").getAsString().equals(versionTemp.get(i).getId())) {
+                                    x = j;
+                                    break;
+                                }
+                            }
+                            int finalX = x;
+                            int finalI = i;
+                            MinecraftClient.getInstance().execute(() -> {
+                                titles.set(finalI, jsonArray.get(finalX).getAsJsonObject().get("title").getAsString());
+
+                                versionDetailButtons.add(new PressableTextWidget(140, (int) (finalI * 40 + scrollAmount), textRenderer.getWidth(versionTemp.get(finalI).getName()), 9, Text.of(versionTemp.get(finalI).getName()), button -> {
+                                    MinecraftClient.getInstance().setScreen(new VersionDetailsScreen(versionTemp.get(finalI), this));
+                                }, textRenderer));
+                                this.addSelectableChild(versionDetailButtons.get(finalI));
+                                Thread thread2 = new Thread(() -> {
+                                    try {
+                                        ImageLoader.loadPlaceholder(ICON_TEXTURE_ID.get(finalI));
+                                        ImageLoader.loadImage(URI.create(jsonArray.get(finalX).getAsJsonObject().get("icon_url").getAsString()).toURL(), ICON_TEXTURE_ID.get(finalI), client);
+                                    } catch (MalformedURLException e) {
+                                        throw new RuntimeException(e);
+                                    }
+                                });
+                                thread2.start();
+                            });
+                        }
+                    }
+
+                }
+                connection.disconnect();
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            MinecraftClient.getInstance().execute(() -> {
+                this.versions = versionTemp;
+                this.scrollAmount = 0;
+                for (int i = 0; i < versions.size(); i++) {
+                    int finalI = i;
+                    installButtons.add(ButtonWidget.builder(Text.of("Update"), button -> {
+                        updateVersion(projectType, versions.get(finalI));
+                        button.visible = false;
+                    }).build());
+                    installButtons.get(i).setDimensions(60, 18);
+                    installButtons.get(i).setPosition(width - 70, i * 50 + 30);
+                    this.addSelectableChild(installButtons.get(i));
+
+                }
+                this.addSelectableChild(doneButton);
+
+                updateAll = ButtonWidget.builder(Text.of("Update All"), button -> {
+                    for (Version version : versions) {
+                        updateVersion(projectType, version);
+                    }
+                    button.visible = false;
+                    button.setFocused(false);
+                }).build();
+                updateAll.setDimensions(60, 18);
+                updateAll.setPosition(width - 70, 2);
+                this.addSelectableChild(updateAll);
+            });
+
+        });
+        thread.start();
+
 
     }
 
     @Override
     protected void init() {
         super.init();
-        versionDetailButtons = new ArrayList<>();
+
+        doneButton = ButtonWidget.builder(Text.of("Done"), button -> MinecraftClient.getInstance().setScreen(parent)).build();
         this.addSelectableChild(doneButton);
-        if (versions.isEmpty()) {
-            return;
-        }
-        JsonArray projectIds = new JsonArray();
+        this.addSelectableChild(updateAll);
         for (int i = 0; i < versions.size(); i++) {
-            projectIds.add(versions.get(i).getId());
-            installButtons.get(i).setDimensions(60, 18);
-            installButtons.get(i).setPosition(width - 70, i * 50 + 30);
             this.addSelectableChild(installButtons.get(i));
         }
 
-        updateAll.setDimensions(60, 18);
-        updateAll.setPosition(width - 70, 2);
-        this.addSelectableChild(updateAll);
-        try {
-            URL url = URI.create("https://api.modrinth.com/v2/projects?ids=" + URLEncoder.encode(projectIds.toString(), StandardCharsets.UTF_8)).toURL();
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-            connection.setRequestMethod("GET");
-            int responseCode = connection.getResponseCode();
-            if (responseCode == HttpURLConnection.HTTP_OK) {
-                try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
-                    String response = reader.lines().collect(Collectors.joining("\n"));
-                    JsonArray jsonArray = JsonParser.parseString(response).getAsJsonArray();
-                    for (int i = 0; i < versions.size(); i++) {
-                        int x = 0;
-                        for (int j = 0; j < jsonArray.size(); j++) {
-                            if (jsonArray.get(j).getAsJsonObject().get("id").getAsString().equals(versions.get(i).getId())) {
-                                x = j;
-                                break;
-                            }
-                        }
-                        titles.add(jsonArray.get(x).getAsJsonObject().get("title").getAsString());
-                        int finalX = x;
-                        int finalI = i;
-                        versionDetailButtons.add(new PressableTextWidget(140, (int) (i * 40 + scrollAmount), textRenderer.getWidth(versions.get(i).getName()), 9, Text.of(versions.get(i).getName()), button -> {
-                            MinecraftClient.getInstance().setScreen(new VersionDetailsScreen(versions.get(finalI), this));
-                        }, textRenderer));
-                        this.addSelectableChild(versionDetailButtons.get(i));
-                        Thread thread = new Thread(() -> {
-                            try {
-                                ImageLoader.loadPlaceholder(ICON_TEXTURE_ID.get(finalI));
-                                ImageLoader.loadImage(URI.create(jsonArray.get(finalX).getAsJsonObject().get("icon_url").getAsString()).toURL(), ICON_TEXTURE_ID.get(finalI), client);
-                            } catch (MalformedURLException e) {
-                                throw new RuntimeException(e);
-                            }
-                        });
-                        thread.start();
-                    }
-                }
-
-            }
-            connection.disconnect();
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
-
 
     @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
@@ -214,8 +233,7 @@ public class UpdateScreen extends Screen {
             EasyInstallClient.checkStatus(projectType);
         });
         thread.start();
-        Thread thread2 = new Thread(() -> EasyInstallClient.deleteOldFiles(projectType, version.getHash()));
-        thread2.start();
+        fileWriteScheduler.submit(() -> EasyInstallClient.deleteOldFiles(projectType, version.getHash()));
         EasyInstallClient.setNumUpdates(EasyInstallClient.getNumUpdates() - 1);
     }
 
@@ -230,4 +248,20 @@ public class UpdateScreen extends Screen {
         }
         return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount);
     }
+
+    @Override
+    public void close() {
+        super.close();
+        fileWriteScheduler.shutdown();
+    }
+
+    @Override
+    public void removed() {
+        super.removed();
+        fileWriteScheduler.shutdown();
+    }
+
+
+
+
 }

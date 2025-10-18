@@ -25,6 +25,7 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Colors;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.Util;
+import org.jetbrains.annotations.Nullable;
 
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -43,21 +44,39 @@ public class ProjectScreen extends Screen implements MarkdownScreenInterface {
     private boolean initialized;
     private Screen prevScreen;
     private boolean filteredByGameVersion;
+    private ArrayList<Version> updatedVersions;
     private final ButtonWidget installButton = ButtonWidget.builder(Text.of("Install"), button -> {
         Thread thread = new Thread(() -> {
             projectInfo.setInstalling(true);
+            Thread thread2 = null;
             if (!projectInfo.isUpdated()) {
-                Thread thread2 = new Thread(() -> {
+                thread2 = new Thread(() -> {
                     EasyInstallClient.deleteOldFiles(projectInfo.getProjectType(), projectInfo.getLatestHash());
                 });
                 thread2.start();
+                for (Version version : updatedVersions) {
+                    if (version.getId().equals(projectInfo.getId())) {
+                        version.download();
+                    }
+                }
+            } else {
+                EasyInstallClient.downloadVersion(projectInfo.getSlug(), projectInfo.getProjectType(), ((ProjectBrowser) prevScreen).isFilteredByGameVersion());
             }
-            EasyInstallClient.downloadVersion(projectInfo.getSlug(), projectInfo.getProjectType(), ((ProjectBrowser) prevScreen).isFilteredByGameVersion());
             MinecraftClient.getInstance().send(() -> {
                 projectInfo.setInstalled(true);
                 projectInfo.setInstalling(false);
                 versionsTab.setInitialized(false);
             });
+            if (thread2 != null) {
+                try {
+                    thread2.join();
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            EasyInstallClient.checkStatus(projectInfo.getProjectType());
+            Thread thread3 = new Thread(() -> this.updatedVersions = EasyInstallClient.getUpdatedVersions(projectInfo.getProjectType()));
+            thread3.start();
         });
         thread.start();
     }).build();
@@ -80,9 +99,10 @@ public class ProjectScreen extends Screen implements MarkdownScreenInterface {
     private TabNavigationWidget tabNavigationWidget;
     private int scrollAmount = 15;
     public static final Identifier VERTICAL_SEPARATOR_TEXTURE = Identifier.of(EasyInstall.MOD_ID,"textures/gui/vertical_separator.png");
-    protected ProjectScreen(Screen parent, ProjectInfo projectInfo) {
+    protected ProjectScreen(Screen parent, ProjectInfo projectInfo, ArrayList<Version> updatedVersions) {
         super(Text.literal(projectInfo.getTitle()));
         this.projectInfo = projectInfo;
+        this.updatedVersions = updatedVersions;
         iconTextureId = Identifier.of("project_texture_id");
         this.prevScreen = parent;
         this.filteredByGameVersion = ((ProjectBrowser) parent).isFilteredByGameVersion();
@@ -268,5 +288,15 @@ public class ProjectScreen extends Screen implements MarkdownScreenInterface {
 
     public int getMaxY() {
         return this.maxY;
+    }
+
+    @Nullable
+    public Version getUpdatedVersion() {
+        for (Version version : updatedVersions) {
+            if (version.getId().equals(projectInfo.getId())) {
+                return version;
+            }
+        }
+        return null;
     }
 }

@@ -37,6 +37,7 @@ public class EasyInstallClient {
     private static HashMap<ProjectType, HashSet<String>> updatesNeeded = new HashMap<>();
     private static HashMap<ProjectType, HashSet<String>> installedProjects = new HashMap<>();
     private static String GAME_VERSION = SharedConstants.getGameVersion().name();
+    private static String currentTargetUpdateVersion = SharedConstants.getGameVersion().name();
 
 
     public static String getSortMethod() {
@@ -50,6 +51,22 @@ public class EasyInstallClient {
     public static void initializeDatapacks() {
         installedProjects.put(ProjectType.DATA_PACK, new HashSet<>());
         updatesNeeded.put(ProjectType.DATA_PACK, new HashSet<>());
+    }
+
+    public static String getCurrentTargetUpdateVersion() {
+        return currentTargetUpdateVersion;
+    }
+
+    public static String getGameVersion() {
+        return GAME_VERSION;
+    }
+
+    public static void setCurrentTargetUpdateVersion(String targetUpdateVersion) {
+        currentTargetUpdateVersion = targetUpdateVersion;
+    }
+
+    public static void resetTargetUpdateVersion() {
+        currentTargetUpdateVersion = GAME_VERSION;
     }
 
 
@@ -483,7 +500,7 @@ public class EasyInstallClient {
         }
         jsonObject.add("loaders", loaders);
         JsonArray gameVersions = new JsonArray();
-        gameVersions.add(GAME_VERSION);
+        gameVersions.add(currentTargetUpdateVersion);
         jsonObject.add("game_versions", gameVersions);
         return jsonObject.toString();
     }
@@ -687,5 +704,7 @@ public class EasyInstallClient {
         return new ArrayList<>();
 
     }
+
+
 
 }

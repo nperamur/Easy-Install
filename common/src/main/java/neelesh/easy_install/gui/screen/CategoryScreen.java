@@ -84,7 +84,7 @@ public class CategoryScreen extends Screen {
         clearButton = ButtonWidget.builder(Text.of("Clear All"), button -> {
             browser.clearCategories();
             browser.setFilteredByGameVersion(true);
-            refreshWidgetPositions();
+            this.refreshWidgetPositions();
         }).build();
         
         clearButton.setDimensions(100, 20);

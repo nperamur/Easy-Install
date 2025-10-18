@@ -24,19 +24,13 @@ import net.minecraft.util.Colors;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.StringHelper;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class ProjectBrowser extends Screen {
-    //Filter By Versions Button/Feature: Experimental and may or may not be implemented
-    //Right now the code is commented out. Here's the plan:
-    //Shows for: Current Version/ All Versions
-    //Tooltip:
-    //[Current Version] - Lists all projects available for this version of Minecraft
-    //All Versions - Lists all projects available regardless of the version of Minecraft. Use as your own risk.
-
     private Identifier[] ICON_TEXTURE_ID = new Identifier[100];
     private static final Identifier SCROLLER_TEXTURE = Identifier.ofVanilla("widget/scroller");
     public static final Identifier SCROLLER_BACKGROUND_TEXTURE = Identifier.ofVanilla("widget/scroller_background");
@@ -69,12 +63,16 @@ public class ProjectBrowser extends Screen {
     //    private ButtonWidget versionButton;
     private final Identifier FILTER_TEXTURE = Identifier.of(EasyInstall.MOD_ID, "textures/gui/filter_icon.png");
     private final Identifier UPDATE_TEXTURE = Identifier.of(EasyInstall.MOD_ID, "textures/gui/update_icon.png");
+    public static final Identifier SETTINGS_TEXTURE = Identifier.of(EasyInstall.MOD_ID, "textures/gui/settings.png");
+
     private final ButtonWidget filtersButton = ButtonWidget.builder(Text.of(""), button -> {
         showingFilterOptions = !showingFilterOptions;
     }).build();
     private ButtonWidget updateScreenButton;
     private ButtonWidget categoriesButton;
     private boolean filteredByGameVersion;
+    private ButtonWidget settingsButton;
+    private ArrayList<Version> updatedVersions;
 
 
     public ProjectBrowser(Screen parent, ProjectType projectType) {
@@ -89,6 +87,7 @@ public class ProjectBrowser extends Screen {
         }
         this.pageNumber = 0;
         this.filteredByGameVersion = true;
+        EasyInstallClient.resetTargetUpdateVersion();
 
     }
 
@@ -115,11 +114,18 @@ public class ProjectBrowser extends Screen {
         categoriesButton.setDimensions(100, 18);
         categoriesButton.setPosition(260, 22);
         this.addSelectableChild(categoriesButton);
+        settingsButton = ButtonWidget.builder(Text.of(""), button -> {
+            MinecraftClient.getInstance().setScreen(new SettingsScreen(this, this.projectType));
+        }).build();
+        settingsButton.setDimensions(20, 20);
+        settingsButton.setPosition(width - 30, 0);
+        settingsButton.setTooltip(Tooltip.of(Text.of("Settings")));
+        this.addSelectableChild(settingsButton);
         updateScreenButton = ButtonWidget.builder(Text.of(""), button -> {
             client.setScreen(new UpdateScreen(projectType, this));
         }).build();
         updateScreenButton.setDimensions(20, 20);
-        updateScreenButton.setPosition(width - 30, 0);
+        updateScreenButton.setPosition(width - 55, 0);
         updateScreenButton.setTooltip(Tooltip.of(Text.of("See All Updates")));
         for (int i = 0; i < EasyInstallClient.getRowsOnPage(); i++) {
             int finalI = i;
@@ -150,6 +156,8 @@ public class ProjectBrowser extends Screen {
             thread.start();
             Thread thread2 = new Thread(this::loadIcons);
             thread2.start();
+            Thread thread3 = new Thread(() -> this.updatedVersions = EasyInstallClient.getUpdatedVersions(projectType));
+            thread3.start();
 
 
         }
@@ -211,14 +219,21 @@ public class ProjectBrowser extends Screen {
                             EasyInstallClient.deleteOldFiles(projectType, INFO[finalI].getLatestHash());
                         });
                         thread2.start();
+                        for (Version version : updatedVersions) {
+                            if (version.getId().equals(INFO[finalI].getId())) {
+                                version.download();
+                            }
+                        }
+                    } else {
+                        EasyInstallClient.downloadVersion(INFO[finalI].getSlug(), projectType, filteredByGameVersion);
                     }
-                    EasyInstallClient.downloadVersion(INFO[finalI].getSlug(), projectType, filteredByGameVersion);
                     INFO[finalI].setInstalling(false);
                     INFO[finalI].setInstalled(true);
-                    t = new Thread(() -> {
-                        EasyInstallClient.checkStatus(projectType);
-                    });
+                    t = new Thread(() -> EasyInstallClient.checkStatus(projectType));
                     t.start();
+                    Thread thread2 = new Thread(() -> this.updatedVersions = EasyInstallClient.getUpdatedVersions(projectType));
+                    thread2.start();
+
                 });
                 thread.start();
             }).build();
@@ -227,7 +242,7 @@ public class ProjectBrowser extends Screen {
             installButtons[i] = buttonWidget;
             installButtons[i].setX(width - 70);
             ButtonWidget projectButtonWidget = ButtonWidget.builder(Text.of("More Info"), button -> {
-                client.setScreen(new ProjectScreen(this, INFO[finalI]));
+                client.setScreen(new ProjectScreen(this, INFO[finalI], this.updatedVersions));
             }).build();
             projectButtonWidget.setDimensions(60, 14);
             projectScreenButtons[i] = projectButtonWidget;
@@ -367,7 +382,10 @@ public class ProjectBrowser extends Screen {
         updateScreenButton.render(context, mouseX, mouseY, delta);
         categoriesButton.visible = showingFilterOptions;
         categoriesButton.render(context, mouseX, mouseY, delta);
+        settingsButton.render(context, mouseX, mouseY, delta);
         context.drawTexture(RenderPipelines.GUI_TEXTURED, FILTER_TEXTURE, filtersButton.getX() + 2, filtersButton.getY() + 2, 0, 0, 16, 16, 16, 16);
+        context.drawTexture(RenderPipelines.GUI_TEXTURED, SETTINGS_TEXTURE, settingsButton.getX() + 2, settingsButton.getY() + 2, -0.5f, 0, 16, 16, 16, 16);
+
         if (EasyInstallClient.getNumUpdates() >= 1) {
             context.drawTexture(RenderPipelines.GUI_TEXTURED, UPDATE_TEXTURE, updateScreenButton.getX() + 3, updateScreenButton.getY() + 3, 0, 0, 14, 14, 14, 14);
         }
@@ -451,6 +469,9 @@ public class ProjectBrowser extends Screen {
                     EasyInstallClient.checkStatus(this.projectType);
                 });
                 t.start();
+
+                Thread thread2 = new Thread(() -> updatedVersions = EasyInstallClient.getUpdatedVersions(this.projectType));
+                thread2.start();
                 loadIcons();
             }
         });
