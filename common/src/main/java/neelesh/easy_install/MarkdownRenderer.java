@@ -1,22 +1,22 @@
 package neelesh.easy_install;
 
 import neelesh.easy_install.gui.screen.MarkdownScreenInterface;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gl.RenderPipelines;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.ConfirmLinkScreen;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.client.render.RenderLayer;
-import net.minecraft.client.texture.NativeImage;
-import net.minecraft.client.texture.NativeImageBackedTexture;
-import net.minecraft.client.texture.TextureManager;
-import net.minecraft.text.MutableText;
-import net.minecraft.text.StringVisitable;
-import net.minecraft.text.Style;
-import net.minecraft.text.Text;
-import net.minecraft.util.Colors;
-import net.minecraft.util.Identifier;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.ConfirmLinkScreen;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.renderer.rendertype.RenderType;
+import com.mojang.blaze3d.platform.NativeImage;
+import net.minecraft.client.renderer.texture.DynamicTexture;
+import net.minecraft.client.renderer.texture.TextureManager;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.FormattedText;
+import net.minecraft.network.chat.Style;
+import net.minecraft.network.chat.Component;
+import net.minecraft.util.CommonColors;
+import net.minecraft.resources.Identifier;
 import org.commonmark.node.Node;
 import org.commonmark.parser.Parser;
 import org.commonmark.renderer.html.HtmlRenderer;
@@ -34,7 +34,7 @@ import java.util.regex.Pattern;
 public class MarkdownRenderer {
     private final ArrayList<ProjectImage> projectImages;
     private int count;
-    private ArrayList<ButtonWidget> linkButtons = new ArrayList<ButtonWidget>();
+    private ArrayList<Button> linkButtons = new ArrayList<Button>();
     private ArrayList<String> linkUrls = new ArrayList<String>();
     private final ArrayList<Integer> linkIndexes = new ArrayList<Integer>();
     private final ArrayList<Integer> linkLengths = new ArrayList<Integer>();
@@ -96,14 +96,14 @@ public class MarkdownRenderer {
                         }
 
                         url = new URL(str); //UrlEscapers.urlFragmentEscaper().escape(str)
-                        Identifier id = Identifier.of(EasyInstall.MOD_ID, "project_image_" + i);
-                        TextureManager textureManager = MinecraftClient.getInstance().getTextureManager();
-                        MinecraftClient.getInstance().execute(() -> {
+                        Identifier id = Identifier.fromNamespaceAndPath(EasyInstall.MOD_ID, "project_image_" + i);
+                        TextureManager textureManager = Minecraft.getInstance().getTextureManager();
+                        Minecraft.getInstance().execute(() -> {
                             NativeImage image = new NativeImage(1, 1, false);
-                            NativeImageBackedTexture texture = new NativeImageBackedTexture(() -> "", image);
-                            textureManager.registerTexture(id, texture);
+                            DynamicTexture texture = new DynamicTexture(() -> "", image);
+                            textureManager.register(id, texture);
                         });
-                        NativeImage image = ImageLoader.loadImage(url, id, MinecraftClient.getInstance());
+                        NativeImage image = ImageLoader.loadImage(url, id, Minecraft.getInstance());
                         if (image != null) {
                             ProjectImage projectImage = new ProjectImage(image, id, i);
                             if (!imageWidth.isEmpty()) {
@@ -128,7 +128,7 @@ public class MarkdownRenderer {
                     puttingImageUrl = true;
                 }
             }
-            MinecraftClient.getInstance().execute(() -> {
+            Minecraft.getInstance().execute(() -> {
                 count = 0;
             });
         });
@@ -136,9 +136,9 @@ public class MarkdownRenderer {
     }
 
     
-    public void render(DrawContext context, int scrollAmount) {
+    public void render(GuiGraphics context, int scrollAmount) {
         int j = 0;
-        for (ButtonWidget linkButton : linkButtons) {
+        for (Button linkButton : linkButtons) {
             linkButton.setY(scrollAmount + originalY.get(j));
             j++;
         }
@@ -154,7 +154,7 @@ public class MarkdownRenderer {
                 int imageWidth;
                 if (!(image.getWidth() == -1) && (image.getWidth() * (endX - 150)/1000) < endX - x - 10) {
                     imageWidth = (int) (image.getWidth() * (endX - 150)/(1000 * scale));
-                    context.drawTexture(RenderPipelines.GUI_TEXTURED, image.getId(), (int)(x/scale), (int)((y+scrollAmount)/scale), 0, 0, imageWidth, image.getImage().getHeight() * imageWidth/image.getImage().getWidth(), imageWidth, image.getImage().getHeight() * imageWidth/image.getImage().getWidth());
+                    context.blit(RenderPipelines.GUI_TEXTURED, image.getId(), (int)(x/scale), (int)((y+scrollAmount)/scale), 0, 0, imageWidth, image.getImage().getHeight() * imageWidth/image.getImage().getWidth(), imageWidth, image.getImage().getHeight() * imageWidth/image.getImage().getWidth());
                     imageHeight = Math.max(imageHeight, image.getImage().getHeight() * imageWidth/image.getImage().getWidth() + 10);
                     if (image.isClickable() && count == 0) {
                         createClickableImageButtons(x, y, imageWidth, image.getImage().getHeight() * imageWidth/image.getImage().getWidth(), image.getLink());
@@ -166,7 +166,7 @@ public class MarkdownRenderer {
                         y += imageHeight;
                         imageHeight = 0;
                     }
-                    context.drawTexture(RenderPipelines.GUI_TEXTURED, image.getId(), (int)(x/scale), (int)((y+scrollAmount)/scale), 0, 0, (int)(image.getImage().getWidth()/(2 * scale)), (int)(image.getImage().getHeight()/(2 * scale)), (int)(image.getImage().getWidth()/(2 * scale)), (int) (image.getImage().getHeight()/(2 * scale)));
+                    context.blit(RenderPipelines.GUI_TEXTURED, image.getId(), (int)(x/scale), (int)((y+scrollAmount)/scale), 0, 0, (int)(image.getImage().getWidth()/(2 * scale)), (int)(image.getImage().getHeight()/(2 * scale)), (int)(image.getImage().getWidth()/(2 * scale)), (int) (image.getImage().getHeight()/(2 * scale)));
                     imageWidth = image.getImage().getWidth()/2;
                     imageHeight = Math.max(imageHeight, image.getImage().getHeight()/2 + 10);
                     if (image.isClickable() && count == 0) {
@@ -183,7 +183,7 @@ public class MarkdownRenderer {
                     if (image.isClickable() && count == 0) {
                         createClickableImageButtons(x, y, imageWidth, image.getImage().getHeight() * imageWidth/image.getImage().getWidth() + 10, image.getLink());
                     }
-                    context.drawTexture(RenderPipelines.GUI_TEXTURED, image.getId(), (int)(x/scale), (int)((y+scrollAmount)/scale), 0, 0, (endX - x - 10), image.getImage().getHeight() * (int)((endX-x-10)/scale)/image.getImage().getWidth(), (int)((endX-x-10)/scale), image.getImage().getHeight() * (int)((endX-x-10)/scale)/image.getImage().getWidth());
+                    context.blit(RenderPipelines.GUI_TEXTURED, image.getId(), (int)(x/scale), (int)((y+scrollAmount)/scale), 0, 0, (endX - x - 10), image.getImage().getHeight() * (int)((endX-x-10)/scale)/image.getImage().getWidth(), (int)((endX-x-10)/scale), image.getImage().getHeight() * (int)((endX-x-10)/scale)/image.getImage().getWidth());
                     y+=image.getImage().getHeight() * imageWidth/image.getImage().getWidth() + 10;
                 }
                 imageIndex++;
@@ -192,15 +192,15 @@ public class MarkdownRenderer {
                 if (i == body.length() - 1) {
                     s.append(body.charAt(i));
                 }
-                MutableText text = extractTextFromHtml(convertMarkdownToHtml(s.toString()));
+                MutableComponent text = extractTextFromHtml(convertMarkdownToHtml(s.toString()));
                 if (count == 0) {
                     putLinkButtons(text, x, y, (int) ((endX-x-10) / scale), scale);
                 }
-                context.drawWrappedText(screen.getTextRenderer(), text, (int) (x/scale), (int) (y/scale + scrollAmount / scale), (int) ((endX-x-10) / scale), Colors.WHITE, false);
-                int wrappedSize = screen.getTextRenderer().getWrappedLinesHeight(text, (int) ((endX-x-10) / scale));
+                context.drawWordWrap(screen.getFont(), text, (int) (x/scale), (int) (y/scale + scrollAmount / scale), (int) ((endX-x-10) / scale), CommonColors.WHITE, false);
+                int wrappedSize = screen.getFont().wordWrapHeight(text, (int) ((endX-x-10) / scale));
                 if (scale == 1) {
                     scale = 1.4f;
-                    context.getMatrices().scale(scale, scale);
+                    context.pose().scale(scale, scale);
                 }
                 s = new StringBuilder();
                 x = startX;
@@ -208,7 +208,7 @@ public class MarkdownRenderer {
                 imageHeight = 0;
                 y += (int) (wrappedSize * scale);
             } else if ((body.charAt(i) == '\n')) {
-                MutableText text = extractTextFromHtml(convertMarkdownToHtml(s.toString()));
+                MutableComponent text = extractTextFromHtml(convertMarkdownToHtml(s.toString()));
                 if (!text.getString().replaceAll("\\s+", "").isEmpty()) {
                     y += imageHeight;
                     if (imageHeight > 0) {
@@ -220,11 +220,11 @@ public class MarkdownRenderer {
                 if (count == 0) {
                     putLinkButtons(text, x, y, (int) ((endX-x-10) / scale), scale);
                 }
-                context.drawWrappedText(screen.getTextRenderer(), text, (int) (x/(scale)), (int) (y/scale + scrollAmount / scale), (int) ((endX-x-10) / scale), Colors.WHITE, false);
+                context.drawWordWrap(screen.getFont(), text, (int) (x/(scale)), (int) (y/scale + scrollAmount / scale), (int) ((endX-x-10) / scale), CommonColors.WHITE, false);
                 if (scale > 1) {
-                    context.getMatrices().scale(1/scale, 1/scale);
+                    context.pose().scale(1/scale, 1/scale);
                 }
-                int wrappedSize = screen.getTextRenderer().getWrappedLinesHeight(text, (int) ((endX-x-10) / scale));
+                int wrappedSize = screen.getFont().wordWrapHeight(text, (int) ((endX-x-10) / scale));
                 if (!s.toString().replaceAll("\\s+", "").isEmpty()) {
                     y += (int) (wrappedSize * scale);
                     if (scale > 1) {
@@ -245,14 +245,14 @@ public class MarkdownRenderer {
                 s.append(body.charAt(i));
             }
         }
-        context.getMatrices().scale(1/scale, 1/scale);
+        context.pose().scale(1/scale, 1/scale);
         maxY = y + imageHeight;
         if (count != -1) {
             count++;
         }
     }
 
-    private void putLinkButtons(MutableText text, int x, int y, int width, double scale) {
+    private void putLinkButtons(MutableComponent text, int x, int y, int width, double scale) {
         boolean isLink = false;
         int j = 0;
         int l = 0;
@@ -260,41 +260,41 @@ public class MarkdownRenderer {
         int numLines = 0;
         int siblingIndex = 0;
         int m = 1;
-        for (StringVisitable visitableText : screen.getTextRenderer().getTextHandler().wrapLines(text, width, Style.EMPTY)) {
+        for (FormattedText visitableText : screen.getFont().getSplitter().splitLines(text, width, Style.EMPTY)) {
             String textString = visitableText.getString();
             String s = "";
-            MutableText t = Text.literal("");
+            MutableComponent t = Component.literal("");
             int lastIndex = 0;
             for (int i = 0; i < textString.length(); i++) {
                 if (linkIndexes.contains(k)) {
                     isLink = true;
                 } else if (isLink && (linkLengths.get(l) == j || i == textString.length() - 1)) {
                     String link = linkUrls.get(l);
-                    ButtonWidget buttonWidget = ButtonWidget.builder(Text.empty(), button -> {
-                        ConfirmLinkScreen.open(screen, link, false);
+                    Button buttonWidget = Button.builder(Component.empty(), button -> {
+                        ConfirmLinkScreen.confirmLinkNow(screen, link, false);
                     }).build();
-                    MutableText prevText = Text.literal("");
-                    MutableText currentText = Text.literal("");
+                    MutableComponent prevText = Component.literal("");
+                    MutableComponent currentText = Component.literal("");
                     if (text.getSiblings().get(siblingIndex).getStyle().isBold()) {
                         prevText.append(t);
-                        prevText.append(Text.literal(textString.substring(lastIndex, i - s.length())).setStyle(Style.EMPTY.withBold(true)));
+                        prevText.append(Component.literal(textString.substring(lastIndex, i - s.length())).setStyle(Style.EMPTY.withBold(true)));
                     } else {
                         prevText.append(t);
-                        prevText.append(Text.literal(textString.substring(lastIndex, i - s.length())));
+                        prevText.append(Component.literal(textString.substring(lastIndex, i - s.length())));
                     }
                     if (linkLengths.get(l) != j) {
-                        currentText.append(Text.literal(String.valueOf(textString.charAt(i))));
+                        currentText.append(Component.literal(String.valueOf(textString.charAt(i))));
                     }
                     if (text.getSiblings().get(siblingIndex).getStyle().isBold()) {
-                        currentText.append(Text.literal(s).setStyle(Style.EMPTY.withBold(true)));
+                        currentText.append(Component.literal(s).setStyle(Style.EMPTY.withBold(true)));
                     } else {
-                        currentText.append(Text.literal(s));
+                        currentText.append(Component.literal(s));
                     }
 
-                    buttonWidget.setPosition((int) (x + screen.getTextRenderer().getWidth(prevText) * scale), y + 9 * numLines);
+                    buttonWidget.setPosition((int) (x + screen.getFont().width(prevText) * scale), y + 9 * numLines);
                     originalY.add(y + 9 * numLines);
                     ((MarkdownScreenInterface) screen).addSelectableChild(buttonWidget);
-                    buttonWidget.setDimensions((int) (screen.getTextRenderer().getWidth(currentText) * scale), (int) (9 * scale));
+                    buttonWidget.setSize((int) (screen.getFont().width(currentText) * scale), (int) (9 * scale));
                     linkButtons.add(buttonWidget);
                     if (linkLengths.get(l) == j) {
                         isLink = false;
@@ -306,9 +306,9 @@ public class MarkdownRenderer {
                 if (siblingIndex < text.getSiblings().size() && m >= text.getSiblings().get(siblingIndex).getString().length() && s.isEmpty()) {
                     m = 1;
                     if (text.getSiblings().get(siblingIndex).getStyle().isBold()) {
-                        t.append(Text.literal(textString.substring(lastIndex, i)).setStyle(Style.EMPTY.withBold(true)));
+                        t.append(Component.literal(textString.substring(lastIndex, i)).setStyle(Style.EMPTY.withBold(true)));
                     } else {
-                        t.append(Text.literal(textString.substring(lastIndex, i)));
+                        t.append(Component.literal(textString.substring(lastIndex, i)));
                     }
                     lastIndex = i;
                     if (siblingIndex + 1 < text.getSiblings().size()) {
@@ -340,11 +340,11 @@ public class MarkdownRenderer {
         return renderer.render(document);
     }
 
-    private MutableText extractMarkdownFromHtml(String htmlContent) {
+    private MutableComponent extractMarkdownFromHtml(String htmlContent) {
         htmlContent = htmlContent.replace("<li>", "-").replace("</p>", "\n");
         Document document = Jsoup.parse(htmlContent);
         Elements images = document.select("img");
-        MutableText finalText;
+        MutableComponent finalText;
         for (Element img : images) {
             String imgUrl = img.attr("src").replaceAll("\\s+", "");
             int width;
@@ -417,15 +417,15 @@ public class MarkdownRenderer {
             }
             i++;
         }
-        finalText = Text.literal(wholeText);
+        finalText = Component.literal(wholeText);
         return finalText;
     }
 
-    private MutableText extractTextFromHtml(String htmlContent) {
+    private MutableComponent extractTextFromHtml(String htmlContent) {
         htmlContent = htmlContent.replace("<li>", "-").replace("</p>", "\n");
         Document document = Jsoup.parse(htmlContent);
 
-        MutableText finalText = Text.literal("");
+        MutableComponent finalText = Component.literal("");
 
         linkUrls.clear();
         linkLengths.clear();
@@ -436,14 +436,14 @@ public class MarkdownRenderer {
             try {
                 String textBeforeLink = document.wholeText().substring(lastIndex, document.wholeText().indexOf(e.wholeText(), lastIndex));
                 finalText.append(textBeforeLink);
-                MutableText text = Text.literal(e.wholeText().replaceAll("\\s*->\\s*", " → ").replaceAll("\\s*<-\\s*", " ← ").replace("\\", ""));
+                MutableComponent text = Component.literal(e.wholeText().replaceAll("\\s*->\\s*", " → ").replaceAll("\\s*<-\\s*", " ← ").replace("\\", ""));
                 if (!e.select("a").isEmpty()) {
-                    MutableText newText = Text.literal("");
+                    MutableComponent newText = Component.literal("");
                     int lastIndex2 = 0;
 
                     for (Element link : e.select("a")) {
-                        newText.append(Text.literal(text.getString().substring(lastIndex2, text.getString().indexOf(link.text()))));
-                        newText.append(Text.literal(text.getString().substring(text.getString().indexOf(link.text()), text.getString().indexOf(link.text()) + link.text().length())).setStyle(text.getStyle()).withColor(0x257DE6));
+                        newText.append(Component.literal(text.getString().substring(lastIndex2, text.getString().indexOf(link.text()))));
+                        newText.append(Component.literal(text.getString().substring(text.getString().indexOf(link.text()), text.getString().indexOf(link.text()) + link.text().length())).setStyle(text.getStyle()).withColor(0x257DE6));
                         if (!link.text().isEmpty()) {
                             linkUrls.add(link.attr("href"));
                             linkIndexes.add(finalText.getString().length() + text.getString().indexOf(link.text()));
@@ -475,10 +475,10 @@ public class MarkdownRenderer {
 
 
     private void createClickableImageButtons(int x, int y, int width, int height, String link) {
-        ButtonWidget button = ButtonWidget.builder(Text.of(""), button1 -> {
-            ConfirmLinkScreen.open(screen, link, false);
+        Button button = Button.builder(Component.nullToEmpty(""), button1 -> {
+            ConfirmLinkScreen.confirmLinkNow(screen, link, false);
         }).build();
-        button.setDimensions(width, height);
+        button.setSize(width, height);
         ((MarkdownScreenInterface) screen).addSelectableChild(button);
         button.setPosition(x, y);
         linkButtons.add(button);
@@ -486,14 +486,14 @@ public class MarkdownRenderer {
     }
 
     public void setLinksActive(boolean active) {
-        for (ButtonWidget linkButton : linkButtons) {
+        for (Button linkButton : linkButtons) {
             linkButton.active = active;
 
         }
     }
 
     public void refreshLinkPositions() {
-        for (ButtonWidget link : linkButtons) {
+        for (Button link : linkButtons) {
             ((MarkdownScreenInterface) (screen)).removeChild(link);
         }
         if (count >= 0) {

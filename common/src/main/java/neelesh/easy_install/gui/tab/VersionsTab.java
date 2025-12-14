@@ -7,17 +7,17 @@ import neelesh.easy_install.EasyInstallClient;
 import neelesh.easy_install.Version;
 import neelesh.easy_install.gui.screen.ProjectScreen;
 import neelesh.easy_install.gui.screen.VersionDetailsScreen;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gl.RenderPipelines;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.Drawable;
-import net.minecraft.client.gui.tab.GridScreenTab;
-import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.client.gui.widget.PressableTextWidget;
-import net.minecraft.client.gui.widget.TabButtonWidget;
-import net.minecraft.text.Text;
-import net.minecraft.util.Colors;
-import net.minecraft.util.Formatting;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.Renderable;
+import net.minecraft.client.gui.components.tabs.GridLayoutTab;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.PlainTextButton;
+import net.minecraft.client.gui.components.TabButton;
+import net.minecraft.network.chat.Component;
+import net.minecraft.util.CommonColors;
+import net.minecraft.ChatFormatting;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
@@ -28,16 +28,16 @@ import java.util.concurrent.CompletableFuture;
 
 import static neelesh.easy_install.gui.screen.ProjectScreen.VERTICAL_SEPARATOR_TEXTURE;
 
-public class VersionsTab extends GridScreenTab implements Drawable {
+public class VersionsTab extends GridLayoutTab implements Renderable {
     private Version[] versions;
-    private ButtonWidget[] versionButtons;
+    private Button[] versionButtons;
     private boolean initialized;
     private ProjectScreen projectScreen;
-    private PressableTextWidget[] versionDetailButtons;
+    private PlainTextButton[] versionDetailButtons;
 
     private Version projectInstallVersion;
 
-    public VersionsTab(Text title, ProjectScreen projectScreen) {
+    public VersionsTab(Component title, ProjectScreen projectScreen) {
         super(title);
         this.projectScreen = projectScreen;
         Thread thread = new Thread(() -> {
@@ -56,8 +56,8 @@ public class VersionsTab extends GridScreenTab implements Drawable {
             }
             JsonArray jsonArray = JsonParser.parseString(response).getAsJsonArray();
             versions = new Version[jsonArray.size()];
-            versionButtons = new ButtonWidget[jsonArray.size()];
-            versionDetailButtons = new PressableTextWidget[jsonArray.size()];
+            versionButtons = new Button[jsonArray.size()];
+            versionDetailButtons = new PlainTextButton[jsonArray.size()];
             for (int i = 0; i < jsonArray.size(); i++) {
                 JsonObject versionInfo = jsonArray.get(i).getAsJsonObject();
                 Version version;
@@ -68,42 +68,42 @@ public class VersionsTab extends GridScreenTab implements Drawable {
                     e.printStackTrace();
                 }
                 int finalI = i;
-                MinecraftClient.getInstance().submit(() -> {
-                    versionButtons[finalI] = ButtonWidget.builder(Text.of("Install"), buttonWidget -> {
+                Minecraft.getInstance().submit(() -> {
+                    versionButtons[finalI] = Button.builder(Component.nullToEmpty("Install"), buttonWidget -> {
                         Thread t = new Thread(() -> {
                             @Nullable Version updatedVersion = projectScreen.getUpdatedVersion();
                             boolean case1 = this.projectInstallVersion != null && this.projectInstallVersion.getHash().equals(versions[finalI].getHash()) && projectScreen.getProjectInfo().isUpdated();
                             boolean case2 = updatedVersion != null && versions[finalI].getHash().equals(updatedVersion.getHash()) && !projectScreen.getProjectInfo().isUpdated();
 
 
-                            MinecraftClient.getInstance().send(() -> {
+                            Minecraft.getInstance().schedule(() -> {
                                 versionButtons[finalI].active = false;
-                                versionButtons[finalI].setMessage(Text.of("Installed"));
+                                versionButtons[finalI].setMessage(Component.nullToEmpty("Installed"));
                                 if (case1 || case2) {
                                     projectScreen.getProjectInfo().setInstalling(true);
                                 }
-                                versionButtons[finalI].setMessage(Text.of("Installing"));
+                                versionButtons[finalI].setMessage(Component.nullToEmpty("Installing"));
                             });
-                            versions[finalI].download();
-                            MinecraftClient.getInstance().send(() -> {
+                            versions[finalI].download(true);
+                            Minecraft.getInstance().schedule(() -> {
                                 if (case1 || case2) {
                                     projectScreen.getProjectInfo().setInstalling(false);
                                     projectScreen.getProjectInfo().setInstalled(true);
                                 }
                                 versionButtons[finalI].active = false;
-                                versionButtons[finalI].setMessage(Text.of("Installed"));
+                                versionButtons[finalI].setMessage(Component.nullToEmpty("Installed"));
                                 initialized = false;
                             });
                             EasyInstallClient.checkStatus(projectScreen.getProjectInfo().getProjectType());
                         });
                         t.start();
                     }).build();
-                    versionButtons[finalI].setDimensions(55, 14);
+                    versionButtons[finalI].setSize(55, 14);
                     projectScreen.addSelectableChild(versionButtons[finalI]);
 
-                    versionDetailButtons[finalI] = new PressableTextWidget(140, finalI * 40 + projectScreen.getScrollAmount(), projectScreen.getTextRenderer().getWidth(versions[finalI].getName()), 9, Text.of(versions[finalI].getName()), button -> {
-                        MinecraftClient.getInstance().setScreen(new VersionDetailsScreen(versions[finalI], projectScreen));
-                    }, projectScreen.getTextRenderer());
+                    versionDetailButtons[finalI] = new PlainTextButton(140, finalI * 40 + projectScreen.getScrollAmount(), projectScreen.getFont().width(versions[finalI].getName()), 9, Component.nullToEmpty(versions[finalI].getName()), button -> {
+                        Minecraft.getInstance().setScreen(new VersionDetailsScreen(versions[finalI], projectScreen));
+                    }, projectScreen.getFont());
                     projectScreen.addSelectableChild(versionDetailButtons[finalI]);
                 });
             }
@@ -113,11 +113,11 @@ public class VersionsTab extends GridScreenTab implements Drawable {
     }
 
     @Override
-    public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+    public void render(GuiGraphics context, int mouseX, int mouseY, float delta) {
         if (versions == null) {
             return;
         }
-        projectScreen.renderDarkening(context, 131, projectScreen.getScrollAmount() + ((TabButtonWidget) projectScreen.getTabNavigationWidget().children().get(0)).getHeight()-10, projectScreen.width, versions.length * 40 + 10);
+        projectScreen.renderMenuBackground(context, 131, projectScreen.getScrollAmount() + ((TabButton) projectScreen.getTabNavigationWidget().children().get(0)).getHeight()-10, projectScreen.width, versions.length * 40 + 10);
 
         for (int i = 0; i < versions.length; i++) {
             if (versions[i] == null || versionDetailButtons[i] == null) {
@@ -129,7 +129,7 @@ public class VersionsTab extends GridScreenTab implements Drawable {
                 boolean case2 = updatedVersion != null && versions[i].getHash().equals(updatedVersion.getHash()) && !projectScreen.getProjectInfo().isUpdated();
                 if (case1 || case2) {
                     versionButtons[i].active = false;
-                    versionButtons[i].setMessage(Text.of("Installing"));
+                    versionButtons[i].setMessage(Component.nullToEmpty("Installing"));
                 }
 
             }
@@ -137,16 +137,16 @@ public class VersionsTab extends GridScreenTab implements Drawable {
             versionDetailButtons[i].setPosition(140, i * 40 + projectScreen.getScrollAmount() + 20);
             versionDetailButtons[i].render(context, mouseX, mouseY, delta);
             //context.drawText(projectScreen.getTextRenderer(), Text.of(versions[i].getName()), 140, i * 40 + projectScreen.getScrollAmount() + 20, Colors.WHITE, true);
-            Formatting formatting;
+            ChatFormatting formatting;
             formatting = switch(versions[i].getVersionType()) {
-                case "release" -> Formatting.GREEN;
-                case "beta" -> Formatting.GOLD;
-                case "alpha" -> Formatting.RED;
+                case "release" -> ChatFormatting.GREEN;
+                case "beta" -> ChatFormatting.GOLD;
+                case "alpha" -> ChatFormatting.RED;
                 default -> null;
             };
-            context.drawText(projectScreen.getTextRenderer(), Text.literal("•" + versions[i].getVersionType()).formatted(formatting), 140, i * 40 + projectScreen.getScrollAmount() + 30, Colors.WHITE, true);
-            context.drawText(projectScreen.getTextRenderer(), Text.of(versions[i].getVersionNumber()), 140 + projectScreen.getTextRenderer().getWidth("•" + versions[i].getVersionType()) + 8, i * 40 + projectScreen.getScrollAmount() + 30, Colors.WHITE, true);
-            context.drawText(projectScreen.getTextRenderer(), Text.of(String.format("%,d", versions[i].getNumDownloads()) + " downloads"), projectScreen.width - projectScreen.getTextRenderer().getWidth(String.format("%,d", versions[i].getNumDownloads()) + " downloads") - 8, i * 40 + projectScreen.getScrollAmount() + 36, Colors.WHITE, true);
+            context.drawString(projectScreen.getFont(), Component.literal("•" + versions[i].getVersionType()).withStyle(formatting), 140, i * 40 + projectScreen.getScrollAmount() + 30, CommonColors.WHITE, true);
+            context.drawString(projectScreen.getFont(), Component.nullToEmpty(versions[i].getVersionNumber()), 140 + projectScreen.getFont().width("•" + versions[i].getVersionType()) + 8, i * 40 + projectScreen.getScrollAmount() + 30, CommonColors.WHITE, true);
+            context.drawString(projectScreen.getFont(), Component.nullToEmpty(String.format("%,d", versions[i].getNumDownloads()) + " downloads"), projectScreen.width - projectScreen.getFont().width(String.format("%,d", versions[i].getNumDownloads()) + " downloads") - 8, i * 40 + projectScreen.getScrollAmount() + 36, CommonColors.WHITE, true);
 
 
             File file = new File(EasyInstallClient.getSavePath(projectScreen.getProjectInfo().getProjectType(), versions[i].getFilename()).toString());
@@ -162,13 +162,13 @@ public class VersionsTab extends GridScreenTab implements Drawable {
                     }
                 }).thenAcceptAsync(hash -> {
                     if (hash != null) {
-                        MinecraftClient.getInstance().send(() -> {
+                        Minecraft.getInstance().schedule(() -> {
                             if (versions[finalI].getHash().equals(hash)) {
                                 versionButtons[finalI].active = false;
-                                versionButtons[finalI].setMessage(Text.of("Installed"));
+                                versionButtons[finalI].setMessage(Component.nullToEmpty("Installed"));
                             } else {
                                 versionButtons[finalI].active = true;
-                                versionButtons[finalI].setMessage(Text.of("Install"));
+                                versionButtons[finalI].setMessage(Component.nullToEmpty("Install"));
                             }
                         });
                     }
@@ -177,15 +177,15 @@ public class VersionsTab extends GridScreenTab implements Drawable {
             } else if (!initialized) {
                 versionButtons[i].active = true;
                 versionDetailButtons[i].active = true;
-                versionButtons[i].setMessage(Text.of("Install"));
+                versionButtons[i].setMessage(Component.nullToEmpty("Install"));
 
             }
             versionButtons[i].setPosition(projectScreen.width - versionButtons[i].getWidth() - 10, i * 40 + 20 + projectScreen.getScrollAmount());
             versionButtons[i].render(context, mouseX, mouseY, delta);
         }
         initialized = true;
-        context.drawTexture(
-                RenderPipelines.GUI_TEXTURED, VERTICAL_SEPARATOR_TEXTURE, 131, projectScreen.getScrollAmount() + ((TabButtonWidget) projectScreen.getTabNavigationWidget().children().getFirst()).getHeight() - 12, 0.0F, 0.0F, 2, versions.length * 40 + 10, 2, 32
+        context.blit(
+                RenderPipelines.GUI_TEXTURED, VERTICAL_SEPARATOR_TEXTURE, 131, projectScreen.getScrollAmount() + ((TabButton) projectScreen.getTabNavigationWidget().children().getFirst()).getHeight() - 12, 0.0F, 0.0F, 2, versions.length * 40 + 10, 2, 32
         );
         projectScreen.setMaxY(versions.length * 40 + 10);
     }
@@ -199,14 +199,14 @@ public class VersionsTab extends GridScreenTab implements Drawable {
         if (versionButtons == null) {
             return;
         }
-        for (ButtonWidget versionButton : versionButtons) {
+        for (Button versionButton : versionButtons) {
             if (versionButton == null) {
                 continue;
             }
             versionButton.active = !versionButton.getMessage().getString().equals("Installed") && !versionButton.getMessage().getString().equals("Installing") && active;
         }
 
-        for (ButtonWidget versionDetailsButton : versionDetailButtons) {
+        for (Button versionDetailsButton : versionDetailButtons) {
             if (versionDetailsButton == null) {
                 continue;
             }

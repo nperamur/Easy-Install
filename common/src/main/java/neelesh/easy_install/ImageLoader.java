@@ -6,11 +6,11 @@ import com.github.weisj.jsvg.parser.LoaderContext;
 import com.github.weisj.jsvg.parser.SVGLoader;
 import com.mojang.logging.LogUtils;
 import com.zakgof.webp4j.Webp4j;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.texture.NativeImage;
-import net.minecraft.client.texture.NativeImageBackedTexture;
-import net.minecraft.client.texture.TextureManager;
-import net.minecraft.util.Identifier;
+import net.minecraft.client.Minecraft;
+import com.mojang.blaze3d.platform.NativeImage;
+import net.minecraft.client.renderer.texture.DynamicTexture;
+import net.minecraft.client.renderer.texture.TextureManager;
+import net.minecraft.resources.Identifier;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -23,19 +23,19 @@ import java.util.logging.Level;
 
 public class ImageLoader {
     public static void loadIcon(ProjectInfo info, Identifier textureId, Thread thread) {
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         try {
             URL url = info.getIconUrl();
             if (url == null) {
                 client.execute(() -> {
-                    NativeImageBackedTexture texture = new NativeImageBackedTexture(() -> "", new NativeImage(64, 64, false));
+                    DynamicTexture texture = new DynamicTexture(() -> "", new NativeImage(64, 64, false));
                     for (int x = 0; x < 64; x++) {
                         for (int j = 0; j < 64; j++) {
-                            texture.getImage().setColorArgb(x, j, 0xFF000000);
+                            texture.getPixels().setPixel(x, j, 0xFF000000);
                         }
                     }
                     texture.upload();
-                    client.getTextureManager().registerTexture(textureId, texture);
+                    client.getTextureManager().register(textureId, texture);
                 });
                 return;
             }
@@ -60,11 +60,11 @@ public class ImageLoader {
                 TextureManager textureManager = client.getTextureManager();
                 NativeImage finalImage = image;
                 client.execute(() -> {
-                    NativeImageBackedTexture texture;
-                    texture = new NativeImageBackedTexture(() -> "", finalImage);
+                    DynamicTexture texture;
+                    texture = new DynamicTexture(() -> "", finalImage);
                     texture.upload();
                     if (!thread.isInterrupted()) {
-                        textureManager.registerTexture(textureId, texture);
+                        textureManager.register(textureId, texture);
                     }
                     finalImage.close();
                 });
@@ -105,7 +105,7 @@ public class ImageLoader {
             for (int x = 0; x < bufferedImage.getWidth(); x++) {
                 for (int y = 0; y < bufferedImage.getHeight(); y++) {
                     int rgb = bufferedImage.getRGB(x, y);
-                    nativeImage.setColorArgb(x, y, rgb);
+                    nativeImage.setPixel(x, y, rgb);
                 }
             }
             return nativeImage;
@@ -117,15 +117,15 @@ public class ImageLoader {
 
     }
 
-    public static NativeImage loadImage(URL url, Identifier textureId, MinecraftClient client) {
+    public static NativeImage loadImage(URL url, Identifier textureId, Minecraft client) {
         NativeImage image = null;
         try {
             if (url == null) {
                 client.execute(() -> {
-                    NativeImageBackedTexture texture = new NativeImageBackedTexture(() -> "", new NativeImage(1, 1, false));
-                    texture.getImage().setColorArgb(0, 0, 0xFF000000);
+                    DynamicTexture texture = new DynamicTexture(() -> "", new NativeImage(1, 1, false));
+                    texture.getPixels().setPixel(0, 0, 0xFF000000);
                     texture.upload();
-                    client.getTextureManager().registerTexture(textureId, texture);
+                    client.getTextureManager().register(textureId, texture);
                 });
                 return null;
             }
@@ -155,10 +155,10 @@ public class ImageLoader {
         TextureManager textureManager = client.getTextureManager();
         NativeImage finalImage = image;
         client.execute(() -> {
-            NativeImageBackedTexture texture;
-            texture = new NativeImageBackedTexture(() -> "", finalImage);
+            DynamicTexture texture;
+            texture = new DynamicTexture(() -> "", finalImage);
             texture.upload();
-            textureManager.registerTexture(textureId, texture);
+            textureManager.register(textureId, texture);
             finalImage.close();
         });
         return image;
@@ -191,7 +191,7 @@ public class ImageLoader {
             for (int x = 0; x < bufferedImage.getWidth(); x++) {
                 for (int y = 0; y < bufferedImage.getHeight(); y++) {
                     int rgb = bufferedImage.getRGB(x, y);
-                    nativeImage.setColorArgb(x, y, rgb);
+                    nativeImage.setPixel(x, y, rgb);
                 }
             }
             return nativeImage;
@@ -201,11 +201,11 @@ public class ImageLoader {
     }
 
     public static void loadPlaceholder(Identifier id) {
-        TextureManager textureManager = MinecraftClient.getInstance().getTextureManager();
-        MinecraftClient.getInstance().execute(() -> {
+        TextureManager textureManager = Minecraft.getInstance().getTextureManager();
+        Minecraft.getInstance().execute(() -> {
             NativeImage image = new NativeImage(1, 1, false);
-            NativeImageBackedTexture texture = new NativeImageBackedTexture(() -> "", image);
-            textureManager.registerTexture(id, texture);
+            DynamicTexture texture = new DynamicTexture(() -> "", image);
+            textureManager.register(id, texture);
         });
     }
 }

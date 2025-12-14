@@ -4,15 +4,15 @@ import com.google.gson.JsonObject;
 import neelesh.easy_install.EasyInstall;
 import neelesh.easy_install.EasyInstallClient;
 import neelesh.easy_install.ImageLoader;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gl.RenderPipelines;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.client.render.RenderLayer;
-import net.minecraft.text.Text;
-import net.minecraft.util.Colors;
-import net.minecraft.util.Identifier;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.network.chat.Component;
+import net.minecraft.util.CommonColors;
+import net.minecraft.resources.Identifier;
 
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -22,12 +22,12 @@ public class ProfileScreen extends Screen {
     private Identifier avatarId;
     private String userName;
     private String bio;
-    private ButtonWidget doneButton;
+    private Button doneButton;
 
     protected ProfileScreen(String name, Screen parent) {
-        super(Text.of("Profile Screen"));
-        doneButton = ButtonWidget.builder(Text.of("Done"), button -> {
-            client.setScreen(parent);
+        super(Component.nullToEmpty("Profile Screen"));
+        doneButton = Button.builder(Component.nullToEmpty("Done"), button -> {
+            minecraft.setScreen(parent);
         }).build();
         this.userName = name;
         Thread thread = new Thread(() -> {
@@ -40,9 +40,9 @@ public class ProfileScreen extends Screen {
                 }
                 try {
                     URL avatarUrl = URI.create(userProfile.get("avatar_url").getAsString()).toURL();
-                    Identifier avatarId = Identifier.of(EasyInstall.MOD_ID, "avatar");
+                    Identifier avatarId = Identifier.fromNamespaceAndPath(EasyInstall.MOD_ID, "avatar");
                     ImageLoader.loadPlaceholder(avatarId);
-                    ImageLoader.loadImage(avatarUrl, avatarId, MinecraftClient.getInstance());
+                    ImageLoader.loadImage(avatarUrl, avatarId, Minecraft.getInstance());
                     this.avatarId = avatarId;
                 } catch (MalformedURLException e) {
                     throw new RuntimeException(e);
@@ -54,16 +54,16 @@ public class ProfileScreen extends Screen {
     }
 
     @Override
-    public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+    public void render(GuiGraphics context, int mouseX, int mouseY, float delta) {
         super.render(context, mouseX, mouseY, delta);
-        context.getMatrices().scale(1.4f, 1.4f);
-        context.drawText(textRenderer, userName, 50, 5, Colors.WHITE, true);
-        context.getMatrices().scale(1 / 1.4f, 1 / 1.4f);
+        context.pose().scale(1.4f, 1.4f);
+        context.drawString(font, userName, 50, 5, CommonColors.WHITE, true);
+        context.pose().scale(1 / 1.4f, 1 / 1.4f);
         if (avatarId != null) {
-            context.drawTexture(RenderPipelines.GUI_TEXTURED, avatarId, 10, 5, 0, 0, 50, 50, 50, 50, Colors.WHITE);
+            context.blit(RenderPipelines.GUI_TEXTURED, avatarId, 10, 5, 0, 0, 50, 50, 50, 50, CommonColors.WHITE);
         }
         if (bio != null) {
-            context.drawWrappedText(textRenderer, Text.of(bio), 70, 25, this.width - 70, Colors.WHITE, false);
+            context.drawWordWrap(font, Component.nullToEmpty(bio), 70, 25, this.width - 70, CommonColors.WHITE, false);
         }
         doneButton.setPosition(width / 2 - doneButton.getWidth() / 2, height - 25);
         doneButton.render(context, mouseX, mouseY, delta);
@@ -72,6 +72,6 @@ public class ProfileScreen extends Screen {
     @Override
     protected void init() {
         super.init();
-        this.addSelectableChild(doneButton);
+        this.addWidget(doneButton);
     }
 }

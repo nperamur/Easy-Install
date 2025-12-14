@@ -3,17 +3,17 @@ package neelesh.easy_install.gui.screen;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonParser;
 import neelesh.easy_install.*;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gl.RenderPipelines;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.client.gui.widget.PressableTextWidget;
-import net.minecraft.client.render.RenderLayer;
-import net.minecraft.text.Text;
-import net.minecraft.util.Colors;
-import net.minecraft.util.Formatting;
-import net.minecraft.util.Identifier;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.PlainTextButton;
+import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.network.chat.Component;
+import net.minecraft.util.CommonColors;
+import net.minecraft.ChatFormatting;
+import net.minecraft.resources.Identifier;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -29,17 +29,17 @@ public class UpdateScreen extends Screen {
     private ArrayList<Version> versions = new ArrayList<>();
     private ArrayList<String> titles = new ArrayList<>();
     private ArrayList<Identifier> ICON_TEXTURE_ID = new ArrayList<>();
-    private ArrayList<ButtonWidget> installButtons = new ArrayList<>();
-    private ArrayList<PressableTextWidget> versionDetailButtons = new ArrayList<>();
-    private ButtonWidget updateAll = ButtonWidget.builder(Text.of("Update All"), button -> {}).size(0, 0).build();
-    private ButtonWidget doneButton;
+    private ArrayList<Button> installButtons = new ArrayList<>();
+    private ArrayList<PlainTextButton> versionDetailButtons = new ArrayList<>();
+    private Button updateAll = Button.builder(Component.nullToEmpty("Update All"), button -> {}).size(0, 0).build();
+    private Button doneButton;
     private double scrollAmount;
     private Screen parent;
     private ExecutorService fileWriteScheduler = Executors.newSingleThreadExecutor();
 
 
     protected UpdateScreen(ProjectType projectType, Screen parent) {
-        super(Text.of("Update Screen"));
+        super(Component.nullToEmpty("Update Screen"));
         this.parent = parent;
         this.updateAll.visible = false;
         Thread thread = new Thread(() -> {
@@ -47,7 +47,7 @@ public class UpdateScreen extends Screen {
             JsonArray projectIds = new JsonArray();
             for (int i = 0; i < versionTemp.size(); i++) {
                 projectIds.add(versionTemp.get(i).getId());
-                ICON_TEXTURE_ID.add(Identifier.of(EasyInstall.MOD_ID, "update_icon" + i));
+                ICON_TEXTURE_ID.add(Identifier.fromNamespaceAndPath(EasyInstall.MOD_ID, "update_icon" + i));
                 ImageLoader.loadPlaceholder(ICON_TEXTURE_ID.get(i));
                 titles.add("");
             }
@@ -70,17 +70,17 @@ public class UpdateScreen extends Screen {
                             }
                             int finalX = x;
                             int finalI = i;
-                            MinecraftClient.getInstance().execute(() -> {
+                            Minecraft.getInstance().execute(() -> {
                                 titles.set(finalI, jsonArray.get(finalX).getAsJsonObject().get("title").getAsString());
 
-                                versionDetailButtons.add(new PressableTextWidget(140, (int) (finalI * 40 + scrollAmount), textRenderer.getWidth(versionTemp.get(finalI).getName()), 9, Text.of(versionTemp.get(finalI).getName()), button -> {
-                                    MinecraftClient.getInstance().setScreen(new VersionDetailsScreen(versionTemp.get(finalI), this));
-                                }, textRenderer));
-                                this.addSelectableChild(versionDetailButtons.get(finalI));
+                                versionDetailButtons.add(new PlainTextButton(140, (int) (finalI * 40 + scrollAmount), font.width(versionTemp.get(finalI).getName()), 9, Component.nullToEmpty(versionTemp.get(finalI).getName()), button -> {
+                                    Minecraft.getInstance().setScreen(new VersionDetailsScreen(versionTemp.get(finalI), this));
+                                }, font));
+                                this.addWidget(versionDetailButtons.get(finalI));
                                 Thread thread2 = new Thread(() -> {
                                     try {
                                         ImageLoader.loadPlaceholder(ICON_TEXTURE_ID.get(finalI));
-                                        ImageLoader.loadImage(URI.create(jsonArray.get(finalX).getAsJsonObject().get("icon_url").getAsString()).toURL(), ICON_TEXTURE_ID.get(finalI), client);
+                                        ImageLoader.loadImage(URI.create(jsonArray.get(finalX).getAsJsonObject().get("icon_url").getAsString()).toURL(), ICON_TEXTURE_ID.get(finalI), minecraft);
                                     } catch (MalformedURLException e) {
                                         throw new RuntimeException(e);
                                     }
@@ -97,32 +97,32 @@ public class UpdateScreen extends Screen {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            MinecraftClient.getInstance().execute(() -> {
+            Minecraft.getInstance().execute(() -> {
                 this.versions = versionTemp;
                 this.scrollAmount = 0;
                 for (int i = 0; i < versions.size(); i++) {
                     int finalI = i;
-                    installButtons.add(ButtonWidget.builder(Text.of("Update"), button -> {
+                    installButtons.add(Button.builder(Component.nullToEmpty("Update"), button -> {
                         updateVersion(projectType, versions.get(finalI));
                         button.visible = false;
                     }).build());
-                    installButtons.get(i).setDimensions(60, 18);
+                    installButtons.get(i).setSize(60, 18);
                     installButtons.get(i).setPosition(width - 70, i * 50 + 30);
-                    this.addSelectableChild(installButtons.get(i));
+                    this.addWidget(installButtons.get(i));
 
                 }
-                this.addSelectableChild(doneButton);
+                this.addWidget(doneButton);
 
-                updateAll = ButtonWidget.builder(Text.of("Update All"), button -> {
+                updateAll = Button.builder(Component.nullToEmpty("Update All"), button -> {
                     for (Version version : versions) {
                         updateVersion(projectType, version);
                     }
                     button.visible = false;
                     button.setFocused(false);
                 }).build();
-                updateAll.setDimensions(60, 18);
+                updateAll.setSize(60, 18);
                 updateAll.setPosition(width - 70, 2);
-                this.addSelectableChild(updateAll);
+                this.addWidget(updateAll);
             });
 
         });
@@ -135,21 +135,21 @@ public class UpdateScreen extends Screen {
     protected void init() {
         super.init();
 
-        doneButton = ButtonWidget.builder(Text.of("Done"), button -> MinecraftClient.getInstance().setScreen(parent)).build();
-        this.addSelectableChild(doneButton);
-        this.addSelectableChild(updateAll);
+        doneButton = Button.builder(Component.nullToEmpty("Done"), button -> Minecraft.getInstance().setScreen(parent)).build();
+        this.addWidget(doneButton);
+        this.addWidget(updateAll);
         for (int i = 0; i < versions.size(); i++) {
-            this.addSelectableChild(installButtons.get(i));
+            this.addWidget(installButtons.get(i));
         }
 
     }
 
     @Override
-    public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+    public void render(GuiGraphics context, int mouseX, int mouseY, float delta) {
         super.render(context, mouseX, mouseY, delta);
         this.setFocused(null);
-        renderDarkening(context);
-        doneButton.setDimensions(80, 18);
+        renderMenuBackground(context);
+        doneButton.setSize(80, 18);
         doneButton.setPosition(0, 0);
         updateAll.visible = !versions.isEmpty() && updateAll.visible;
         for (int i = 0; i < installButtons.size(); i++) {
@@ -162,34 +162,34 @@ public class UpdateScreen extends Screen {
         } else {
             updateText = versions.size() + " Update Available!";
         }
-        context.drawText(textRenderer, updateText, width / 2 - textRenderer.getWidth(updateText)/2, 10 + (int) scrollAmount, Colors.WHITE, true);
+        context.drawString(font, updateText, width / 2 - font.width(updateText)/2, 10 + (int) scrollAmount, CommonColors.WHITE, true);
         int i = 0;
         while(i < versions.size()) {
-            context.drawTexture(RenderPipelines.GUI_TEXTURED, ICON_TEXTURE_ID.get(i), 0, i * 50 + 30 + (int) scrollAmount, 0, 0, 40, 40, 40, 40);
-            context.getMatrices().scale(1.5f, 1.5f);
-            context.drawText(textRenderer, titles.get(i), (int) (50 / 1.5), (int) ((i * 50 + 30) / 1.5 + scrollAmount / 1.5), Colors.WHITE, true);
+            context.blit(RenderPipelines.GUI_TEXTURED, ICON_TEXTURE_ID.get(i), 0, i * 50 + 30 + (int) scrollAmount, 0, 0, 40, 40, 40, 40);
+            context.pose().scale(1.5f, 1.5f);
+            context.drawString(font, titles.get(i), (int) (50 / 1.5), (int) ((i * 50 + 30) / 1.5 + scrollAmount / 1.5), CommonColors.WHITE, true);
 //            context.getMatrices().scale((float) 2 / 3, (float) 2 / 3, (float) 2 / 3);
-            context.getMatrices().scale((float) 2 / 3, (float) 2 / 3);
+            context.pose().scale((float) 2 / 3, (float) 2 / 3);
             //context.drawText(textRenderer, versions.get(i).getName(), 50, i * 50 + 45 +  (int) scrollAmount, Colors.WHITE, true);
             int finalI = i;
-            this.remove(versionDetailButtons.get(i));
-            versionDetailButtons.set(i, new PressableTextWidget(140, (int) (i * 40 + scrollAmount), textRenderer.getWidth(versions.get(i).getName()), 9, Text.of(versions.get(i).getName()), button -> {
-                MinecraftClient.getInstance().setScreen(new VersionDetailsScreen(versions.get(finalI), this));
-            }, textRenderer));
-            this.addSelectableChild(versionDetailButtons.get(i));
+            this.removeWidget(versionDetailButtons.get(i));
+            versionDetailButtons.set(i, new PlainTextButton(140, (int) (i * 40 + scrollAmount), font.width(versions.get(i).getName()), 9, Component.nullToEmpty(versions.get(i).getName()), button -> {
+                Minecraft.getInstance().setScreen(new VersionDetailsScreen(versions.get(finalI), this));
+            }, font));
+            this.addWidget(versionDetailButtons.get(i));
             versionDetailButtons.get(i).setPosition(50, i * 50 + 45 + (int) scrollAmount);
             versionDetailButtons.get(i).render(context, mouseX, mouseY, delta);
-            Formatting formatting;
+            ChatFormatting formatting;
 
             formatting = switch (versions.get(i).getVersionType()) {
-                case "release" -> Formatting.GREEN;
-                case "beta" -> Formatting.GOLD;
-                case "alpha" -> Formatting.RED;
+                case "release" -> ChatFormatting.GREEN;
+                case "beta" -> ChatFormatting.GOLD;
+                case "alpha" -> ChatFormatting.RED;
                 default -> null;
             };
-            context.drawText(textRenderer, Text.literal("•" + versions.get(i).getVersionType()).formatted(formatting), 50, i * 50 + 55 + (int) scrollAmount, Colors.WHITE, true);
-            context.drawText(textRenderer, Text.of(versions.get(i).getVersionNumber()), 50 + textRenderer.getWidth("•" + versions.get(i).getVersionType()) + 8, i * 50 + 55 + (int) scrollAmount, Colors.WHITE, true);
-            context.drawText(textRenderer, Text.of(String.format("%,d", versions.get(i).getNumDownloads()) + " downloads"), width - textRenderer.getWidth(String.format("%,d", versions.get(i).getNumDownloads()) + " downloads") - 8, installButtons.get(i).getY() + installButtons.get(i).getHeight() + 2, Colors.WHITE, true);
+            context.drawString(font, Component.literal("•" + versions.get(i).getVersionType()).withStyle(formatting), 50, i * 50 + 55 + (int) scrollAmount, CommonColors.WHITE, true);
+            context.drawString(font, Component.nullToEmpty(versions.get(i).getVersionNumber()), 50 + font.width("•" + versions.get(i).getVersionType()) + 8, i * 50 + 55 + (int) scrollAmount, CommonColors.WHITE, true);
+            context.drawString(font, Component.nullToEmpty(String.format("%,d", versions.get(i).getNumDownloads()) + " downloads"), width - font.width(String.format("%,d", versions.get(i).getNumDownloads()) + " downloads") - 8, installButtons.get(i).getY() + installButtons.get(i).getHeight() + 2, CommonColors.WHITE, true);
 
             installButtons.get(i).render(context, mouseX, mouseY, delta);
             if (!installButtons.get(i).visible) {
@@ -229,7 +229,7 @@ public class UpdateScreen extends Screen {
 
     public void updateVersion(ProjectType projectType, Version version) {
         Thread thread = new Thread(() -> {
-            version.download();
+            version.download(false);
             EasyInstallClient.checkStatus(projectType);
         });
         thread.start();
@@ -250,8 +250,8 @@ public class UpdateScreen extends Screen {
     }
 
     @Override
-    public void close() {
-        super.close();
+    public void onClose() {
+        super.onClose();
         fileWriteScheduler.shutdown();
     }
 

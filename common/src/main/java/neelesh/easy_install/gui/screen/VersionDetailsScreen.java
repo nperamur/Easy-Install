@@ -5,18 +5,18 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import neelesh.easy_install.*;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gl.RenderPipelines;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.Element;
-import net.minecraft.client.gui.Selectable;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.client.render.RenderLayer;
-import net.minecraft.text.Text;
-import net.minecraft.util.Colors;
-import net.minecraft.util.Formatting;
-import net.minecraft.util.Identifier;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.client.gui.narration.NarratableEntry;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.network.chat.Component;
+import net.minecraft.util.CommonColors;
+import net.minecraft.ChatFormatting;
+import net.minecraft.resources.Identifier;
 import org.apache.commons.lang3.StringUtils;
 
 import java.net.MalformedURLException;
@@ -33,14 +33,14 @@ public class VersionDetailsScreen extends Screen implements MarkdownScreenInterf
     private Identifier[] dependencyIconIds;
     private String[] dependencyNames;
     private String[] dependencyTypes;
-    private ButtonWidget doneButton;
+    private Button doneButton;
     private JsonArray gameVersions;
 
     public VersionDetailsScreen(Version version, Screen parent) {
-        super(Text.of("Version Details"));
+        super(Component.nullToEmpty("Version Details"));
         this.version = version;
-        doneButton = ButtonWidget.builder(Text.of("Done"), button -> {
-            MinecraftClient.getInstance().setScreen(parent);
+        doneButton = Button.builder(Component.nullToEmpty("Done"), button -> {
+            Minecraft.getInstance().setScreen(parent);
         }).build();
         this.addSelectableChild(doneButton);
         JsonArray gameVersions = version.getGameVersions();
@@ -107,12 +107,12 @@ public class VersionDetailsScreen extends Screen implements MarkdownScreenInterf
             for (int i = 0; i < dependencies.size(); i++) {
                 String projectId = dependencies.get(i).getAsJsonObject().get("project_id").getAsString();
                 JsonObject jsonObject = EasyInstallClient.getProject(projectId);
-                dependencyIconIds[i] = Identifier.of(EasyInstall.MOD_ID, "dependency_" + i);
+                dependencyIconIds[i] = Identifier.fromNamespaceAndPath(EasyInstall.MOD_ID, "dependency_" + i);
                 dependencyNames[i] = jsonObject.get("title").getAsString();
                 dependencyTypes[i] = dependencies.get(i).getAsJsonObject().get("dependency_type").getAsString();
                 try {
                     ImageLoader.loadPlaceholder(dependencyIconIds[i]);
-                    ImageLoader.loadImage(URI.create(jsonObject.get("icon_url").getAsString()).toURL(), dependencyIconIds[i], MinecraftClient.getInstance());
+                    ImageLoader.loadImage(URI.create(jsonObject.get("icon_url").getAsString()).toURL(), dependencyIconIds[i], Minecraft.getInstance());
                 } catch (MalformedURLException e) {
                     throw new RuntimeException(e);
                 }
@@ -122,95 +122,97 @@ public class VersionDetailsScreen extends Screen implements MarkdownScreenInterf
         thread.start();
     }
 
+
     @Override
     protected void init() {
         super.init();
         this.addSelectableChild(doneButton);
-        doneButton.setDimensions(width / 3 - 20, 20);
+        doneButton.setSize(width / 3 - 20, 20);
         doneButton.setPosition(width * 2 / 3 + 17, height - 20);
         if (version.getChangelog() != null) {
-            int height = (int) (textRenderer.getWrappedLinesHeight(Text.of(version.getName()), (int) (width * 2 / (3 * 1.5))) * 1.5);
+            int height = (int) (font.wordWrapHeight(Component.nullToEmpty(version.getName()), (int) (width * 2 / (3 * 1.5))) * 1.5);
             markdownRenderer = new MarkdownRenderer(version.getChangelog(), 5, 35 + height, this.width * 2 / 3, this);
             markdownRenderer.refreshLinkPositions();
         }
 
     }
 
+
     @Override
-    public <T extends Element & Selectable> T addSelectableChild(T child) {
-        return super.addSelectableChild(child);
+    public <T extends GuiEventListener & NarratableEntry> T addSelectableChild(T child) {
+        return super.addWidget(child);
     }
 
     @Override
-    public void removeChild(Element e) {
-        super.remove(e);
+    public void removeChild(GuiEventListener e) {
+        super.removeWidget(e);
     }
 
     @Override
-    public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+    public void render(GuiGraphics context, int mouseX, int mouseY, float delta) {
         super.render(context, mouseX, mouseY, delta);
-        renderDarkening(context);
+        renderMenuBackground(context);
 //        context.getMatrices().translate(0, 0, 1);
 //        context.getMatrices().translate(0, 0, -1);
-        context.getMatrices().scale(1.5f, 1.5f);
-        context.drawWrappedText(textRenderer, Text.of(version.getName()), 3, 5 + (int) (scrollAmount / 1.5), (int) (width * 2 / (3 * 1.5)), Colors.WHITE, true);
-        context.getMatrices().scale(1 / 1.5f, 1 / 1.5f);
+        context.pose().scale(1.5f, 1.5f);
+        context.drawWordWrap(font, Component.nullToEmpty(version.getName()), 3, 5 + (int) (scrollAmount / 1.5), (int) (width * 2 / (3 * 1.5)), CommonColors.WHITE, true);
+        context.pose().scale(1 / 1.5f, 1 / 1.5f);
         if (markdownRenderer != null) {
-            context.getMatrices().scale(1.2f, 1.2f);
-            int height = (int) (textRenderer.getWrappedLinesHeight(Text.of(version.getName()), (int) (width * 2 / (3 * 1.5))) * 1.5);
-            context.drawText(textRenderer, Text.of("Changelog"), 4, 15 + (int) (height / 1.2) + (int) (scrollAmount / 1.2), Colors.WHITE, true);
-            context.getMatrices().scale(1 / 1.2f, 1 / 1.2f);
+            context.pose().scale(1.2f, 1.2f);
+            int height = (int) (font.wordWrapHeight(Component.nullToEmpty(version.getName()), (int) (width * 2 / (3 * 1.5))) * 1.5);
+            context.drawString(font, Component.nullToEmpty("Changelog"), 4, 15 + (int) (height / 1.2) + (int) (scrollAmount / 1.2), CommonColors.WHITE, true);
+            context.pose().scale(1 / 1.2f, 1 / 1.2f);
             markdownRenderer.render(context, + (int) scrollAmount);
 
-            context.drawTexture(
+            context.blit(
                     RenderPipelines.GUI_TEXTURED, VERTICAL_SEPARATOR_TEXTURE, width * 2 / 3 + 10, 0, 0.0F, 0.0F, 2, this.height, 2, 32
             );
 
 
-            Formatting formatting;
+            ChatFormatting formatting;
             formatting = switch(version.getVersionType()) {
-                case "release" -> Formatting.GREEN;
-                case "beta" -> Formatting.GOLD;
-                case "alpha" -> Formatting.RED;
+                case "release" -> ChatFormatting.GREEN;
+                case "beta" -> ChatFormatting.GOLD;
+                case "alpha" -> ChatFormatting.RED;
                 default -> null;
             };
-            context.drawText(textRenderer, Text.of("Release Type:"), width * 2 / 3 + 20, 10, Colors.WHITE, false);
-            context.drawText(textRenderer, Text.literal("•" + version.getVersionType()).formatted(formatting), width * 2 / 3 + 20, 20, Colors.WHITE, true);
+            context.drawString(font, Component.nullToEmpty("Release Type:"), width * 2 / 3 + 20, 10, CommonColors.WHITE, false);
+            context.drawString(font, Component.literal("•" + version.getVersionType()).withStyle(formatting), width * 2 / 3 + 20, 20, CommonColors.WHITE, true);
 
-            context.drawText(textRenderer, Text.of("Version Number:"), width * 2 / 3 + 20, 35, Colors.WHITE, false);
-            context.drawText(textRenderer, version.getVersionNumber(), width * 2 / 3 + 20, 45, Colors.WHITE, true);
+            context.drawString(font, Component.nullToEmpty("Version Number:"), width * 2 / 3 + 20, 35, CommonColors.WHITE, false);
+            context.drawString(font, version.getVersionNumber(), width * 2 / 3 + 20, 45, CommonColors.WHITE, true);
 
-            context.drawText(textRenderer, Text.of("Downloads:"), width * 2 / 3 + 20, 60, Colors.WHITE, false);
-            context.drawText(textRenderer, Text.of(String.format("%,d", version.getNumDownloads())), width * 2 / 3 + 20, 70, Colors.WHITE, true);
+            context.drawString(font, Component.nullToEmpty("Downloads:"), width * 2 / 3 + 20, 60, CommonColors.WHITE, false);
+            context.drawString(font, Component.nullToEmpty(String.format("%,d", version.getNumDownloads())), width * 2 / 3 + 20, 70, CommonColors.WHITE, true);
 
-            context.drawText(textRenderer, Text.of("File Size:"), width * 2 / 3 + 20, 85, Colors.WHITE, false);
+            context.drawString(font, Component.nullToEmpty("File Size:"), width * 2 / 3 + 20, 85, CommonColors.WHITE, false);
             String text = formatFileSize();
-            context.drawText(textRenderer, Text.of(text), width * 2 / 3 + 20, 95, Colors.WHITE, true);
+            context.drawString(font, Component.nullToEmpty(text), width * 2 / 3 + 20, 95, CommonColors.WHITE, true);
 
 
-            context.drawText(textRenderer, Text.of("Game Versions:"), width * 2 / 3 + 20, 110, Colors.WHITE, false);
+            context.drawString(font, Component.nullToEmpty("Game Versions:"), width * 2 / 3 + 20, 110, CommonColors.WHITE, false);
             for (int i = 0; i < gameVersions.size(); i++) {
                 JsonElement gameVersion = gameVersions.get(i);
                 String str = gameVersion.getAsString();
                 if (!gameVersion.equals(gameVersions.get(gameVersions.size() - 1))) {
                     str += ",";
                 }
-                context.drawText(textRenderer, Text.of(str), width * 2 / 3 + 20, 120 + 10 * i, Colors.WHITE, true);
+                context.drawString(font, Component.nullToEmpty(str), width * 2 / 3 + 20, 120 + 10 * i, CommonColors.WHITE, true);
 
             }
 
         }
         if (dependencyIconIds != null) {
             if (dependencyIconIds.length > 0) {
-                context.getMatrices().scale(1.2f, 1.2f);
-                context.drawText(textRenderer, Text.of("Dependencies"), 4, (int) (markdownRenderer.getMaxY() / 1.2 + scrollAmount / 1.2), Colors.WHITE, true);
-                context.getMatrices().scale(1 / 1.2f, 1 / 1.2f);
+                context.pose().scale(1.2f, 1.2f);
+                context.drawString(font, Component.nullToEmpty("Dependencies"), 4, (int) (markdownRenderer.getMaxY() / 1.2 + scrollAmount / 1.2), CommonColors.WHITE, true);
+                context.pose().scale(1 / 1.2f, 1 / 1.2f);
             }
             for (int i = 0; i < dependencyIconIds.length; i++) {
                 if (dependencyIconIds[i] != null) {
-                    context.drawTexture(RenderPipelines.GUI_TEXTURED, dependencyIconIds[i], 4, i * 40 + 20 + (int) scrollAmount + markdownRenderer.getMaxY(), 0, 0, 30, 30, 30, 30);
-                    context.drawText(textRenderer, Text.of(dependencyNames[i]), 40, i * 40 + 20 + (int) scrollAmount + markdownRenderer.getMaxY(), Colors.WHITE, true);
-                    context.drawText(textRenderer, Text.of(StringUtils.capitalize(dependencyTypes[i])), 40, i * 40 + 32 + (int) scrollAmount + markdownRenderer.getMaxY(), Colors.ALTERNATE_WHITE, true);
+                    context.blit(RenderPipelines.GUI_TEXTURED, dependencyIconIds[i], 4, i * 40 + 20 + (int) scrollAmount + markdownRenderer.getMaxY(), 0, 0, 30, 30, 30, 30);
+                    context.drawString(font, Component.nullToEmpty(dependencyNames[i]), 40, i * 40 + 20 + (int) scrollAmount + markdownRenderer.getMaxY(), CommonColors.WHITE, true);
+                    context.drawString(font, Component.nullToEmpty(StringUtils.capitalize(dependencyTypes[i])), 40, i * 40 + 32 + (int) scrollAmount + markdownRenderer.getMaxY(), CommonColors.LIGHTER_GRAY, true);
                 }
             }
         }
