@@ -6,7 +6,7 @@
     "TitleScreenMixin",
     "ResourceScreenMixin",
     "ShaderPackScreenMixin",
-    "GameMenuScreenMixin",
+    "PauseScreenMixin",
     "TabNavigationMixin"
   ],
   "injectors": {

@@ -1,10 +1,10 @@
 package neelesh.easy_install;
 
-import net.minecraft.client.gui.screen.TitleScreen;
-import net.minecraft.text.MutableText;
-import net.minecraft.text.Style;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
+import net.minecraft.client.gui.screens.TitleScreen;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Style;
+import net.minecraft.network.chat.Component;
+import net.minecraft.ChatFormatting;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -129,15 +129,15 @@ public class MarkdownTest {
     public void testExtractTextFromHtml() {
         try {
             String input1 = "This is a <a href='https://example.com'>link</a>.";
-            MutableText expectedOutput1 = Text.literal("This is a ").append(Text.literal("link").setStyle(Style.EMPTY.withColor(0x257DE6))).append(".");
+            MutableComponent expectedOutput1 = Component.literal("This is a ").append(Component.literal("link").setStyle(Style.EMPTY.withColor(0x257DE6))).append(".");
             assertEquals(expectedOutput1, flattenText(testExtractTextFromHtmlMethod(input1)));
 
             String input2 = "This is <b>bold</b> and <i>italic</i> text.";
-            MutableText expectedOutput2 = Text.literal("This is ").append(Text.literal("bold").setStyle(Style.EMPTY.withBold(true))).append(" and ").append(Text.literal("italic").setStyle(Style.EMPTY.withItalic(true))).append(" text.");
+            MutableComponent expectedOutput2 = Component.literal("This is ").append(Component.literal("bold").setStyle(Style.EMPTY.withBold(true))).append(" and ").append(Component.literal("italic").setStyle(Style.EMPTY.withItalic(true))).append(" text.");
             assertEquals(expectedOutput2, flattenText(testExtractTextFromHtmlMethod(input2)));
 
             String input3 = "This is <strong>strong</strong> and <em>emphasized</em> text.";
-            MutableText expectedOutput3 = Text.literal("This is ").append(Text.literal("strong").setStyle(Style.EMPTY.withBold(true))).append(" and ").append(Text.literal("emphasized").setStyle(Style.EMPTY.withItalic(true))).append(" text.");
+            MutableComponent expectedOutput3 = Component.literal("This is ").append(Component.literal("strong").setStyle(Style.EMPTY.withBold(true))).append(" and ").append(Component.literal("emphasized").setStyle(Style.EMPTY.withItalic(true))).append(" text.");
             assertEquals(expectedOutput3, flattenText(testExtractTextFromHtmlMethod(input3)));
         } catch(Exception e) {
             fail("Caused error");
@@ -149,13 +149,13 @@ public class MarkdownTest {
     private String testMarkdownFromHtmlMethod(String input) throws InvocationTargetException, IllegalAccessException, NoSuchMethodException {
         Method method = MarkdownRenderer.class.getDeclaredMethod("extractMarkdownFromHtml", String.class);
         method.setAccessible(true);
-        return ((MutableText) method.invoke(markdownRenderer, input)).getString();
+        return ((MutableComponent) method.invoke(markdownRenderer, input)).getString();
     }
 
-    private MutableText testExtractTextFromHtmlMethod(String input) throws InvocationTargetException, IllegalAccessException, NoSuchMethodException {
+    private MutableComponent testExtractTextFromHtmlMethod(String input) throws InvocationTargetException, IllegalAccessException, NoSuchMethodException {
         Method method = MarkdownRenderer.class.getDeclaredMethod("extractTextFromHtml", String.class);
         method.setAccessible(true);
-        return ((MutableText) method.invoke(markdownRenderer, input));
+        return ((MutableComponent) method.invoke(markdownRenderer, input));
     }
 
     private String testMarkdownToHtmlMethod(String input) throws InvocationTargetException, IllegalAccessException, NoSuchMethodException {
@@ -165,13 +165,13 @@ public class MarkdownTest {
     }
 
 
-    private MutableText flattenText(MutableText text) {
-        MutableText finalText = null;
-        for (Text sibling : text.getSiblings()) {
-            if (!sibling.equals(Text.empty()) && finalText != null) {
-                finalText.append(flattenText((MutableText) sibling));
-            } else if (finalText == null && !sibling.equals(Text.empty())) {
-                finalText = Text.literal(sibling.getString()).setStyle(sibling.getStyle());
+    private MutableComponent flattenText(MutableComponent text) {
+        MutableComponent finalText = null;
+        for (Component sibling : text.getSiblings()) {
+            if (!sibling.equals(Component.empty()) && finalText != null) {
+                finalText.append(flattenText((MutableComponent) sibling));
+            } else if (finalText == null && !sibling.equals(Component.empty())) {
+                finalText = Component.literal(sibling.getString()).setStyle(sibling.getStyle());
             }
         }
         if (finalText == null) {

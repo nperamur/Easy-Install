@@ -7,23 +7,23 @@ import neelesh.easy_install.gui.tab.DescriptionTab;
 import neelesh.easy_install.gui.tab.GalleryTab;
 import neelesh.easy_install.gui.tab.TabNavigationMixinInterface;
 import neelesh.easy_install.gui.tab.VersionsTab;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gl.RenderPipelines;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.Drawable;
-import net.minecraft.client.gui.Element;
-import net.minecraft.client.gui.Selectable;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.tab.Tab;
-import net.minecraft.client.gui.tab.TabManager;
-import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.client.gui.widget.TabButtonWidget;
-import net.minecraft.client.gui.widget.TabNavigationWidget;
-import net.minecraft.client.render.RenderLayer;
-import net.minecraft.text.StringVisitable;
-import net.minecraft.text.Text;
-import net.minecraft.util.Colors;
-import net.minecraft.util.Identifier;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.Renderable;
+import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.client.gui.narration.NarratableEntry;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.components.tabs.Tab;
+import net.minecraft.client.gui.components.tabs.TabManager;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.TabButton;
+import net.minecraft.client.gui.components.tabs.TabNavigationBar;
+import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.network.chat.FormattedText;
+import net.minecraft.network.chat.Component;
+import net.minecraft.util.CommonColors;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.Util;
 import org.jetbrains.annotations.Nullable;
 
@@ -32,7 +32,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 
-import static net.minecraft.client.gui.screen.world.CreateWorldScreen.TAB_HEADER_BACKGROUND_TEXTURE;
+import static net.minecraft.client.gui.screens.worldselection.CreateWorldScreen.TAB_HEADER_BACKGROUND;
 
 
 public class ProjectScreen extends Screen implements MarkdownScreenInterface {
@@ -45,7 +45,7 @@ public class ProjectScreen extends Screen implements MarkdownScreenInterface {
     private Screen prevScreen;
     private boolean filteredByGameVersion;
     private ArrayList<Version> updatedVersions;
-    private final ButtonWidget installButton = ButtonWidget.builder(Text.of("Install"), button -> {
+    private final Button installButton = Button.builder(Component.nullToEmpty("Install"), button -> {
         Thread thread = new Thread(() -> {
             projectInfo.setInstalling(true);
             Thread thread2 = null;
@@ -56,13 +56,13 @@ public class ProjectScreen extends Screen implements MarkdownScreenInterface {
                 thread2.start();
                 for (Version version : updatedVersions) {
                     if (version.getId().equals(projectInfo.getId())) {
-                        version.download();
+                        version.download(false);
                     }
                 }
             } else {
                 EasyInstallClient.downloadVersion(projectInfo.getSlug(), projectInfo.getProjectType(), ((ProjectBrowser) prevScreen).isFilteredByGameVersion());
             }
-            MinecraftClient.getInstance().send(() -> {
+            Minecraft.getInstance().schedule(() -> {
                 projectInfo.setInstalled(true);
                 projectInfo.setInstalling(false);
                 versionsTab.setInitialized(false);
@@ -81,35 +81,35 @@ public class ProjectScreen extends Screen implements MarkdownScreenInterface {
         thread.start();
     }).build();
 
-    private final ButtonWidget siteButton = ButtonWidget.builder(Text.of("Modrinth↗"), button -> {
+    private final Button siteButton = Button.builder(Component.nullToEmpty("Modrinth↗"), button -> {
         try {
-            Util.getOperatingSystem().open(new URI("https://modrinth.com/project/" + projectInfo.getSlug()));
+            Util.getPlatform().openUri(new URI("https://modrinth.com/project/" + projectInfo.getSlug()));
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }
     }).build();
 
-    private final ButtonWidget doneButton = ButtonWidget.builder(Text.of("Done"), button -> {
-        MinecraftClient.getInstance().setScreen(this.prevScreen);
+    private final Button doneButton = Button.builder(Component.nullToEmpty("Done"), button -> {
+        Minecraft.getInstance().setScreen(this.prevScreen);
     }).build();
     private DescriptionTab descriptionTab;
     private Tab prevTab;
 
     private TabManager tabManager;
-    private TabNavigationWidget tabNavigationWidget;
+    private TabNavigationBar tabNavigationWidget;
     private int scrollAmount = 15;
-    public static final Identifier VERTICAL_SEPARATOR_TEXTURE = Identifier.of(EasyInstall.MOD_ID,"textures/gui/vertical_separator.png");
+    public static final Identifier VERTICAL_SEPARATOR_TEXTURE = Identifier.fromNamespaceAndPath(EasyInstall.MOD_ID,"textures/gui/vertical_separator.png");
     protected ProjectScreen(Screen parent, ProjectInfo projectInfo, ArrayList<Version> updatedVersions) {
-        super(Text.literal(projectInfo.getTitle()));
+        super(Component.literal(projectInfo.getTitle()));
         this.projectInfo = projectInfo;
         this.updatedVersions = updatedVersions;
-        iconTextureId = Identifier.of("project_texture_id");
+        iconTextureId = Identifier.parse("project_texture_id");
         this.prevScreen = parent;
         this.filteredByGameVersion = ((ProjectBrowser) parent).isFilteredByGameVersion();
     }
 
     @Override
-    public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+    public void render(GuiGraphics context, int mouseX, int mouseY, float delta) {
         super.render(context, mouseX, mouseY, delta);
         doneButton.setWidth(110);
         doneButton.setHeight(17);
@@ -119,7 +119,7 @@ public class ProjectScreen extends Screen implements MarkdownScreenInterface {
             ((VersionsTab) (tabManager.getCurrentTab())).setInitialized(false);
         }
         prevTab = tabManager.getCurrentTab();
-        ((Drawable) tabManager.getCurrentTab()).render(context, mouseX, mouseY, delta);
+        ((Renderable) tabManager.getCurrentTab()).render(context, mouseX, mouseY, delta);
         descriptionTab.setLinksActive(tabManager.getCurrentTab() instanceof DescriptionTab);
         versionsTab.setActive(tabManager.getCurrentTab() instanceof VersionsTab);
         for (int i = 0; i < tabNavigationWidget.children().size(); i++) {
@@ -127,28 +127,28 @@ public class ProjectScreen extends Screen implements MarkdownScreenInterface {
                 ((TabNavigationMixinInterface) tabNavigationWidget).setX(131);
                 ((TabNavigationMixinInterface) tabNavigationWidget).setY(scrollAmount - 10);
             }
-            ((TabButtonWidget) tabNavigationWidget.children().get(i)).render(context, mouseX, mouseY, delta);
+            ((TabButton) tabNavigationWidget.children().get(i)).render(context, mouseX, mouseY, delta);
         }
         float titleSize = 1.4f;
-        context.getMatrices().scale(titleSize, titleSize);
-        context.drawWrappedText(textRenderer, StringVisitable.plain(projectInfo.getTitle()), (int) (10 /titleSize), 40, (int) (110/titleSize), Colors.WHITE, false);
-        int wrappedHeight =  textRenderer.getWrappedLinesHeight(StringVisitable.plain(projectInfo.getTitle()), (int) (110/titleSize));
-        context.getMatrices().scale(1/titleSize, 1/titleSize);
-        context.drawTexture(RenderPipelines.GUI_TEXTURED, iconTextureId, 10, 0, 0, 0, 50, 50, 50, 50);
-        context.drawWrappedText(textRenderer, StringVisitable.plain(projectInfo.getDescription()), 10, (int) (65 + wrappedHeight*titleSize), 110, Colors.WHITE, false);
-        installButton.setPosition(10, (int) ((65 + textRenderer.getWrappedLinesHeight(StringVisitable.plain(projectInfo.getDescription()), 110) + wrappedHeight * titleSize + 10)));
-        siteButton.setPosition(65, (int) ((65 + textRenderer.getWrappedLinesHeight(StringVisitable.plain(projectInfo.getDescription()), 110) + wrappedHeight * titleSize + 10)));
+        context.pose().scale(titleSize, titleSize);
+        context.drawWordWrap(font, FormattedText.of(projectInfo.getTitle()), (int) (10 /titleSize), 40, (int) (110/titleSize), CommonColors.WHITE, false);
+        int wrappedHeight =  font.wordWrapHeight(FormattedText.of(projectInfo.getTitle()), (int) (110/titleSize));
+        context.pose().scale(1/titleSize, 1/titleSize);
+        context.blit(RenderPipelines.GUI_TEXTURED, iconTextureId, 10, 0, 0, 0, 50, 50, 50, 50);
+        context.drawWordWrap(font, FormattedText.of(projectInfo.getDescription()), 10, (int) (65 + wrappedHeight*titleSize), 110, CommonColors.WHITE, false);
+        installButton.setPosition(10, (int) ((65 + font.wordWrapHeight(FormattedText.of(projectInfo.getDescription()), 110) + wrappedHeight * titleSize + 10)));
+        siteButton.setPosition(65, (int) ((65 + font.wordWrapHeight(FormattedText.of(projectInfo.getDescription()), 110) + wrappedHeight * titleSize + 10)));
         installButton.render(context, mouseX, mouseY, delta);
         siteButton.render(context, mouseX, mouseY, delta);
 
         if (projectInfo.isInstalling()) {
-            installButton.setMessage(Text.of("Installing"));
+            installButton.setMessage(Component.nullToEmpty("Installing"));
         } else if (projectInfo.isInstalled()) {
-            installButton.setMessage(Text.of("Installed"));
+            installButton.setMessage(Component.nullToEmpty("Installed"));
         } else if (projectInfo.isUpdated()) {
-            installButton.setMessage(Text.of("Install"));
+            installButton.setMessage(Component.nullToEmpty("Install"));
         } else {
-            installButton.setMessage(Text.of("Update"));
+            installButton.setMessage(Component.nullToEmpty("Update"));
         }
         installButton.active = !projectInfo.isInstalled() && !projectInfo.isInstalling();
         if (scrollAmount < - maxY + height - 10 && maxY > height - 10) {
@@ -162,8 +162,8 @@ public class ProjectScreen extends Screen implements MarkdownScreenInterface {
     @Override
     protected void init() {
         super.init();
-        installButton.setDimensions(52, 14);
-        siteButton.setDimensions(55, 14);
+        installButton.setSize(52, 14);
+        siteButton.setSize(55, 14);
         this.addSelectableChild(doneButton);
         this.addSelectableChild(installButton);
         this.addSelectableChild(siteButton);
@@ -181,10 +181,10 @@ public class ProjectScreen extends Screen implements MarkdownScreenInterface {
             JsonArray gallery = jsonObject.get("gallery").getAsJsonArray();
             for (int i = 0; i < gallery.size(); i++) {
                 try {
-                    galleryImages.add(new GalleryImage(Identifier.of(EasyInstall.MOD_ID, "gallery_image_" + i), URI.create(gallery.get(i).getAsJsonObject().get("url").getAsString()).toURL(), gallery.get(i).getAsJsonObject().get("description").getAsString()));
+                    galleryImages.add(new GalleryImage(Identifier.fromNamespaceAndPath(EasyInstall.MOD_ID, "gallery_image_" + i), URI.create(gallery.get(i).getAsJsonObject().get("url").getAsString()).toURL(), gallery.get(i).getAsJsonObject().get("description").getAsString()));
                 } catch (UnsupportedOperationException e) {
                     try {
-                        galleryImages.add(new GalleryImage(Identifier.of(EasyInstall.MOD_ID, "gallery_image__" + i), URI.create(gallery.get(i).getAsJsonObject().get("url").getAsString()).toURL()));
+                        galleryImages.add(new GalleryImage(Identifier.fromNamespaceAndPath(EasyInstall.MOD_ID, "gallery_image__" + i), URI.create(gallery.get(i).getAsJsonObject().get("url").getAsString()).toURL()));
                     } catch (MalformedURLException exception) {
                         throw new RuntimeException(exception);
                     }
@@ -197,20 +197,20 @@ public class ProjectScreen extends Screen implements MarkdownScreenInterface {
 
                 }
             }
-            this.descriptionTab = new DescriptionTab(Text.of("Description"), this);
+            this.descriptionTab = new DescriptionTab(Component.nullToEmpty("Description"), this);
             initialized = true;
         }
         descriptionTab.refreshLinkPositions();
-        GalleryTab galleryTab = new GalleryTab(Text.of("Gallery"), this);
-        this.versionsTab = new VersionsTab(Text.of("Versions"), this);
-        tabManager = new TabManager(this::addSelectableChild, this::remove);
+        GalleryTab galleryTab = new GalleryTab(Component.nullToEmpty("Gallery"), this);
+        this.versionsTab = new VersionsTab(Component.nullToEmpty("Versions"), this);
+        tabManager = new TabManager(this::addSelectableChild, this::removeWidget);
         if (!galleryImages.isEmpty()) {
-            tabNavigationWidget = TabNavigationWidget.builder(this.tabManager, width - 131).tabs(descriptionTab, galleryTab, versionsTab).build(); //width - 131
+            tabNavigationWidget = TabNavigationBar.builder(this.tabManager, width - 131).addTabs(descriptionTab, galleryTab, versionsTab).build(); //width - 131
         } else {
-            tabNavigationWidget = TabNavigationWidget.builder(this.tabManager, width - 131).tabs(descriptionTab, versionsTab).build(); // width - 131
+            tabNavigationWidget = TabNavigationBar.builder(this.tabManager, width - 131).addTabs(descriptionTab, versionsTab).build(); // width - 131
 
         }
-        tabNavigationWidget.init();
+        tabNavigationWidget.arrangeElements();
         if (tabNavigationWidget instanceof TabNavigationMixinInterface) {
             ((TabNavigationMixinInterface) tabNavigationWidget).setButtonWidth((this.width - 130)/(tabNavigationWidget.children().size()));
         }
@@ -232,14 +232,14 @@ public class ProjectScreen extends Screen implements MarkdownScreenInterface {
     }
 
     @Override
-    protected void renderDarkening(DrawContext context) {
-        context.drawTexture(RenderPipelines.GUI_TEXTURED, TAB_HEADER_BACKGROUND_TEXTURE, 0, 0, 0.0F, 0.0F, this.width, ((TabButtonWidget) this.tabNavigationWidget.children().getFirst()).getHeight(), 16, 16);
+    protected void renderMenuBackground(GuiGraphics context) {
+        context.blit(RenderPipelines.GUI_TEXTURED, TAB_HEADER_BACKGROUND, 0, 0, 0.0F, 0.0F, this.width, ((TabButton) this.tabNavigationWidget.children().getFirst()).getHeight(), 16, 16);
     }
 
     @Override
-    public void renderBackground(DrawContext context, int mouseX, int mouseY, float delta) {
+    public void renderBackground(GuiGraphics context, int mouseX, int mouseY, float delta) {
         super.renderBackground(context, mouseX, mouseY, delta);
-        super.renderDarkening(context);
+        super.renderMenuBackground(context);
 
     }
 
@@ -252,8 +252,8 @@ public class ProjectScreen extends Screen implements MarkdownScreenInterface {
     }
 
 
-    public void renderDarkening(DrawContext context, int x, int y, int width, int height) {
-        super.renderDarkening(context, x, y, width, height);
+    public void renderMenuBackground(GuiGraphics context, int x, int y, int width, int height) {
+        super.renderMenuBackground(context, x, y, width, height);
     }
 
     public ProjectInfo getProjectInfo() {
@@ -261,15 +261,15 @@ public class ProjectScreen extends Screen implements MarkdownScreenInterface {
     }
 
     @Override
-    public <T extends Element & Selectable> T addSelectableChild(T child) {
-        return super.addSelectableChild(child);
+    public <T extends GuiEventListener & NarratableEntry> T addSelectableChild(T child) {
+        return super.addWidget(child);
     }
 
     public TabManager getTabManager() {
         return tabManager;
     }
 
-    public TabNavigationWidget getTabNavigationWidget() {
+    public TabNavigationBar getTabNavigationWidget() {
         return tabNavigationWidget;
     }
 
@@ -278,8 +278,8 @@ public class ProjectScreen extends Screen implements MarkdownScreenInterface {
     }
 
     @Override
-    public void removeChild(Element c) {
-        this.remove(c);
+    public void removeChild(GuiEventListener c) {
+        this.removeWidget(c);
     }
 
     public boolean isFilteredByGameVersion() {

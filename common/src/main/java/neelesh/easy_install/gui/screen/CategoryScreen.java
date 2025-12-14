@@ -3,14 +3,14 @@ package neelesh.easy_install.gui.screen;
 import com.google.gson.JsonArray;
 import neelesh.easy_install.EasyInstallClient;
 import neelesh.easy_install.ProjectType;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.ConfirmScreen;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.tooltip.Tooltip;
-import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.client.gui.widget.CheckboxWidget;
-import net.minecraft.text.Text;
-import net.minecraft.util.Colors;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.ConfirmScreen;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.components.Tooltip;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.Checkbox;
+import net.minecraft.network.chat.Component;
+import net.minecraft.util.CommonColors;
 import org.apache.commons.lang3.StringUtils;
 
 import java.time.Duration;
@@ -19,18 +19,18 @@ import java.util.TreeMap;
 
 public class CategoryScreen extends Screen {
 
-    private TreeMap<String, ArrayList<CheckboxWidget>> checkBoxes;
+    private TreeMap<String, ArrayList<Checkbox>> checkBoxes;
     private ProjectType projectType;
     private double scrollAmount;
     private ProjectBrowser browser;
-    private ButtonWidget doneButton;
+    private Button doneButton;
     private int maxY;
-    private ButtonWidget clearButton;
+    private Button clearButton;
     private JsonArray tags;
-    private CheckboxWidget disableGameVersionFilter;
+    private Checkbox disableGameVersionFilter;
 
     public CategoryScreen(ProjectBrowser browser, ProjectType projectType) {
-        super(Text.of("Filter Categories"));
+        super(Component.nullToEmpty("Filter Categories"));
         this.browser = browser;
         this.projectType = projectType;
         tags = EasyInstallClient.getCategoryTags(projectType);
@@ -40,55 +40,55 @@ public class CategoryScreen extends Screen {
     @Override
     protected void init() {
         super.init();
-        disableGameVersionFilter = CheckboxWidget.builder(Text.of("Disable Game Version Filter"), textRenderer)
-                        .tooltip(Tooltip.of(Text.literal("- Warning: Disabling the game version filter may allow you to install incompatible content.\n\n").withColor(0xFFA500)
-                        .append(Text.literal("- By default, the search results are automatically filtered for this version of Minecraft. If these filters are disabled, it will display all results regardless of the version of Minecraft you are playing on.").withColor(Colors.WHITE))))
-                        .checked(!browser.isFilteredByGameVersion()).pos(width / 2 - 70, 25).callback(((box, checked) -> {
+        disableGameVersionFilter = Checkbox.builder(Component.nullToEmpty("Disable Game Version Filter"), font)
+                        .tooltip(Tooltip.create(Component.literal("- Warning: Disabling the game version filter may allow you to install incompatible content.\n\n").withColor(0xFFA500)
+                        .append(Component.literal("- By default, the search results are automatically filtered for this version of Minecraft. If these filters are disabled, it will display all results regardless of the version of Minecraft you are playing on.").withColor(CommonColors.WHITE))))
+                        .selected(!browser.isFilteredByGameVersion()).pos(width / 2 - 70, 25).onValueChange(((box, checked) -> {
 
 
             if (checked) {
                 ConfirmScreen confirmScreen = new ConfirmScreen(bool -> {
                     browser.setFilteredByGameVersion(!bool);
-                    client.setScreen(this);
-                }, Text.of("Are you sure you want to disable the game version filter?"), Text.literal("Disabling the game version filter may allow you to install incompatible content.").withColor(0xFFA500));
-                client.setScreen(confirmScreen);
+                    minecraft.setScreen(this);
+                }, Component.nullToEmpty("Are you sure you want to disable the game version filter?"), Component.literal("Disabling the game version filter may allow you to install incompatible content.").withColor(0xFFA500));
+                minecraft.setScreen(confirmScreen);
             } else {
                 browser.setFilteredByGameVersion(true);
             }
         })).build();
         disableGameVersionFilter.setTooltipDelay(Duration.ofMillis(500));
-        this.addSelectableChild(disableGameVersionFilter);
+        this.addWidget(disableGameVersionFilter);
         checkBoxes = new TreeMap<>();
-        doneButton = ButtonWidget.builder(Text.of("Done"), button -> {
+        doneButton = Button.builder(Component.nullToEmpty("Done"), button -> {
             browser.setPage(0);
             browser.setInitialized(false);
-            client.setScreen(browser);
+            minecraft.setScreen(browser);
         }).build();
         doneButton.setPosition(width/2 - 70, height - 25);
-        this.addSelectableChild(doneButton);
+        this.addWidget(doneButton);
         for (int i = 0; i < tags.size(); i++) {
             String name = tags.get(i).getAsJsonObject().get("name").getAsString();
-            CheckboxWidget checkBox = CheckboxWidget.builder(Text.of(StringUtils.capitalize(name)), textRenderer).checked(browser.getCategories().contains(name)).callback(((box, checked) -> {
+            Checkbox checkBox = Checkbox.builder(Component.nullToEmpty(StringUtils.capitalize(name)), font).selected(browser.getCategories().contains(name)).onValueChange(((box, checked) -> {
                 if (checked) {
                    browser.addFilterCategory(name);
                 } else {
                     browser.removeFilterCategory(name);
                 }
             })).build();
-            this.addSelectableChild(checkBox);
+            this.addWidget(checkBox);
             if (!checkBoxes.containsKey(tags.get(i).getAsJsonObject().get("header").getAsString())) {
                 checkBoxes.put(tags.get(i).getAsJsonObject().get("header").getAsString(), new ArrayList<>());
             }
             checkBoxes.get(tags.get(i).getAsJsonObject().get("header").getAsString()).add(checkBox);
         }
-        clearButton = ButtonWidget.builder(Text.of("Clear All"), button -> {
+        clearButton = Button.builder(Component.nullToEmpty("Clear All"), button -> {
             browser.clearCategories();
             browser.setFilteredByGameVersion(true);
-            this.refreshWidgetPositions();
+            this.repositionElements();
         }).build();
         
-        clearButton.setDimensions(100, 20);
-        this.addSelectableChild(clearButton);
+        clearButton.setSize(100, 20);
+        this.addWidget(clearButton);
         if (projectType == ProjectType.RESOURCE_PACK) {
             checkBoxes.get("resolutions").sort((o1, o2) -> {
                 String str1 = o1.getMessage().getString();
@@ -99,24 +99,24 @@ public class CategoryScreen extends Screen {
     }
 
     @Override
-    public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+    public void render(GuiGraphics context, int mouseX, int mouseY, float delta) {
         super.render(context, mouseX, mouseY, delta);
-        renderDarkening(context);
+        renderMenuBackground(context);
         clearButton.active = false;
         clearButton.setPosition(width - 115, 8);
         if (checkBoxes != null) {
             int i = 0;
             int offset = 10;
             for (String header : checkBoxes.sequencedKeySet()) {
-                ArrayList<CheckboxWidget> boxes = checkBoxes.get(header);
-                context.getMatrices().scale(1.4f, 1.4f);
-                context.drawText(textRenderer, StringUtils.capitalize(header), (int)(20 /1.4f), (int) ((i * 25 + offset + scrollAmount)/1.4f), Colors.WHITE, true);
-                context.getMatrices().scale(1/1.4f,1/1.4f);
+                ArrayList<Checkbox> boxes = checkBoxes.get(header);
+                context.pose().scale(1.4f, 1.4f);
+                context.drawString(font, StringUtils.capitalize(header), (int)(20 /1.4f), (int) ((i * 25 + offset + scrollAmount)/1.4f), CommonColors.WHITE, true);
+                context.pose().scale(1/1.4f,1/1.4f);
                 offset += 20;
-                for (CheckboxWidget box : boxes) {
+                for (Checkbox box : boxes) {
                     box.setPosition(20, i * 25 + offset + (int) scrollAmount);
                     box.render(context, mouseX, mouseY, delta);
-                    if (box.isChecked()) {
+                    if (box.selected()) {
                         clearButton.active = true;
                     }
                     i++;
@@ -125,13 +125,13 @@ public class CategoryScreen extends Screen {
             }
             maxY = i * 25 + offset;
         }
-        context.getMatrices().scale(1.4f, 1.4f);
-        context.drawText(textRenderer, "Game Version", (int)(20 /1.4f), (int) ((maxY + scrollAmount)/1.4f), Colors.WHITE, true);
-        context.getMatrices().scale(1/1.4f,1/1.4f);
+        context.pose().scale(1.4f, 1.4f);
+        context.drawString(font, "Game Version", (int)(20 /1.4f), (int) ((maxY + scrollAmount)/1.4f), CommonColors.WHITE, true);
+        context.pose().scale(1/1.4f,1/1.4f);
         disableGameVersionFilter.setPosition(20, (int) (maxY + scrollAmount + 20));
         maxY += 45;
 
-        if (disableGameVersionFilter.isChecked()) {
+        if (disableGameVersionFilter.selected()) {
             clearButton.active = true;
         }
         disableGameVersionFilter.render(context, mouseX, mouseY, delta);

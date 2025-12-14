@@ -1,9 +1,9 @@
 package neelesh.easy_install.gui.screen;
 
-import net.minecraft.client.gui.Element;
-import net.minecraft.client.gui.Selectable;
+import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.client.gui.narration.NarratableEntry;
 
 public interface MarkdownScreenInterface {
-    <T extends Element & Selectable> T addSelectableChild(T child);
-    void removeChild(Element e);
+    <T extends GuiEventListener & NarratableEntry> T addSelectableChild(T child);
+    void removeChild(GuiEventListener e);
 }

@@ -1,7 +1,7 @@
 package neelesh.easy_install.fabric;
 
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.SharedConstants;
+import net.minecraft.client.Minecraft;
 
 import java.io.File;
 
@@ -19,6 +19,6 @@ public class EasyInstallClientImpl {
     }
 
     public static String getModLoaderDisplayText() {
-        return "Minecraft " + SharedConstants.getGameVersion().name() + "/Fabric (Modded)";
+        return "Minecraft " + Minecraft.getInstance().name() + "/Fabric (Modded)";
     }
 }

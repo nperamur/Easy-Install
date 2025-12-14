@@ -69,14 +69,16 @@ public class Version {
         return id;
     }
 
-    public void download() {
+    public void download(boolean installDependencies) {
         int numberOfThreads = 5;
         try (ExecutorService executorService = Executors.newFixedThreadPool(numberOfThreads)) {
             executorService.submit(() -> EasyInstallClient.downloadVersion(this.downloadUrl, this.filename, this.projectType));
-            for (int i = 0; i < this.dependencies.size(); i++) {
-                if (this.dependencies.get(i).getAsJsonObject().get("dependency_type").getAsString().equals("required")) {
-                    String id = this.dependencies.get(i).getAsJsonObject().get("project_id").getAsString();
-                    executorService.submit(() -> EasyInstallClient.downloadVersion(id, EasyInstallClient.getProjectType(id), true));
+            if (installDependencies) {
+                for (int i = 0; i < this.dependencies.size(); i++) {
+                    if (this.dependencies.get(i).getAsJsonObject().get("dependency_type").getAsString().equals("required")) {
+                        String id = this.dependencies.get(i).getAsJsonObject().get("project_id").getAsString();
+                        executorService.submit(() -> EasyInstallClient.downloadVersion(id, EasyInstallClient.getProjectType(id), true));
+                    }
                 }
             }
             executorService.shutdown();
@@ -87,6 +89,8 @@ public class Version {
             }
         }
     }
+
+
 
     @Override
     public String toString() {

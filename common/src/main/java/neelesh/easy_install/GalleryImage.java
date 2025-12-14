@@ -1,7 +1,7 @@
 package neelesh.easy_install;
 
-import net.minecraft.client.texture.NativeImage;
-import net.minecraft.util.Identifier;
+import com.mojang.blaze3d.platform.NativeImage;
+import net.minecraft.resources.Identifier;
 
 import java.net.URL;
 
