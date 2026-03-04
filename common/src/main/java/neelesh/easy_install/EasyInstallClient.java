@@ -39,6 +39,7 @@ public class EasyInstallClient {
     private static String GAME_VERSION = SharedConstants.getCurrentVersion().name();
     private static String currentTargetUpdateVersion = SharedConstants.getCurrentVersion().name();
 
+    private static final String MODRINTH_BASE_URL = "https://api.modrinth.com/v2";
 
     public static String getSortMethod() {
         return sortMethod;
@@ -359,25 +360,41 @@ public class EasyInstallClient {
         throw new AssertionError();
     }
 
-    public static void search(String query, ProjectType projectType, int offset, HashSet<String> categories, boolean isFilteredByGameVersion) {
+    public static void search(String query, ProjectType projectType, int offset, HashSet<String> categories, boolean isFilteredByGameVersion, Environment environment) {
         StringBuilder categoriesString = new StringBuilder();
         for (String category : categories) {
             categoriesString.append(",[\"categories:").append(category).append("\"]");
         }
+        StringBuilder environmentString = new StringBuilder();
+        if (environment != null) {
+            environmentString.append(",[\"").append("client_side");
+            if (environment == Environment.CLIENT_SIDE || environment == Environment.CLIENT_AND_SERVER) {
+                environmentString.append(":required\"],[\"");
+            } else {
+                environmentString.append("!=required\"],[\"");
+            }
+            environmentString.append("server_side");
+            if (environment == Environment.SERVER_SIDE  || environment == Environment.CLIENT_AND_SERVER) {
+                environmentString.append(":required\"]");
+            } else {
+                environmentString.append("!=required\"]");
+            }
+        }
+        StringBuilder strings = categoriesString.append(environmentString);
         String encodedFacets;
         if (isFilteredByGameVersion) {
             encodedFacets = switch(projectType) {
-                case MOD -> URLEncoder.encode(String.format("[[\"categories:%s\"],[\"versions:%s\"],[\"project_type:mod\"]" + categoriesString + "]", getLoader(), GAME_VERSION), StandardCharsets.UTF_8);
-                case RESOURCE_PACK -> URLEncoder.encode(String.format("[[\"versions:%s\"],[\"project_type:resourcepack\"]" + categoriesString + "]", GAME_VERSION), StandardCharsets.UTF_8);
-                case DATA_PACK -> URLEncoder.encode(String.format("[[\"versions:%s\"],[\"project_type:datapack\"]" + categoriesString + "]", GAME_VERSION), StandardCharsets.UTF_8);
-                case SHADER -> URLEncoder.encode(String.format("[[\"versions:%s\"],[\"project_type:shader\"],[\"categories:iris\"]" + categoriesString + "]", GAME_VERSION), StandardCharsets.UTF_8);
+                case MOD -> URLEncoder.encode(String.format("[[\"categories:%s\"],[\"versions:%s\"],[\"project_type:mod\"]" + strings + "]", getLoader(), GAME_VERSION), StandardCharsets.UTF_8);
+                case RESOURCE_PACK -> URLEncoder.encode(String.format("[[\"versions:%s\"],[\"project_type:resourcepack\"]" + strings + "]", GAME_VERSION), StandardCharsets.UTF_8);
+                case DATA_PACK -> URLEncoder.encode(String.format("[[\"versions:%s\"],[\"project_type:datapack\"]" + strings + "]", GAME_VERSION), StandardCharsets.UTF_8);
+                case SHADER -> URLEncoder.encode(String.format("[[\"versions:%s\"],[\"project_type:shader\"],[\"categories:iris\"]" + strings + "]", GAME_VERSION), StandardCharsets.UTF_8);
             };
         } else {
             encodedFacets = switch(projectType) {
-                case MOD -> URLEncoder.encode(String.format("[[\"categories:%s\"],[\"project_type:mod\"]" + categoriesString + "]", getLoader()), StandardCharsets.UTF_8);
-                case RESOURCE_PACK -> URLEncoder.encode(String.format("[[\"project_type:resourcepack\"]" + categoriesString + "]"), StandardCharsets.UTF_8);
-                case DATA_PACK -> URLEncoder.encode(String.format("[[\"project_type:datapack\"]" + categoriesString + "]"), StandardCharsets.UTF_8);
-                case SHADER -> URLEncoder.encode(String.format("[[\"project_type:shader\"],[\"categories:iris\"]" + categoriesString + "]"), StandardCharsets.UTF_8);
+                case MOD -> URLEncoder.encode(String.format("[[\"categories:%s\"],[\"project_type:mod\"]" + strings + "]", getLoader()), StandardCharsets.UTF_8);
+                case RESOURCE_PACK -> URLEncoder.encode(String.format("[[\"project_type:resourcepack\"]" + strings + "]"), StandardCharsets.UTF_8);
+                case DATA_PACK -> URLEncoder.encode(String.format("[[\"project_type:datapack\"]" + strings + "]"), StandardCharsets.UTF_8);
+                case SHADER -> URLEncoder.encode(String.format("[[\"project_type:shader\"],[\"categories:iris\"]" + strings + "]"), StandardCharsets.UTF_8);
             };
         }
 
@@ -387,7 +404,7 @@ public class EasyInstallClient {
 
 
     public static void search(String query, ProjectType projectType) {
-        search(query, projectType, 0, new HashSet<>(), true);
+        search(query, projectType, 0, new HashSet<>(), true, null);
     }
 
     public static String createFileHash(Path path) throws IOException {
@@ -523,11 +540,9 @@ public class EasyInstallClient {
     }
 
     public static JsonObject getProject(String slug) {
-        String urlString = "https://api.modrinth.com/v2/project/" + slug;
         String response = null;
         try {
-            URL url = URI.create(urlString).toURL();
-            HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
+            HttpURLConnection httpURLConnection = getConnection("/project/" + slug);
             httpURLConnection.setRequestMethod("GET");
             int responseCode = httpURLConnection.getResponseCode();
             if (responseCode == httpURLConnection.HTTP_OK) {
@@ -607,10 +622,8 @@ public class EasyInstallClient {
     }
 
     public static JsonArray getCategoryTags(ProjectType projectType) {
-        String urlString = "https://api.modrinth.com/v2/tag/category";
         try {
-            URL url = URI.create(urlString).toURL();
-            HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
+            HttpURLConnection httpURLConnection = getConnection("/tag/category");
             httpURLConnection.setRequestMethod("GET");
             int responseCode = httpURLConnection.getResponseCode();
             if (responseCode == httpURLConnection.HTTP_OK) {
@@ -640,8 +653,7 @@ public class EasyInstallClient {
 
     public static JsonObject getUserProfile(String name) {
         try {
-            URL url = URI.create("https://api.modrinth.com/v2/user/" + name).toURL();
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            HttpURLConnection connection = getConnection("/user");
             connection.setRequestMethod("GET");
             if (connection.getResponseCode() == HttpURLConnection.HTTP_OK) {
                 try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
@@ -678,8 +690,7 @@ public class EasyInstallClient {
 
     public static ArrayList<String> getReleaseVersionNumbers() {
         try {
-            URL url = URI.create("https://api.modrinth.com/v2/tag/game_version").toURL();
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            HttpURLConnection connection = getConnection("/tag/game_version");
             connection.setRequestMethod("GET");
             if (connection.getResponseCode() == HttpURLConnection.HTTP_OK) {
                 try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
@@ -704,6 +715,13 @@ public class EasyInstallClient {
         return new ArrayList<>();
 
     }
+
+    private static HttpURLConnection getConnection(String endpoint) throws IOException {
+        URL url =  URI.create(MODRINTH_BASE_URL + endpoint).toURL();
+        return (HttpURLConnection) url.openConnection();
+    }
+
+
 
 
 

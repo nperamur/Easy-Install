@@ -2,6 +2,7 @@ package neelesh.easy_install.gui.screen;
 
 import com.google.gson.JsonArray;
 import neelesh.easy_install.EasyInstallClient;
+import neelesh.easy_install.Environment;
 import neelesh.easy_install.ProjectType;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.ConfirmScreen;
@@ -28,6 +29,9 @@ public class CategoryScreen extends Screen {
     private Button clearButton;
     private JsonArray tags;
     private Checkbox disableGameVersionFilter;
+
+    private Checkbox requiresClientSide;
+    private Checkbox requiresServerSide;
 
     public CategoryScreen(ProjectBrowser browser, ProjectType projectType) {
         super(Component.nullToEmpty("Filter Categories"));
@@ -56,6 +60,46 @@ public class CategoryScreen extends Screen {
                 browser.setFilteredByGameVersion(true);
             }
         })).build();
+
+        this.requiresClientSide = Checkbox.builder(Component.literal("Client Side"), font)
+                .selected(browser.getEnvironment() == Environment.CLIENT_SIDE || browser.getEnvironment() == Environment.CLIENT_AND_SERVER)
+                .onValueChange(((box, checked) -> {
+            if (checked) {
+                if (this.requiresServerSide.selected()) {
+                    browser.setEnvironment(Environment.CLIENT_AND_SERVER);
+                } else {
+                    browser.setEnvironment(Environment.CLIENT_SIDE);
+                }
+            } else {
+                if (this.requiresServerSide.selected()) {
+                    browser.setEnvironment(Environment.SERVER_SIDE);
+                } else {
+                    browser.setEnvironment(null);
+                }
+            }
+        })).build();
+        requiresClientSide.visible = browser.getProjectType() == ProjectType.MOD;
+
+        this.requiresServerSide = Checkbox.builder(Component.literal("Server Side"), font)
+                .selected(browser.getEnvironment() == Environment.SERVER_SIDE || browser.getEnvironment() == Environment.CLIENT_AND_SERVER)
+                .onValueChange(((box, checked) -> {
+            if (checked) {
+                if (this.requiresClientSide.selected()) {
+                    browser.setEnvironment(Environment.CLIENT_AND_SERVER);
+                } else {
+                    browser.setEnvironment(Environment.SERVER_SIDE);
+                }
+            } else {
+                if (this.requiresClientSide.selected()) {
+                    browser.setEnvironment(Environment.CLIENT_SIDE);
+                } else {
+                    browser.setEnvironment(null);
+                }
+            }
+        })).build();
+        this.addWidget(requiresClientSide);
+        this.addWidget(requiresServerSide);
+        requiresServerSide.visible = browser.getProjectType() == ProjectType.MOD;
         disableGameVersionFilter.setTooltipDelay(Duration.ofMillis(500));
         this.addWidget(disableGameVersionFilter);
         checkBoxes = new TreeMap<>();
@@ -70,7 +114,7 @@ public class CategoryScreen extends Screen {
             String name = tags.get(i).getAsJsonObject().get("name").getAsString();
             Checkbox checkBox = Checkbox.builder(Component.nullToEmpty(StringUtils.capitalize(name)), font).selected(browser.getCategories().contains(name)).onValueChange(((box, checked) -> {
                 if (checked) {
-                   browser.addFilterCategory(name);
+                    browser.addFilterCategory(name);
                 } else {
                     browser.removeFilterCategory(name);
                 }
@@ -84,6 +128,7 @@ public class CategoryScreen extends Screen {
         clearButton = Button.builder(Component.nullToEmpty("Clear All"), button -> {
             browser.clearCategories();
             browser.setFilteredByGameVersion(true);
+            browser.setEnvironment(null);
             this.repositionElements();
         }).build();
         
@@ -125,13 +170,26 @@ public class CategoryScreen extends Screen {
             }
             maxY = i * 25 + offset;
         }
+
+        if (browser.getProjectType() == ProjectType.MOD) {
+            context.pose().scale(1.4f, 1.4f);
+            context.drawString(font, "Environments", (int)(20/1.4f), (int) ((maxY + scrollAmount)/1.4f), CommonColors.WHITE, true);
+            context.pose().scale(1/1.4f,1/1.4f);
+            maxY += 20;
+            requiresClientSide.setPosition(20, (int) (maxY + scrollAmount));
+            requiresClientSide.render(context, mouseX, mouseY, delta);
+            maxY += 20;
+            requiresServerSide.setPosition(20, (int) (maxY + scrollAmount));
+            requiresServerSide.render(context, mouseX, mouseY, delta);
+            maxY += 25;
+        }
         context.pose().scale(1.4f, 1.4f);
-        context.drawString(font, "Game Version", (int)(20 /1.4f), (int) ((maxY + scrollAmount)/1.4f), CommonColors.WHITE, true);
+        context.drawString(font, "Game Version", (int)(20/1.4f), (int) ((maxY + scrollAmount)/1.4f), CommonColors.WHITE, true);
         context.pose().scale(1/1.4f,1/1.4f);
         disableGameVersionFilter.setPosition(20, (int) (maxY + scrollAmount + 20));
         maxY += 45;
 
-        if (disableGameVersionFilter.selected()) {
+        if (disableGameVersionFilter.selected() || requiresClientSide.selected() || requiresServerSide.selected()) {
             clearButton.active = true;
         }
         disableGameVersionFilter.render(context, mouseX, mouseY, delta);

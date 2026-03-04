@@ -58,7 +58,6 @@ public class ProjectBrowser extends Screen {
     private boolean isScrolling;
     private HashSet<String> categories = new HashSet<String>();
     private boolean initialized;
-    //    private ButtonWidget versionButton;
     private final Identifier FILTER_TEXTURE = Identifier.fromNamespaceAndPath(EasyInstall.MOD_ID, "textures/gui/filter_icon.png");
     private final Identifier UPDATE_TEXTURE = Identifier.fromNamespaceAndPath(EasyInstall.MOD_ID, "textures/gui/update_icon.png");
     public static final Identifier SETTINGS_TEXTURE = Identifier.fromNamespaceAndPath(EasyInstall.MOD_ID, "textures/gui/settings.png");
@@ -72,6 +71,7 @@ public class ProjectBrowser extends Screen {
     private Button settingsButton;
     private ArrayList<Version> updatedVersions;
 
+    private Environment environment = null;
 
     public ProjectBrowser(Screen parent, ProjectType projectType) {
         super(Component.literal(""));
@@ -453,7 +453,7 @@ public class ProjectBrowser extends Screen {
             t.interrupt();
         }
         searchThread = new Thread(() -> {
-            EasyInstallClient.search(query, projectType, pageNumber * EasyInstallClient.getRowsOnPage(), categories, filteredByGameVersion);
+            EasyInstallClient.search(query, projectType, pageNumber * EasyInstallClient.getRowsOnPage(), categories, filteredByGameVersion, environment);
             if (scrollAmount >= 0 || -50 * EasyInstallClient.getNumRows() - firstRowY + height - 35 >= 0) {
                 scrollAmount = 0;
             } else if (scrollAmount < -50 * EasyInstallClient.getNumRows() - firstRowY + height - 35) {
@@ -545,5 +545,18 @@ public class ProjectBrowser extends Screen {
 
     public void setFilteredByGameVersion(boolean isFiltered) {
         this.filteredByGameVersion = isFiltered;
+    }
+
+
+    public void setEnvironment(Environment environment) {
+        this.environment = environment;
+    }
+
+    public ProjectType getProjectType() {
+        return projectType;
+    }
+
+    public Environment getEnvironment() {
+        return this.environment;
     }
 }
