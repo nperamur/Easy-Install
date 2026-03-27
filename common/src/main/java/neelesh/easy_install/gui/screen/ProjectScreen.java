@@ -8,8 +8,8 @@ import neelesh.easy_install.gui.tab.GalleryTab;
 import neelesh.easy_install.gui.tab.TabNavigationMixinInterface;
 import neelesh.easy_install.gui.tab.VersionsTab;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.RenderPipelines;
-import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.narration.NarratableEntry;
@@ -19,7 +19,6 @@ import net.minecraft.client.gui.components.tabs.TabManager;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.TabButton;
 import net.minecraft.client.gui.components.tabs.TabNavigationBar;
-import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.network.chat.FormattedText;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.CommonColors;
@@ -108,18 +107,17 @@ public class ProjectScreen extends Screen implements MarkdownScreenInterface {
         this.filteredByGameVersion = ((ProjectBrowser) parent).isFilteredByGameVersion();
     }
 
-    @Override
-    public void render(GuiGraphics context, int mouseX, int mouseY, float delta) {
-        super.render(context, mouseX, mouseY, delta);
+    public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
+        super.extractRenderState(context, mouseX, mouseY, delta);
         doneButton.setWidth(110);
         doneButton.setHeight(17);
         doneButton.setPosition(10, height - doneButton.getHeight());
-        doneButton.render(context, mouseX, mouseY, delta);
+        doneButton.extractRenderState(context, mouseX, mouseY, delta);
         if (tabManager.getCurrentTab() instanceof VersionsTab && tabManager.getCurrentTab() != prevTab) {
             ((VersionsTab) (tabManager.getCurrentTab())).setInitialized(false);
         }
         prevTab = tabManager.getCurrentTab();
-        ((Renderable) tabManager.getCurrentTab()).render(context, mouseX, mouseY, delta);
+        ((Renderable) tabManager.getCurrentTab()).extractRenderState(context, mouseX, mouseY, delta);
         descriptionTab.setLinksActive(tabManager.getCurrentTab() instanceof DescriptionTab);
         versionsTab.setActive(tabManager.getCurrentTab() instanceof VersionsTab);
         for (int i = 0; i < tabNavigationWidget.children().size(); i++) {
@@ -127,19 +125,19 @@ public class ProjectScreen extends Screen implements MarkdownScreenInterface {
                 ((TabNavigationMixinInterface) tabNavigationWidget).setX(131);
                 ((TabNavigationMixinInterface) tabNavigationWidget).setY(scrollAmount - 10);
             }
-            ((TabButton) tabNavigationWidget.children().get(i)).render(context, mouseX, mouseY, delta);
+            ((TabButton) tabNavigationWidget.children().get(i)).extractRenderState(context, mouseX, mouseY, delta);
         }
         float titleSize = 1.4f;
         context.pose().scale(titleSize, titleSize);
-        context.drawWordWrap(font, FormattedText.of(projectInfo.getTitle()), (int) (10 /titleSize), 40, (int) (110/titleSize), CommonColors.WHITE, false);
+        context.textWithWordWrap(font, FormattedText.of(projectInfo.getTitle()), (int) (10 /titleSize), 40, (int) (110/titleSize), CommonColors.WHITE, false);
         int wrappedHeight =  font.wordWrapHeight(FormattedText.of(projectInfo.getTitle()), (int) (110/titleSize));
         context.pose().scale(1/titleSize, 1/titleSize);
         context.blit(RenderPipelines.GUI_TEXTURED, iconTextureId, 10, 0, 0, 0, 50, 50, 50, 50);
-        context.drawWordWrap(font, FormattedText.of(projectInfo.getDescription()), 10, (int) (65 + wrappedHeight*titleSize), 110, CommonColors.WHITE, false);
+        context.textWithWordWrap(font, FormattedText.of(projectInfo.getDescription()), 10, (int) (65 + wrappedHeight*titleSize), 110, CommonColors.WHITE, false);
         installButton.setPosition(10, (int) ((65 + font.wordWrapHeight(FormattedText.of(projectInfo.getDescription()), 110) + wrappedHeight * titleSize + 10)));
         siteButton.setPosition(65, (int) ((65 + font.wordWrapHeight(FormattedText.of(projectInfo.getDescription()), 110) + wrappedHeight * titleSize + 10)));
-        installButton.render(context, mouseX, mouseY, delta);
-        siteButton.render(context, mouseX, mouseY, delta);
+        installButton.extractRenderState(context, mouseX, mouseY, delta);
+        siteButton.extractRenderState(context, mouseX, mouseY, delta);
 
         if (projectInfo.isInstalling()) {
             installButton.setMessage(Component.nullToEmpty("Installing"));
@@ -232,14 +230,14 @@ public class ProjectScreen extends Screen implements MarkdownScreenInterface {
     }
 
     @Override
-    protected void renderMenuBackground(GuiGraphics context) {
+    protected void extractMenuBackground(GuiGraphicsExtractor context) {
         context.blit(RenderPipelines.GUI_TEXTURED, TAB_HEADER_BACKGROUND, 0, 0, 0.0F, 0.0F, this.width, ((TabButton) this.tabNavigationWidget.children().getFirst()).getHeight(), 16, 16);
     }
 
     @Override
-    public void renderBackground(GuiGraphics context, int mouseX, int mouseY, float delta) {
-        super.renderBackground(context, mouseX, mouseY, delta);
-        super.renderMenuBackground(context);
+    public void extractBackground(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
+        super.extractBackground(context, mouseX, mouseY, delta);
+        super.extractMenuBackground(context);
 
     }
 
@@ -251,10 +249,15 @@ public class ProjectScreen extends Screen implements MarkdownScreenInterface {
         return this.scrollAmount;
     }
 
-
-    public void renderMenuBackground(GuiGraphics context, int x, int y, int width, int height) {
-        super.renderMenuBackground(context, x, y, width, height);
+    @Override
+    protected void extractMenuBackground(GuiGraphicsExtractor graphics, int x, int y, int width, int height) {
+        super.extractMenuBackground(graphics, x, y, width, height);
     }
+
+    public void renderMenuBackground(GuiGraphicsExtractor graphics, int x, int y, int width, int height) {
+        extractMenuBackground(graphics, x, y, width, height);
+    }
+
 
     public ProjectInfo getProjectInfo() {
         return this.projectInfo;
@@ -262,7 +265,10 @@ public class ProjectScreen extends Screen implements MarkdownScreenInterface {
 
     @Override
     public <T extends GuiEventListener & NarratableEntry> T addSelectableChild(T child) {
-        return super.addWidget(child);
+        if (child != null) {
+            return super.addWidget(child);
+        }
+        return null;
     }
 
     public TabManager getTabManager() {

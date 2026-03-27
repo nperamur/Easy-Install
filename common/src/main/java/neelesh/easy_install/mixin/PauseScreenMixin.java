@@ -4,7 +4,7 @@ package neelesh.easy_install.mixin;
 import neelesh.easy_install.ProjectType;
 import neelesh.easy_install.gui.screen.ProjectBrowser;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.PauseScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.components.Button;
@@ -25,11 +25,11 @@ public class PauseScreenMixin extends Screen {
     }).build();
 
 
-    @Inject(method = "render", at = @At("TAIL"))
-    private void addButton(GuiGraphics context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
+    @Inject(method = "extractRenderState", at = @At("TAIL"))
+    private void addButton(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
         buttonWidget.setSize(65, 20);
         buttonWidget.setPosition(width/2 + 115, height / 4 + 56);
-        buttonWidget.render(context, mouseX, mouseY, delta);
+        buttonWidget.extractRenderState(context, mouseX, mouseY, delta);
         this.addWidget(buttonWidget);
     }
 }

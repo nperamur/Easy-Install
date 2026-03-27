@@ -1,24 +1,26 @@
 package neelesh.easy_install.fabric;
 
+import neelesh.easy_install.EasyInstallClient;
+import neelesh.easy_install.Platform;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
 
 import java.io.File;
 
-public class EasyInstallClientImpl {
-    public static String getLoader() {
+public class EasyInstallClientImpl implements Platform {
+    public String getLoader() {
         return "fabric";
     }
 
-    public static String getGameDir() {
+    public String getGameDir() {
         return FabricLoader.getInstance().getGameDir().toString();
     }
 
-    public static File getGameDirAsFile() {
+    public File getGameDirAsFile() {
         return FabricLoader.getInstance().getGameDir().toFile();
     }
 
-    public static String getModLoaderDisplayText() {
-        return "Minecraft " + Minecraft.getInstance().name() + "/Fabric (Modded)";
+    public String getModLoaderDisplayText() {
+        return "Minecraft " + EasyInstallClient.getGameVersion() + " (Modded)";
     }
 }

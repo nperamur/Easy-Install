@@ -4,7 +4,7 @@ import com.google.gson.JsonArray;
 import neelesh.easy_install.EasyInstallClient;
 import neelesh.easy_install.Environment;
 import neelesh.easy_install.ProjectType;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.ConfirmScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.components.Tooltip;
@@ -143,10 +143,11 @@ public class CategoryScreen extends Screen {
         }
     }
 
+
     @Override
-    public void render(GuiGraphics context, int mouseX, int mouseY, float delta) {
-        super.render(context, mouseX, mouseY, delta);
-        renderMenuBackground(context);
+    public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
+        super.extractRenderState(context, mouseX, mouseY, delta);
+        this.extractMenuBackground(context);
         clearButton.active = false;
         clearButton.setPosition(width - 115, 8);
         if (checkBoxes != null) {
@@ -155,12 +156,12 @@ public class CategoryScreen extends Screen {
             for (String header : checkBoxes.sequencedKeySet()) {
                 ArrayList<Checkbox> boxes = checkBoxes.get(header);
                 context.pose().scale(1.4f, 1.4f);
-                context.drawString(font, StringUtils.capitalize(header), (int)(20 /1.4f), (int) ((i * 25 + offset + scrollAmount)/1.4f), CommonColors.WHITE, true);
+                context.text(font, StringUtils.capitalize(header), (int)(20 /1.4f), (int) ((i * 25 + offset + scrollAmount)/1.4f), CommonColors.WHITE, true);
                 context.pose().scale(1/1.4f,1/1.4f);
                 offset += 20;
                 for (Checkbox box : boxes) {
                     box.setPosition(20, i * 25 + offset + (int) scrollAmount);
-                    box.render(context, mouseX, mouseY, delta);
+                    box.extractRenderState(context, mouseX, mouseY, delta);
                     if (box.selected()) {
                         clearButton.active = true;
                     }
@@ -173,18 +174,18 @@ public class CategoryScreen extends Screen {
 
         if (browser.getProjectType() == ProjectType.MOD) {
             context.pose().scale(1.4f, 1.4f);
-            context.drawString(font, "Environments", (int)(20/1.4f), (int) ((maxY + scrollAmount)/1.4f), CommonColors.WHITE, true);
+            context.text(font, "Environments", (int)(20/1.4f), (int) ((maxY + scrollAmount)/1.4f), CommonColors.WHITE, true);
             context.pose().scale(1/1.4f,1/1.4f);
             maxY += 20;
             requiresClientSide.setPosition(20, (int) (maxY + scrollAmount));
-            requiresClientSide.render(context, mouseX, mouseY, delta);
+            requiresClientSide.extractRenderState(context, mouseX, mouseY, delta);
             maxY += 20;
             requiresServerSide.setPosition(20, (int) (maxY + scrollAmount));
-            requiresServerSide.render(context, mouseX, mouseY, delta);
+            requiresServerSide.extractRenderState(context, mouseX, mouseY, delta);
             maxY += 25;
         }
         context.pose().scale(1.4f, 1.4f);
-        context.drawString(font, "Game Version", (int)(20/1.4f), (int) ((maxY + scrollAmount)/1.4f), CommonColors.WHITE, true);
+        context.text(font, "Game Version", (int)(20/1.4f), (int) ((maxY + scrollAmount)/1.4f), CommonColors.WHITE, true);
         context.pose().scale(1/1.4f,1/1.4f);
         disableGameVersionFilter.setPosition(20, (int) (maxY + scrollAmount + 20));
         maxY += 45;
@@ -192,9 +193,9 @@ public class CategoryScreen extends Screen {
         if (disableGameVersionFilter.selected() || requiresClientSide.selected() || requiresServerSide.selected()) {
             clearButton.active = true;
         }
-        disableGameVersionFilter.render(context, mouseX, mouseY, delta);
-        doneButton.render(context, mouseX, mouseY, delta);
-        clearButton.render(context, mouseX, mouseY, delta);
+        disableGameVersionFilter.extractRenderState(context, mouseX, mouseY, delta);
+        doneButton.extractRenderState(context, mouseX, mouseY, delta);
+        clearButton.extractRenderState(context, mouseX, mouseY, delta);
     }
 
     @Override

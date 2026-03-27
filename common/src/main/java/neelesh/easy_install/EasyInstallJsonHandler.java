@@ -14,32 +14,35 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 public class EasyInstallJsonHandler {
-    private static final Path PATH = EasyInstallClient.getGameDirAsFile().toPath().resolve("easy_install/deleted_files.json");
+
+    private static Path getPath() {
+        return EasyInstallClient.getGameDirAsFile().toPath().resolve("easy_install/deleted_files.json");
+    }
     public static void addDeletedFile(String file) {
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
         try {
             JsonArray jsonArray = getDeletedFiles();
             jsonArray.add(file);
-            Files.write(PATH, gson.toJson(jsonArray).getBytes());
+            Files.write(getPath(), gson.toJson(jsonArray).getBytes());
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
     public static JsonArray getDeletedFiles() {
-        if (Files.notExists(PATH.getParent())) {
+        if (Files.notExists(getPath().getParent())) {
             try {
-                Files.createDirectories(PATH.getParent());
+                Files.createDirectories(getPath().getParent());
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
-        File file = PATH.toFile();
+        File file = getPath().toFile();
         if (!file.exists()) {
             return new JsonArray();
         }
         JsonArray jsonArray = null;
-        try (BufferedReader bufferedReader = Files.newBufferedReader(PATH)) {
+        try (BufferedReader bufferedReader = Files.newBufferedReader(getPath())) {
             jsonArray = new JsonParser().parse(bufferedReader).getAsJsonArray();
         } catch (IOException e) {
             e.printStackTrace();
@@ -50,7 +53,7 @@ public class EasyInstallJsonHandler {
     public static void clearDeletedFiles() {
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
         try {
-            Files.write(PATH, gson.toJson(new JsonArray()).getBytes());
+            Files.write(getPath(), gson.toJson(new JsonArray()).getBytes());
         } catch (IOException e) {
             e.printStackTrace();
         }

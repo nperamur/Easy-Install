@@ -6,8 +6,8 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import neelesh.easy_install.*;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.RenderPipelines;
-import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.narration.NarratableEntry;
 import net.minecraft.client.gui.screens.Screen;
@@ -149,18 +149,18 @@ public class VersionDetailsScreen extends Screen implements MarkdownScreenInterf
     }
 
     @Override
-    public void render(GuiGraphics context, int mouseX, int mouseY, float delta) {
-        super.render(context, mouseX, mouseY, delta);
-        renderMenuBackground(context);
+    public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
+        super.extractRenderState(context, mouseX, mouseY, delta);
+        extractMenuBackground(context);
 //        context.getMatrices().translate(0, 0, 1);
 //        context.getMatrices().translate(0, 0, -1);
         context.pose().scale(1.5f, 1.5f);
-        context.drawWordWrap(font, Component.nullToEmpty(version.getName()), 3, 5 + (int) (scrollAmount / 1.5), (int) (width * 2 / (3 * 1.5)), CommonColors.WHITE, true);
+        context.textWithWordWrap(font, Component.nullToEmpty(version.getName()), 3, 5 + (int) (scrollAmount / 1.5), (int) (width * 2 / (3 * 1.5)), CommonColors.WHITE, true);
         context.pose().scale(1 / 1.5f, 1 / 1.5f);
         if (markdownRenderer != null) {
             context.pose().scale(1.2f, 1.2f);
             int height = (int) (font.wordWrapHeight(Component.nullToEmpty(version.getName()), (int) (width * 2 / (3 * 1.5))) * 1.5);
-            context.drawString(font, Component.nullToEmpty("Changelog"), 4, 15 + (int) (height / 1.2) + (int) (scrollAmount / 1.2), CommonColors.WHITE, true);
+            context.text(font, Component.nullToEmpty("Changelog"), 4, 15 + (int) (height / 1.2) + (int) (scrollAmount / 1.2), CommonColors.WHITE, true);
             context.pose().scale(1 / 1.2f, 1 / 1.2f);
             markdownRenderer.render(context, + (int) scrollAmount);
 
@@ -176,28 +176,28 @@ public class VersionDetailsScreen extends Screen implements MarkdownScreenInterf
                 case "alpha" -> ChatFormatting.RED;
                 default -> null;
             };
-            context.drawString(font, Component.nullToEmpty("Release Type:"), width * 2 / 3 + 20, 10, CommonColors.WHITE, false);
-            context.drawString(font, Component.literal("•" + version.getVersionType()).withStyle(formatting), width * 2 / 3 + 20, 20, CommonColors.WHITE, true);
+            context.text(font, Component.nullToEmpty("Release Type:"), width * 2 / 3 + 20, 10, CommonColors.WHITE, false);
+            context.text(font, Component.literal("•" + version.getVersionType()).withStyle(formatting), width * 2 / 3 + 20, 20, CommonColors.WHITE, true);
 
-            context.drawString(font, Component.nullToEmpty("Version Number:"), width * 2 / 3 + 20, 35, CommonColors.WHITE, false);
-            context.drawString(font, version.getVersionNumber(), width * 2 / 3 + 20, 45, CommonColors.WHITE, true);
+            context.text(font, Component.nullToEmpty("Version Number:"), width * 2 / 3 + 20, 35, CommonColors.WHITE, false);
+            context.text(font, version.getVersionNumber(), width * 2 / 3 + 20, 45, CommonColors.WHITE, true);
 
-            context.drawString(font, Component.nullToEmpty("Downloads:"), width * 2 / 3 + 20, 60, CommonColors.WHITE, false);
-            context.drawString(font, Component.nullToEmpty(String.format("%,d", version.getNumDownloads())), width * 2 / 3 + 20, 70, CommonColors.WHITE, true);
+            context.text(font, Component.nullToEmpty("Downloads:"), width * 2 / 3 + 20, 60, CommonColors.WHITE, false);
+            context.text(font, Component.nullToEmpty(String.format("%,d", version.getNumDownloads())), width * 2 / 3 + 20, 70, CommonColors.WHITE, true);
 
-            context.drawString(font, Component.nullToEmpty("File Size:"), width * 2 / 3 + 20, 85, CommonColors.WHITE, false);
+            context.text(font, Component.nullToEmpty("File Size:"), width * 2 / 3 + 20, 85, CommonColors.WHITE, false);
             String text = formatFileSize();
-            context.drawString(font, Component.nullToEmpty(text), width * 2 / 3 + 20, 95, CommonColors.WHITE, true);
+            context.text(font, Component.nullToEmpty(text), width * 2 / 3 + 20, 95, CommonColors.WHITE, true);
 
 
-            context.drawString(font, Component.nullToEmpty("Game Versions:"), width * 2 / 3 + 20, 110, CommonColors.WHITE, false);
+            context.text(font, Component.nullToEmpty("Game Versions:"), width * 2 / 3 + 20, 110, CommonColors.WHITE, false);
             for (int i = 0; i < gameVersions.size(); i++) {
                 JsonElement gameVersion = gameVersions.get(i);
                 String str = gameVersion.getAsString();
                 if (!gameVersion.equals(gameVersions.get(gameVersions.size() - 1))) {
                     str += ",";
                 }
-                context.drawString(font, Component.nullToEmpty(str), width * 2 / 3 + 20, 120 + 10 * i, CommonColors.WHITE, true);
+                context.text(font, Component.nullToEmpty(str), width * 2 / 3 + 20, 120 + 10 * i, CommonColors.WHITE, true);
 
             }
 
@@ -205,19 +205,19 @@ public class VersionDetailsScreen extends Screen implements MarkdownScreenInterf
         if (dependencyIconIds != null) {
             if (dependencyIconIds.length > 0) {
                 context.pose().scale(1.2f, 1.2f);
-                context.drawString(font, Component.nullToEmpty("Dependencies"), 4, (int) (markdownRenderer.getMaxY() / 1.2 + scrollAmount / 1.2), CommonColors.WHITE, true);
+                context.text(font, Component.nullToEmpty("Dependencies"), 4, (int) (markdownRenderer.getMaxY() / 1.2 + scrollAmount / 1.2), CommonColors.WHITE, true);
                 context.pose().scale(1 / 1.2f, 1 / 1.2f);
             }
             for (int i = 0; i < dependencyIconIds.length; i++) {
                 if (dependencyIconIds[i] != null) {
                     context.blit(RenderPipelines.GUI_TEXTURED, dependencyIconIds[i], 4, i * 40 + 20 + (int) scrollAmount + markdownRenderer.getMaxY(), 0, 0, 30, 30, 30, 30);
-                    context.drawString(font, Component.nullToEmpty(dependencyNames[i]), 40, i * 40 + 20 + (int) scrollAmount + markdownRenderer.getMaxY(), CommonColors.WHITE, true);
-                    context.drawString(font, Component.nullToEmpty(StringUtils.capitalize(dependencyTypes[i])), 40, i * 40 + 32 + (int) scrollAmount + markdownRenderer.getMaxY(), CommonColors.LIGHTER_GRAY, true);
+                    context.text(font, Component.nullToEmpty(dependencyNames[i]), 40, i * 40 + 20 + (int) scrollAmount + markdownRenderer.getMaxY(), CommonColors.WHITE, true);
+                    context.text(font, Component.nullToEmpty(StringUtils.capitalize(dependencyTypes[i])), 40, i * 40 + 32 + (int) scrollAmount + markdownRenderer.getMaxY(), CommonColors.LIGHTER_GRAY, true);
                 }
             }
         }
 
-        doneButton.render(context, mouseX, mouseY, delta);
+        doneButton.extractRenderState(context, mouseX, mouseY, delta);
     }
 
     private String formatFileSize() {

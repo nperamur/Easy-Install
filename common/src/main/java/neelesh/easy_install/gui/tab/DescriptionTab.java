@@ -2,8 +2,8 @@ package neelesh.easy_install.gui.tab;
 
 import neelesh.easy_install.MarkdownRenderer;
 import neelesh.easy_install.gui.screen.ProjectScreen;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.RenderPipelines;
-import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.components.tabs.GridLayoutTab;
 import net.minecraft.client.gui.components.TabButton;
@@ -23,7 +23,7 @@ public class DescriptionTab extends GridLayoutTab implements Renderable {
     }
 
     @Override
-    public void render(GuiGraphics context, int mouseX, int mouseY, float delta) {
+    public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
 
         projectScreen.renderMenuBackground(context, 131, projectScreen.getScrollAmount() + ((TabButton) projectScreen.getTabNavigationWidget().children().get(0)).getHeight()-10, projectScreen.width, markdownRenderer.getMaxY());
         projectScreen.setMaxY(markdownRenderer.getMaxY());

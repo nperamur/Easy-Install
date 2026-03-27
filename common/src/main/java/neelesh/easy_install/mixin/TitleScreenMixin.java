@@ -1,12 +1,12 @@
 package neelesh.easy_install.mixin;
 
 
-import dev.architectury.injectables.annotations.ExpectPlatform;
 import neelesh.easy_install.EasyInstallClient;
 import neelesh.easy_install.ProjectType;
 import neelesh.easy_install.gui.screen.ProjectBrowser;
+import net.fabricmc.loader.FabricLoader;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.client.gui.components.Button;
@@ -30,17 +30,17 @@ public class TitleScreenMixin extends Screen {
 	public void init(CallbackInfo ci) {
 		buttonWidget = new Button.Builder(Component.nullToEmpty("Add Mods"), button -> {
 			ProjectBrowser modBrowser = new ProjectBrowser(this, ProjectType.MOD);
-			Minecraft.getInstance().setScreen(modBrowser);
+			Minecraft.getInstance().setScreen((Screen) ((Object) modBrowser));
 		}).build();
 	}
 
-	@Inject(method = "render", at = @At("TAIL"))
-	private void addCustomButton(GuiGraphics context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
+	@Inject(method = "extractRenderState", at = @At("TAIL"))
+	private void addCustomButton(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
 		if (buttonWidget != null) {
 			buttonWidget.setHeight(15);
 			buttonWidget.setWidth(80);
 			buttonWidget.setPosition(font.width(EasyInstallClient.getModLoaderDisplayText()) + 10, height-15);
-			buttonWidget.render(context, mouseX, mouseY, delta);
+			buttonWidget.extractRenderState(context, mouseX, mouseY, delta);
 			this.addWidget(buttonWidget);
 		}
 	}

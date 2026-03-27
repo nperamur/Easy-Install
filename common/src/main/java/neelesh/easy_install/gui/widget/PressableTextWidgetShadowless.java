@@ -3,7 +3,7 @@ package neelesh.easy_install.gui.widget;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
@@ -24,9 +24,9 @@ public class PressableTextWidgetShadowless extends Button {
     }
 
     @Override
-    protected void renderContents(GuiGraphics context, int mouseX, int mouseY, float deltaTicks) {
+    protected void extractContents(GuiGraphicsExtractor context, int mouseX, int mouseY, float deltaTicks) {
         MutableComponent text = this.isHoveredOrFocused() ? this.hoverText : this.text;
-        context.drawString(this.textRenderer, text, this.getX(), this.getY(), 16777215 | Mth.ceil(this.alpha * 255.0F) << 24, false);
+        context.text(this.textRenderer, text, this.getX(), this.getY(), 16777215 | Mth.ceil(this.alpha * 255.0F) << 24, false);
 
     }
 

@@ -4,8 +4,8 @@ import neelesh.easy_install.GalleryImage;
 import neelesh.easy_install.ImageLoader;
 import neelesh.easy_install.gui.screen.ProjectScreen;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.RenderPipelines;
-import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.components.tabs.GridLayoutTab;
 import net.minecraft.client.gui.components.TabButton;
@@ -41,7 +41,7 @@ public class GalleryTab extends GridLayoutTab implements Renderable {
     }
 
     @Override
-    public void render(GuiGraphics context, int mouseX, int mouseY, float delta) {
+    public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         projectScreen.renderMenuBackground(context, 131, projectScreen.getScrollAmount() + ((TabButton) projectScreen.getTabNavigationWidget().children().getFirst()).getHeight()-10, projectScreen.width, projectScreen.getMaxY());
         int y = 30;
         int prevHeight = 0;
@@ -54,10 +54,10 @@ public class GalleryTab extends GridLayoutTab implements Renderable {
             float titleSize = 1.2f;
 
             context.pose().scale(titleSize, titleSize);
-            context.drawWordWrap(projectScreen.getFont(), FormattedText.of(galleryImages.get(i).getTitle()), (int) ((135 + ((double) (projectScreen.width - 130)/2 + v) - imageSize/2)/titleSize), (int) ((int) (y + 5 + projectScreen.getScrollAmount() + imageSize/galleryImages.get(i).getImage().getWidth() * galleryImages.get(i).getImage().getHeight())/titleSize),(int) (imageSize/titleSize), CommonColors.WHITE, false);
+            context.textWithWordWrap(projectScreen.getFont(), FormattedText.of(galleryImages.get(i).getTitle()), (int) ((135 + ((double) (projectScreen.width - 130)/2 + v) - imageSize/2)/titleSize), (int) ((int) (y + 5 + projectScreen.getScrollAmount() + imageSize/galleryImages.get(i).getImage().getWidth() * galleryImages.get(i).getImage().getHeight())/titleSize),(int) (imageSize/titleSize), CommonColors.WHITE, false);
             float titleHeight = (projectScreen.getFont().wordWrapHeight(FormattedText.of(galleryImages.get(i).getTitle()), (int) (imageSize/titleSize)) * titleSize);
             context.pose().scale(1.0f/titleSize, 1.0f/titleSize);
-            context.drawWordWrap(projectScreen.getFont(), FormattedText.of(galleryImages.get(i).getDescription()), 135 + ((int)((double) (projectScreen.width - 130)/2 + v)  - (int) imageSize/2), (int) (y + titleHeight + 8 + projectScreen.getScrollAmount() + (imageSize/galleryImages.get(i).getImage().getWidth() * galleryImages.get(i).getImage().getHeight())),(int) imageSize, CommonColors.WHITE, false);
+            context.textWithWordWrap(projectScreen.getFont(), FormattedText.of(galleryImages.get(i).getDescription()), 135 + ((int)((double) (projectScreen.width - 130)/2 + v)  - (int) imageSize/2), (int) (y + titleHeight + 8 + projectScreen.getScrollAmount() + (imageSize/galleryImages.get(i).getImage().getWidth() * galleryImages.get(i).getImage().getHeight())),(int) imageSize, CommonColors.WHITE, false);
             context.blit(RenderPipelines.GUI_TEXTURED, galleryImages.get(i).getId(), 135 + ((int)((double) (projectScreen.width - 130)/2 + v) - (int) imageSize/2), y + projectScreen.getScrollAmount(), 0, 0, (int) imageSize, (int)(imageSize/galleryImages.get(i).getImage().getWidth() * galleryImages.get(i).getImage().getHeight()), (int) imageSize, (int)(imageSize/galleryImages.get(i).getImage().getWidth() * galleryImages.get(i).getImage().getHeight()));
             float descriptionHeight = (projectScreen.getFont().wordWrapHeight(FormattedText.of(galleryImages.get(i).getDescription()), (int) imageSize));
             if (!galleryImages.get(i).getTitle().trim().isEmpty()) {

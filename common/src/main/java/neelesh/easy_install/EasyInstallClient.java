@@ -6,7 +6,6 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import dev.architectury.injectables.annotations.ExpectPlatform;
 import net.minecraft.SharedConstants;
 import org.jetbrains.annotations.NotNull;
 
@@ -15,10 +14,7 @@ import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -36,10 +32,18 @@ public class EasyInstallClient {
     private static int numUpdates;
     private static HashMap<ProjectType, HashSet<String>> updatesNeeded = new HashMap<>();
     private static HashMap<ProjectType, HashSet<String>> installedProjects = new HashMap<>();
-    private static String GAME_VERSION = SharedConstants.getCurrentVersion().name();
-    private static String currentTargetUpdateVersion = SharedConstants.getCurrentVersion().name();
-
+    //private static String GAME_VERSION = SharedConstants.getCurrentVersion().name();
+    private static String currentTargetUpdateVersion = null;
+    
+    public static String getGameVersion() {
+        return SharedConstants.getCurrentVersion().name();
+    }
+    
     private static final String MODRINTH_BASE_URL = "https://api.modrinth.com/v2";
+
+    private static final Platform PLATFORM = ServiceLoader.load(Platform.class)
+            .findFirst()
+            .orElseThrow();
 
     public static String getSortMethod() {
         return sortMethod;
@@ -54,20 +58,26 @@ public class EasyInstallClient {
         updatesNeeded.put(ProjectType.DATA_PACK, new HashSet<>());
     }
 
+    //TODO: Handle this better
     public static String getCurrentTargetUpdateVersion() {
+        if (currentTargetUpdateVersion == null) {
+            try {
+                setCurrentTargetUpdateVersion(SharedConstants.getCurrentVersion().name());
+            } catch (Exception e) {
+                return "21.6";
+            }
+        }
         return currentTargetUpdateVersion;
     }
 
-    public static String getGameVersion() {
-        return GAME_VERSION;
-    }
+
 
     public static void setCurrentTargetUpdateVersion(String targetUpdateVersion) {
         currentTargetUpdateVersion = targetUpdateVersion;
     }
 
     public static void resetTargetUpdateVersion() {
-        currentTargetUpdateVersion = GAME_VERSION;
+        currentTargetUpdateVersion = getGameVersion();
     }
 
 
@@ -171,13 +181,13 @@ public class EasyInstallClient {
         if (isFilteredByGameVersion) {
             urlString = switch (projectType) {
                 case MOD ->
-                        "https://api.modrinth.com/v2/project/" + slug + "/version?loaders=" + URLEncoder.encode(String.format("[\"%s\"]", getLoader())) + "&game_versions=" + URLEncoder.encode(String.format("[\"%s\"]", GAME_VERSION));
+                        "https://api.modrinth.com/v2/project/" + slug + "/version?loaders=" + URLEncoder.encode(String.format("[\"%s\"]", getLoader())) + "&game_versions=" + URLEncoder.encode(String.format("[\"%s\"]", getGameVersion()));
                 case DATA_PACK ->
-                        "https://api.modrinth.com/v2/project/" + slug + "/version?loaders=" + URLEncoder.encode("[\"datapack\"]") + "&game_versions=" + URLEncoder.encode(String.format("[\"%s\"]", GAME_VERSION));
+                        "https://api.modrinth.com/v2/project/" + slug + "/version?loaders=" + URLEncoder.encode("[\"datapack\"]") + "&game_versions=" + URLEncoder.encode(String.format("[\"%s\"]", getGameVersion()));
                 case SHADER ->
-                        "https://api.modrinth.com/v2/project/" + slug + "/version?loaders=" + URLEncoder.encode("[\"iris\"]") + "&game_versions=" + URLEncoder.encode(String.format("[\"%s\"]", GAME_VERSION));
+                        "https://api.modrinth.com/v2/project/" + slug + "/version?loaders=" + URLEncoder.encode("[\"iris\"]") + "&game_versions=" + URLEncoder.encode(String.format("[\"%s\"]", getGameVersion()));
                 default ->
-                        "https://api.modrinth.com/v2/project/" + slug + "/version?game_versions=" + URLEncoder.encode(String.format("[\"%s\"]", GAME_VERSION));
+                        "https://api.modrinth.com/v2/project/" + slug + "/version?game_versions=" + URLEncoder.encode(String.format("[\"%s\"]", getGameVersion()));
             };
         } else {
             urlString = switch (projectType) {
@@ -355,9 +365,9 @@ public class EasyInstallClient {
 
     }
 
-    @ExpectPlatform
+
     private static String getLoader() {
-        throw new AssertionError();
+        return PLATFORM.getLoader();
     }
 
     public static void search(String query, ProjectType projectType, int offset, HashSet<String> categories, boolean isFilteredByGameVersion, Environment environment) {
@@ -384,10 +394,10 @@ public class EasyInstallClient {
         String encodedFacets;
         if (isFilteredByGameVersion) {
             encodedFacets = switch(projectType) {
-                case MOD -> URLEncoder.encode(String.format("[[\"categories:%s\"],[\"versions:%s\"],[\"project_type:mod\"]" + strings + "]", getLoader(), GAME_VERSION), StandardCharsets.UTF_8);
-                case RESOURCE_PACK -> URLEncoder.encode(String.format("[[\"versions:%s\"],[\"project_type:resourcepack\"]" + strings + "]", GAME_VERSION), StandardCharsets.UTF_8);
-                case DATA_PACK -> URLEncoder.encode(String.format("[[\"versions:%s\"],[\"project_type:datapack\"]" + strings + "]", GAME_VERSION), StandardCharsets.UTF_8);
-                case SHADER -> URLEncoder.encode(String.format("[[\"versions:%s\"],[\"project_type:shader\"],[\"categories:iris\"]" + strings + "]", GAME_VERSION), StandardCharsets.UTF_8);
+                case MOD -> URLEncoder.encode(String.format("[[\"categories:%s\"],[\"versions:%s\"],[\"project_type:mod\"]" + strings + "]", getLoader(), getGameVersion()), StandardCharsets.UTF_8);
+                case RESOURCE_PACK -> URLEncoder.encode(String.format("[[\"versions:%s\"],[\"project_type:resourcepack\"]" + strings + "]", getGameVersion()), StandardCharsets.UTF_8);
+                case DATA_PACK -> URLEncoder.encode(String.format("[[\"versions:%s\"],[\"project_type:datapack\"]" + strings + "]", getGameVersion()), StandardCharsets.UTF_8);
+                case SHADER -> URLEncoder.encode(String.format("[[\"versions:%s\"],[\"project_type:shader\"],[\"categories:iris\"]" + strings + "]", getGameVersion()), StandardCharsets.UTF_8);
             };
         } else {
             encodedFacets = switch(projectType) {
@@ -517,7 +527,7 @@ public class EasyInstallClient {
         }
         jsonObject.add("loaders", loaders);
         JsonArray gameVersions = new JsonArray();
-        gameVersions.add(currentTargetUpdateVersion);
+        gameVersions.add(getCurrentTargetUpdateVersion());
         jsonObject.add("game_versions", gameVersions);
         return jsonObject.toString();
     }
@@ -571,19 +581,17 @@ public class EasyInstallClient {
         };
     }
 
-    @ExpectPlatform
     public static String getModLoaderDisplayText() {
-        throw new AssertionError();
+        return PLATFORM.getModLoaderDisplayText();
     }
 
-    @ExpectPlatform
     public static String getGameDir() {
-        throw new AssertionError();
+        return PLATFORM.getGameDir();
     }
 
-    @ExpectPlatform
+
     public static File getGameDirAsFile() {
-        throw new AssertionError();
+        return PLATFORM.getGameDirAsFile();
     }
 
 
@@ -653,7 +661,7 @@ public class EasyInstallClient {
 
     public static JsonObject getUserProfile(String name) {
         try {
-            HttpURLConnection connection = getConnection("/user");
+            HttpURLConnection connection = getConnection("/user/" + name);
             connection.setRequestMethod("GET");
             if (connection.getResponseCode() == HttpURLConnection.HTTP_OK) {
                 try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {

@@ -14,23 +14,17 @@ logoFile = "assets/easy_install/icon.png"
 [[dependencies.easy-install]]
 modId = "neoforge"
 type = "required"
-versionRange = "[21.11,)"
+versionRange = "[26.1,)"
 ordering = "NONE"
 side = "BOTH"
 
 [[dependencies.easy-install]]
 modId = "minecraft"
 type = "required"
-versionRange = "[1.21.11]"
+versionRange = "[26.1]"
 ordering = "NONE"
 side = "BOTH"
 
-[[dependencies.easy-install]]
-modId = "architectury"
-type = "required"
-versionRange = "[15.0.1,)"
-ordering = "AFTER"
-side = "BOTH"
 
 [[mixins]]
 config = "easy-install.mixins.json"

@@ -8,8 +8,8 @@ import neelesh.easy_install.Version;
 import neelesh.easy_install.gui.screen.ProjectScreen;
 import neelesh.easy_install.gui.screen.VersionDetailsScreen;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.RenderPipelines;
-import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.components.tabs.GridLayoutTab;
 import net.minecraft.client.gui.components.Button;
@@ -45,6 +45,9 @@ public class VersionsTab extends GridLayoutTab implements Renderable {
             if (!projectScreen.isFilteredByGameVersion()) {
                 Thread thread2 = new Thread(() -> {
                     String response2 = EasyInstallClient.getVersions(projectScreen.getProjectInfo().getSlug(), projectScreen.getProjectInfo().getProjectType(), true);
+                    if (response2 == null || JsonParser.parseString(response2).getAsJsonArray().isEmpty()) {
+                        return;
+                    }
                     JsonObject jsonObject = JsonParser.parseString(response2).getAsJsonArray().get(0).getAsJsonObject();
                     try {
                         this.projectInstallVersion = EasyInstallClient.createVersion(jsonObject, projectScreen.getProjectInfo().getProjectType());
@@ -101,9 +104,11 @@ public class VersionsTab extends GridLayoutTab implements Renderable {
                     versionButtons[finalI].setSize(55, 14);
                     projectScreen.addSelectableChild(versionButtons[finalI]);
 
-                    versionDetailButtons[finalI] = new PlainTextButton(140, finalI * 40 + projectScreen.getScrollAmount(), projectScreen.getFont().width(versions[finalI].getName()), 9, Component.nullToEmpty(versions[finalI].getName()), button -> {
-                        Minecraft.getInstance().setScreen(new VersionDetailsScreen(versions[finalI], projectScreen));
-                    }, projectScreen.getFont());
+                    if (versions[finalI] != null) {
+                        versionDetailButtons[finalI] = new PlainTextButton(140, finalI * 40 + projectScreen.getScrollAmount(), projectScreen.getFont().width(versions[finalI].getName()), 9, Component.nullToEmpty(versions[finalI].getName()), button -> {
+                            Minecraft.getInstance().setScreen(new VersionDetailsScreen(versions[finalI], projectScreen));
+                        }, projectScreen.getFont());
+                    }
                     projectScreen.addSelectableChild(versionDetailButtons[finalI]);
                 });
             }
@@ -113,7 +118,7 @@ public class VersionsTab extends GridLayoutTab implements Renderable {
     }
 
     @Override
-    public void render(GuiGraphics context, int mouseX, int mouseY, float delta) {
+    public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         if (versions == null) {
             return;
         }
@@ -135,7 +140,7 @@ public class VersionsTab extends GridLayoutTab implements Renderable {
             }
 
             versionDetailButtons[i].setPosition(140, i * 40 + projectScreen.getScrollAmount() + 20);
-            versionDetailButtons[i].render(context, mouseX, mouseY, delta);
+            versionDetailButtons[i].extractRenderState(context, mouseX, mouseY, delta);
             //context.drawText(projectScreen.getTextRenderer(), Text.of(versions[i].getName()), 140, i * 40 + projectScreen.getScrollAmount() + 20, Colors.WHITE, true);
             ChatFormatting formatting;
             formatting = switch(versions[i].getVersionType()) {
@@ -144,9 +149,9 @@ public class VersionsTab extends GridLayoutTab implements Renderable {
                 case "alpha" -> ChatFormatting.RED;
                 default -> null;
             };
-            context.drawString(projectScreen.getFont(), Component.literal("•" + versions[i].getVersionType()).withStyle(formatting), 140, i * 40 + projectScreen.getScrollAmount() + 30, CommonColors.WHITE, true);
-            context.drawString(projectScreen.getFont(), Component.nullToEmpty(versions[i].getVersionNumber()), 140 + projectScreen.getFont().width("•" + versions[i].getVersionType()) + 8, i * 40 + projectScreen.getScrollAmount() + 30, CommonColors.WHITE, true);
-            context.drawString(projectScreen.getFont(), Component.nullToEmpty(String.format("%,d", versions[i].getNumDownloads()) + " downloads"), projectScreen.width - projectScreen.getFont().width(String.format("%,d", versions[i].getNumDownloads()) + " downloads") - 8, i * 40 + projectScreen.getScrollAmount() + 36, CommonColors.WHITE, true);
+            context.text(projectScreen.getFont(), Component.literal("•" + versions[i].getVersionType()).withStyle(formatting), 140, i * 40 + projectScreen.getScrollAmount() + 30, CommonColors.WHITE, true);
+            context.text(projectScreen.getFont(), Component.nullToEmpty(versions[i].getVersionNumber()), 140 + projectScreen.getFont().width("•" + versions[i].getVersionType()) + 8, i * 40 + projectScreen.getScrollAmount() + 30, CommonColors.WHITE, true);
+            context.text(projectScreen.getFont(), Component.nullToEmpty(String.format("%,d", versions[i].getNumDownloads()) + " downloads"), projectScreen.width - projectScreen.getFont().width(String.format("%,d", versions[i].getNumDownloads()) + " downloads") - 8, i * 40 + projectScreen.getScrollAmount() + 36, CommonColors.WHITE, true);
 
 
             File file = new File(EasyInstallClient.getSavePath(projectScreen.getProjectInfo().getProjectType(), versions[i].getFilename()).toString());
@@ -181,7 +186,7 @@ public class VersionsTab extends GridLayoutTab implements Renderable {
 
             }
             versionButtons[i].setPosition(projectScreen.width - versionButtons[i].getWidth() - 10, i * 40 + 20 + projectScreen.getScrollAmount());
-            versionButtons[i].render(context, mouseX, mouseY, delta);
+            versionButtons[i].extractRenderState(context, mouseX, mouseY, delta);
         }
         initialized = true;
         context.blit(

@@ -6,7 +6,7 @@ import neelesh.easy_install.gui.screen.ProjectBrowser;
 import net.irisshaders.iris.gui.element.ShaderPackOptionList;
 import net.irisshaders.iris.gui.screen.ShaderPackScreen;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.network.chat.Component;
@@ -46,10 +46,10 @@ public class ShaderPackScreenMixin extends Screen {
         addWidget(buttonWidget);
     }
 
-    @Inject(method = "render", at = @At("TAIL"))
-    private void addCustomButton(GuiGraphics context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
+    @Inject(method = "extractRenderState", at = @At("TAIL"))
+    private void addCustomButton(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
         if (!(this.optionMenuOpen && this.shaderOptionList != null) && !guiHidden) {
-            buttonWidget.render(context, mouseX, mouseY, delta);
+            buttonWidget.extractRenderState(context, mouseX, mouseY, delta);
         }
 
     }

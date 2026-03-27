@@ -4,7 +4,7 @@ import neelesh.easy_install.EasyInstallClient;
 import neelesh.easy_install.ProjectType;
 import neelesh.easy_install.gui.widget.VersionPickerWidget;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.ConfirmScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.components.Button;
@@ -120,16 +120,16 @@ public class SettingsScreen extends Screen {
     }
 
     @Override
-    public void render(GuiGraphics context, int mouseX, int mouseY, float deltaTicks) {
-        super.render(context, mouseX, mouseY, deltaTicks);
-        context.drawString(font, Component.literal("Settings"), this.width / 2 - font.width("Settings") / 2, 10, CommonColors.WHITE, true);
+    public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float deltaTicks) {
+        super.extractRenderState(context, mouseX, mouseY, deltaTicks);
+        context.text(font, Component.literal("Settings"), this.width / 2 - font.width("Settings") / 2, 10, CommonColors.WHITE, true);
 
 
-        context.drawString(font, Component.nullToEmpty("Scanning for updates to Minecraft version: " + EasyInstallClient.getCurrentTargetUpdateVersion()), 10, 40, CommonColors.WHITE, true);
+        context.text(font, Component.nullToEmpty("Scanning for updates to Minecraft version: " + EasyInstallClient.getCurrentTargetUpdateVersion()), 10, 40, CommonColors.WHITE, true);
 
 
 
-        context.drawString(font, Component.nullToEmpty("Configure target update version"), 10, 55, CommonColors.WHITE, false);
+        context.text(font, Component.nullToEmpty("Configure target update version"), 10, 55, CommonColors.WHITE, false);
 
 
         if (versionPickerWidget.getFocused() != null) {
@@ -140,15 +140,15 @@ public class SettingsScreen extends Screen {
             versionCancelButton.active = false;
         }
 
-        versionPickerWidget.render(context, mouseX, mouseY, deltaTicks);
-        versionSaveButton.render(context, mouseX, mouseY, deltaTicks);
-        versionCancelButton.render(context, mouseX, mouseY, deltaTicks);
+        versionPickerWidget.extractRenderState(context, mouseX, mouseY, deltaTicks);
+        versionSaveButton.extractRenderState(context, mouseX, mouseY, deltaTicks);
+        versionCancelButton.extractRenderState(context, mouseX, mouseY, deltaTicks);
         doneButton.setPosition(width / 2 - doneButton.getWidth() / 2, height - 25);
-        doneButton.render(context, mouseX, mouseY, deltaTicks);
+        doneButton.extractRenderState(context, mouseX, mouseY, deltaTicks);
 
         clearButton.active = !EasyInstallClient.getCurrentTargetUpdateVersion().equals(EasyInstallClient.getGameVersion());
         clearButton.setPosition(width - 115, 8);
-        clearButton.render(context, mouseX, mouseY, deltaTicks);
+        clearButton.extractRenderState(context, mouseX, mouseY, deltaTicks);
 
 
     }
