@@ -57,14 +57,13 @@ public class EasyInstallClient {
         installedProjects.put(ProjectType.DATA_PACK, new HashSet<>());
         updatesNeeded.put(ProjectType.DATA_PACK, new HashSet<>());
     }
-
-    //TODO: Handle this better
+    
     public static String getCurrentTargetUpdateVersion() {
         if (currentTargetUpdateVersion == null) {
             try {
                 setCurrentTargetUpdateVersion(SharedConstants.getCurrentVersion().name());
             } catch (Exception e) {
-                return "21.6";
+                return "26.1";
             }
         }
         return currentTargetUpdateVersion;
