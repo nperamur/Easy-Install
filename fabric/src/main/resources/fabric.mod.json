@@ -1,7 +1,7 @@
 {
 	"schemaVersion": 1,
 	"id": "easy-install",
-	"version": "1.1.9",
+	"version": "1.1.10",
 	"name": "Easy Install",
 	"description": "Browse, install, and update mods, resource packs, data packs, and shaders from Modrinth directly in-game!",
 	"authors": [
@@ -33,7 +33,7 @@
 
 	"depends": {
 		"fabricloader": ">=0.16.7",
-		"minecraft": ["26.1"],
+		"minecraft": "~26.1",
 		"java": ">=21",
 		"fabric-api": "*"
 	},

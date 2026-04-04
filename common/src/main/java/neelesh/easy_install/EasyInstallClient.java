@@ -60,11 +60,7 @@ public class EasyInstallClient {
     
     public static String getCurrentTargetUpdateVersion() {
         if (currentTargetUpdateVersion == null) {
-            try {
-                setCurrentTargetUpdateVersion(SharedConstants.getCurrentVersion().name());
-            } catch (Exception e) {
-                return "26.1";
-            }
+            setCurrentTargetUpdateVersion(SharedConstants.getCurrentVersion().name());
         }
         return currentTargetUpdateVersion;
     }
