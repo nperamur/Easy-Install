@@ -61,12 +61,12 @@ public class SettingsScreen extends Screen {
                     ConfirmScreen confirmScreen = new ConfirmScreen(bool -> {
                         if (bool) {
                             setTargetUpdateVersion(version, projectType);
-                            minecraft.setScreen(this);
+                            minecraft.gui.setScreen(this);
                         } else {
-                            minecraft.setScreen(this);
+                            minecraft.gui.setScreen(this);
                         }
                     }, Component.nullToEmpty("Are you sure you want to change the target update version?"), Component.literal("This could make this mod scan for updates to versions incompatible with this Minecraft instance.").withColor(0xFFA500));
-                    minecraft.setScreen(confirmScreen);
+                    minecraft.gui.setScreen(confirmScreen);
                 } else {
                     this.setTargetUpdateVersion(version, projectType);
                 }
@@ -91,7 +91,7 @@ public class SettingsScreen extends Screen {
         }).build();
 
         this.doneButton = Button.builder(Component.nullToEmpty("Done"), button -> {
-            Minecraft.getInstance().setScreen(parent);
+            Minecraft.getInstance().gui.setScreen(parent);
         }).build();
 
 

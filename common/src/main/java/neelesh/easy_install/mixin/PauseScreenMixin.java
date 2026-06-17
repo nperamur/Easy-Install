@@ -21,7 +21,7 @@ public class PauseScreenMixin extends Screen {
     }
     private Button buttonWidget = new Button.Builder(Component.nullToEmpty("\uD83D\uDCE5 Add Mods"), button -> {
         ProjectBrowser modBrowser = new ProjectBrowser(this, ProjectType.MOD);
-        Minecraft.getInstance().setScreen(modBrowser);
+        Minecraft.getInstance().gui.setScreen(modBrowser);
     }).build();
 
 

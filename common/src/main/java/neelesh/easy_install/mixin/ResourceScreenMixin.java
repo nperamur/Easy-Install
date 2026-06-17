@@ -41,7 +41,7 @@ public class ResourceScreenMixin extends Screen {
         }
         this.buttonWidget = new Button.Builder(Component.nullToEmpty(buttonText), button -> {
             ProjectBrowser browser = new ProjectBrowser(this, projectType);
-            Minecraft.getInstance().setScreen(browser);
+            Minecraft.getInstance().gui.setScreen(browser);
         }).build();
         buttonWidget.setHeight(15);
         buttonWidget.setWidth(110);

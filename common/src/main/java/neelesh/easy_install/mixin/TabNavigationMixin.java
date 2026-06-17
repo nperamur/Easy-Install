@@ -3,6 +3,9 @@ package neelesh.easy_install.mixin;
 
 import com.google.common.collect.ImmutableList;
 import neelesh.easy_install.gui.tab.TabNavigationMixinInterface;
+import net.minecraft.client.gui.components.tabs.MenuTabBar;
+import net.minecraft.client.gui.components.tabs.Tab;
+import net.minecraft.client.gui.layouts.FrameLayout;
 import net.minecraft.client.gui.layouts.LinearLayout;
 import net.minecraft.client.gui.components.TabButton;
 import net.minecraft.client.gui.components.tabs.TabNavigationBar;
@@ -13,14 +16,15 @@ import org.spongepowered.asm.mixin.Unique;
 @Mixin(TabNavigationBar.class)
 public class TabNavigationMixin implements TabNavigationMixinInterface {
     @Shadow
-    private final LinearLayout layout;
+    private final FrameLayout layout;
 
     @Shadow
-    private final ImmutableList<TabButton> tabButtons;
+    protected final ImmutableList<TabButton> tabButtons;
 
-    public TabNavigationMixin(ImmutableList<TabButton> tabButtons) {
-        this.tabButtons = tabButtons;
-        this.layout = LinearLayout.horizontal();
+    public TabNavigationMixin(ImmutableList<TabButton> tabButtons, FrameLayout layout, ImmutableList<TabButton> tabButtons1) {
+
+        this.layout = layout;
+        this.tabButtons = tabButtons1;
     }
 
     @Unique

@@ -53,9 +53,9 @@ public class CategoryScreen extends Screen {
             if (checked) {
                 ConfirmScreen confirmScreen = new ConfirmScreen(bool -> {
                     browser.setFilteredByGameVersion(!bool);
-                    minecraft.setScreen(this);
+                    minecraft.gui.setScreen(this);
                 }, Component.nullToEmpty("Are you sure you want to disable the game version filter?"), Component.literal("Disabling the game version filter may allow you to install incompatible content.").withColor(0xFFA500));
-                minecraft.setScreen(confirmScreen);
+                minecraft.gui.setScreen(confirmScreen);
             } else {
                 browser.setFilteredByGameVersion(true);
             }
@@ -106,7 +106,7 @@ public class CategoryScreen extends Screen {
         doneButton = Button.builder(Component.nullToEmpty("Done"), button -> {
             browser.setPage(0);
             browser.setInitialized(false);
-            minecraft.setScreen(browser);
+            minecraft.gui.setScreen(browser);
         }).build();
         doneButton.setPosition(width/2 - 70, height - 25);
         this.addWidget(doneButton);

@@ -27,7 +27,7 @@ public class ProfileScreen extends Screen {
     protected ProfileScreen(String name, Screen parent) {
         super(Component.nullToEmpty("Profile Screen"));
         doneButton = Button.builder(Component.nullToEmpty("Done"), button -> {
-            minecraft.setScreen(parent);
+            minecraft.gui.setScreen(parent);
         }).build();
         this.userName = name;
         Thread thread = new Thread(() -> {

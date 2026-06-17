@@ -21,7 +21,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public class ShaderPackScreenMixin extends Screen {
     private Button buttonWidget = new Button.Builder(Component.nullToEmpty("Add Shaders"), button -> {
         ProjectBrowser browser = new ProjectBrowser(this, ProjectType.SHADER);
-        Minecraft.getInstance().setScreen(browser);
+        Minecraft.getInstance().gui.setScreen(browser);
     }).build();
 
     @Shadow

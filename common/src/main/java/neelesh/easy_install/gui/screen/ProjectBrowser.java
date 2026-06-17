@@ -43,7 +43,7 @@ public class ProjectBrowser extends Screen {
     private static Thread searchThread;
     private final ProjectType projectType;
     private final Button doneButton = Button.builder(Component.nullToEmpty("Done"), button -> {
-        minecraft.setScreen(prevScreen);
+        minecraft.gui.setScreen(prevScreen);
     }).build();
     private Button backButton;
     private Button nextButton;
@@ -107,20 +107,20 @@ public class ProjectBrowser extends Screen {
         });
 //        sortButton.setValue(EasyInstallClient.getSortMethod());
         categoriesButton = Button.builder(Component.nullToEmpty("Select Categories"), button -> {
-            Minecraft.getInstance().setScreen(new CategoryScreen(this, projectType));
+            Minecraft.getInstance().gui.setScreen(new CategoryScreen(this, projectType));
         }).build();
         categoriesButton.setSize(100, 18);
         categoriesButton.setPosition(260, 22);
         this.addWidget(categoriesButton);
         settingsButton = Button.builder(Component.nullToEmpty(""), button -> {
-            Minecraft.getInstance().setScreen(new SettingsScreen(this, this.projectType));
+            Minecraft.getInstance().gui.setScreen(new SettingsScreen(this, this.projectType));
         }).build();
         settingsButton.setSize(20, 20);
         settingsButton.setPosition(width - 30, 0);
         settingsButton.setTooltip(Tooltip.create(Component.nullToEmpty("Settings")));
         this.addWidget(settingsButton);
         updateScreenButton = Button.builder(Component.nullToEmpty(""), button -> {
-            minecraft.setScreen(new UpdateScreen(projectType, this));
+            minecraft.gui.setScreen(new UpdateScreen(projectType, this));
         }).build();
         updateScreenButton.setSize(20, 20);
         updateScreenButton.setPosition(width - 55, 0);
@@ -240,7 +240,7 @@ public class ProjectBrowser extends Screen {
             installButtons[i] = buttonWidget;
             installButtons[i].setX(width - 70);
             Button projectButtonWidget = Button.builder(Component.nullToEmpty("More Info"), button -> {
-                minecraft.setScreen(new ProjectScreen(this, INFO[finalI], this.updatedVersions));
+                minecraft.gui.setScreen(new ProjectScreen(this, INFO[finalI], this.updatedVersions));
             }).build();
             projectButtonWidget.setSize(60, 14);
             projectScreenButtons[i] = projectButtonWidget;
@@ -273,7 +273,7 @@ public class ProjectBrowser extends Screen {
                     removeWidget(authors[i]);
                 }
                 authors[i] = new PressableTextWidgetShadowless(0, 0, font.width(Component.translationArg(Component.nullToEmpty(INFO[i].getAuthor()))), 9, Component.literal(INFO[i].getAuthor()), button -> {
-                    minecraft.setScreen(new ProfileScreen(INFO[finalI].getAuthor(), this));
+                    minecraft.gui.setScreen(new ProfileScreen(INFO[finalI].getAuthor(), this));
                 }, font);
                 authors[i].setPosition(75 + font.width(INFO[i].getTitle() + "by "), firstRowY + (int) scrollAmount + i * 50);
                 authors[i].extractRenderState(context, mouseX, mouseY, delta);

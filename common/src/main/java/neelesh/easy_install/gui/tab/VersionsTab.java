@@ -106,7 +106,7 @@ public class VersionsTab extends GridLayoutTab implements Renderable {
 
                     if (versions[finalI] != null) {
                         versionDetailButtons[finalI] = new PlainTextButton(140, finalI * 40 + projectScreen.getScrollAmount(), projectScreen.getFont().width(versions[finalI].getName()), 9, Component.nullToEmpty(versions[finalI].getName()), button -> {
-                            Minecraft.getInstance().setScreen(new VersionDetailsScreen(versions[finalI], projectScreen));
+                            Minecraft.getInstance().gui.setScreen(new VersionDetailsScreen(versions[finalI], projectScreen));
                         }, projectScreen.getFont());
                     }
                     projectScreen.addSelectableChild(versionDetailButtons[finalI]);

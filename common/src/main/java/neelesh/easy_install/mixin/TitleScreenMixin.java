@@ -30,7 +30,7 @@ public class TitleScreenMixin extends Screen {
 	public void init(CallbackInfo ci) {
 		buttonWidget = new Button.Builder(Component.nullToEmpty("Add Mods"), button -> {
 			ProjectBrowser modBrowser = new ProjectBrowser(this, ProjectType.MOD);
-			Minecraft.getInstance().setScreen((Screen) ((Object) modBrowser));
+			Minecraft.getInstance().gui.setScreen((Screen) ((Object) modBrowser));
 		}).build();
 	}
 

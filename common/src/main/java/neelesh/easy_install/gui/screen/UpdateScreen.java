@@ -73,7 +73,7 @@ public class UpdateScreen extends Screen {
                                 titles.set(finalI, jsonArray.get(finalX).getAsJsonObject().get("title").getAsString());
 
                                 versionDetailButtons.add(new PlainTextButton(140, (int) (finalI * 40 + scrollAmount), font.width(versionTemp.get(finalI).getName()), 9, Component.nullToEmpty(versionTemp.get(finalI).getName()), button -> {
-                                    Minecraft.getInstance().setScreen(new VersionDetailsScreen(versionTemp.get(finalI), this));
+                                    Minecraft.getInstance().gui.setScreen(new VersionDetailsScreen(versionTemp.get(finalI), this));
                                 }, font));
                                 this.addWidget(versionDetailButtons.get(finalI));
                                 Thread thread2 = new Thread(() -> {
@@ -134,7 +134,7 @@ public class UpdateScreen extends Screen {
     protected void init() {
         super.init();
 
-        doneButton = Button.builder(Component.nullToEmpty("Done"), button -> Minecraft.getInstance().setScreen(parent)).build();
+        doneButton = Button.builder(Component.nullToEmpty("Done"), button -> Minecraft.getInstance().gui.setScreen(parent)).build();
         this.addWidget(doneButton);
         this.addWidget(updateAll);
         for (int i = 0; i < versions.size(); i++) {
@@ -172,7 +172,7 @@ public class UpdateScreen extends Screen {
             int finalI = i;
             this.removeWidget(versionDetailButtons.get(i));
             versionDetailButtons.set(i, new PlainTextButton(140, (int) (i * 40 + scrollAmount), font.width(versions.get(i).getName()), 9, Component.nullToEmpty(versions.get(i).getName()), button -> {
-                Minecraft.getInstance().setScreen(new VersionDetailsScreen(versions.get(finalI), this));
+                Minecraft.getInstance().gui.setScreen(new VersionDetailsScreen(versions.get(finalI), this));
             }, font));
             this.addWidget(versionDetailButtons.get(i));
             versionDetailButtons.get(i).setPosition(50, i * 50 + 45 + (int) scrollAmount);

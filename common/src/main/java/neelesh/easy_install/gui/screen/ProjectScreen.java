@@ -9,6 +9,7 @@ import neelesh.easy_install.gui.tab.TabNavigationMixinInterface;
 import neelesh.easy_install.gui.tab.VersionsTab;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.tabs.MenuTabBar;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.components.events.GuiEventListener;
@@ -18,7 +19,7 @@ import net.minecraft.client.gui.components.tabs.Tab;
 import net.minecraft.client.gui.components.tabs.TabManager;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.TabButton;
-import net.minecraft.client.gui.components.tabs.TabNavigationBar;
+import net.minecraft.client.gui.components.tabs.MenuTabBar;
 import net.minecraft.network.chat.FormattedText;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.CommonColors;
@@ -89,13 +90,13 @@ public class ProjectScreen extends Screen implements MarkdownScreenInterface {
     }).build();
 
     private final Button doneButton = Button.builder(Component.nullToEmpty("Done"), button -> {
-        Minecraft.getInstance().setScreen(this.prevScreen);
+        Minecraft.getInstance().gui.setScreen(this.prevScreen);
     }).build();
     private DescriptionTab descriptionTab;
     private Tab prevTab;
 
     private TabManager tabManager;
-    private TabNavigationBar tabNavigationWidget;
+    private MenuTabBar tabNavigationWidget;
     private int scrollAmount = 15;
     public static final Identifier VERTICAL_SEPARATOR_TEXTURE = Identifier.fromNamespaceAndPath(EasyInstall.MOD_ID,"textures/gui/vertical_separator.png");
     protected ProjectScreen(Screen parent, ProjectInfo projectInfo, ArrayList<Version> updatedVersions) {
@@ -203,12 +204,14 @@ public class ProjectScreen extends Screen implements MarkdownScreenInterface {
         this.versionsTab = new VersionsTab(Component.nullToEmpty("Versions"), this);
         tabManager = new TabManager(this::addSelectableChild, this::removeWidget);
         if (!galleryImages.isEmpty()) {
-            tabNavigationWidget = TabNavigationBar.builder(this.tabManager, width - 131).addTabs(descriptionTab, galleryTab, versionsTab).build(); //width - 131
+            tabNavigationWidget = MenuTabBar.builder(this.tabManager, width - 131)
+                    .addTabs(new Tab[]{descriptionTab, galleryTab, versionsTab}).build(); //width - 131
         } else {
-            tabNavigationWidget = TabNavigationBar.builder(this.tabManager, width - 131).addTabs(descriptionTab, versionsTab).build(); // width - 131
+            tabNavigationWidget = MenuTabBar.builder(this.tabManager, width - 131)
+                    .addTabs(new Tab[]{descriptionTab, versionsTab}).build(); // width - 131
 
         }
-        tabNavigationWidget.arrangeElements();
+        tabNavigationWidget.arrangeElements(width - 131);
         if (tabNavigationWidget instanceof TabNavigationMixinInterface) {
             ((TabNavigationMixinInterface) tabNavigationWidget).setButtonWidth((this.width - 130)/(tabNavigationWidget.children().size()));
         }
@@ -275,7 +278,7 @@ public class ProjectScreen extends Screen implements MarkdownScreenInterface {
         return tabManager;
     }
 
-    public TabNavigationBar getTabNavigationWidget() {
+    public MenuTabBar getTabNavigationWidget() {
         return tabNavigationWidget;
     }
 

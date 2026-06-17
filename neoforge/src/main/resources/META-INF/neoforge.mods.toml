@@ -14,14 +14,14 @@ logoFile = "assets/easy_install/icon.png"
 [[dependencies.easy-install]]
 modId = "neoforge"
 type = "required"
-versionRange = "[26.1,)"
+versionRange = "[26.2,)"
 ordering = "NONE"
 side = "BOTH"
 
 [[dependencies.easy-install]]
 modId = "minecraft"
 type = "required"
-versionRange = "[26.1,26.2)"
+versionRange = "[26.2,)"
 ordering = "NONE"
 side = "BOTH"
 
