@@ -26,6 +26,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
@@ -271,7 +272,7 @@ public class MarkdownRenderer {
                 } else if (isLink && (linkLengths.get(l) == j || i == textString.length() - 1)) {
                     String link = linkUrls.get(l);
                     Button buttonWidget = Button.builder(Component.empty(), button -> {
-                        ConfirmLinkScreen.confirmLinkNow(screen, link, false);
+                        ConfirmLinkScreen.confirmLinkNow(screen, URI.create(link), false);
                     }).build();
                     MutableComponent prevText = Component.literal("");
                     MutableComponent currentText = Component.literal("");
@@ -476,7 +477,7 @@ public class MarkdownRenderer {
 
     private void createClickableImageButtons(int x, int y, int width, int height, String link) {
         Button button = Button.builder(Component.nullToEmpty(""), button1 -> {
-            ConfirmLinkScreen.confirmLinkNow(screen, link, false);
+            ConfirmLinkScreen.confirmLinkNow(screen, URI.create(link), false);
         }).build();
         button.setSize(width, height);
         ((MarkdownScreenInterface) screen).addSelectableChild(button);

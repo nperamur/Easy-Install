@@ -2,6 +2,7 @@ package neelesh.easy_install.gui.screen;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import com.mojang.blaze3d.Blaze3D;
 import neelesh.easy_install.*;
 import neelesh.easy_install.gui.tab.DescriptionTab;
 import neelesh.easy_install.gui.tab.GalleryTab;
@@ -83,7 +84,7 @@ public class ProjectScreen extends Screen implements MarkdownScreenInterface {
 
     private final Button siteButton = Button.builder(Component.nullToEmpty("Modrinth↗"), button -> {
         try {
-            Util.getPlatform().openUri(new URI("https://modrinth.com/project/" + projectInfo.getSlug()));
+            Blaze3D.openUri(new URI("https://modrinth.com/project/" + projectInfo.getSlug()));
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }
