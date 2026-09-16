@@ -129,7 +129,9 @@ public class EasyInstallClient {
                 JsonObject dependency = dependencies.get(i).getAsJsonObject();
                 if (dependency.get("dependency_type").getAsString().equals("required")) {
                     String id = dependency.get("project_id").getAsString();
-                    executorService.submit(() -> downloadVersion(id, getProjectType(id), true));
+                    if (!installedProject(projectType, id)) {
+                        executorService.submit(() -> downloadVersion(id, getProjectType(id), true));
+                    }
 
                 }
             }
@@ -141,6 +143,11 @@ public class EasyInstallClient {
             }
         }
     }
+
+    public static boolean installedProject(ProjectType projectType, String id) {
+        return installedProjects.get(projectType).contains(id) || updatesNeeded.get(projectType).contains(id);
+    }
+
 
     public static ProjectType getProjectType(String id) {
         String urlString = "https://api.modrinth.com/v2/project/" + id;

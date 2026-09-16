@@ -1,9 +1,6 @@
 package neelesh.easy_install.gui.screen;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonPrimitive;
+import com.google.gson.*;
 import neelesh.easy_install.*;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -23,26 +20,32 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 
+import static neelesh.easy_install.EasyInstallClient.getVersions;
 import static neelesh.easy_install.gui.screen.ProjectScreen.VERTICAL_SEPARATOR_TEXTURE;
 
 public class VersionDetailsScreen extends Screen implements MarkdownScreenInterface {
     private Version version;
     private MarkdownRenderer markdownRenderer;
     private double scrollAmount = 0;
-    private Identifier[] dependencyIconIds;
-    private String[] dependencyNames;
-    private String[] dependencyTypes;
+    private ArrayList<Identifier> dependencyIconIds;
+    private ArrayList<String> dependencyNames;
+    private ArrayList<String> dependencyTypes;
+
+    private ProjectType projectType;
+
+    private HashSet<String> dependencyProjectIds = new HashSet<>();
     private Button doneButton;
     private JsonArray gameVersions;
-
-    public VersionDetailsScreen(Version version, Screen parent) {
+    public VersionDetailsScreen(Version version, Screen parent, ProjectType projectType) {
         super(Component.nullToEmpty("Version Details"));
         this.version = version;
         doneButton = Button.builder(Component.nullToEmpty("Done"), button -> {
             Minecraft.getInstance().gui.setScreen(parent);
         }).build();
         this.addSelectableChild(doneButton);
+        this.projectType = projectType;
         JsonArray gameVersions = version.getGameVersions();
         ArrayList<String> versionNumbers = EasyInstallClient.getReleaseVersionNumbers();
         Collections.reverse(versionNumbers);
@@ -101,27 +104,50 @@ public class VersionDetailsScreen extends Screen implements MarkdownScreenInterf
         this.gameVersions = gameVersions;
         Thread thread = new Thread(() -> {
             JsonArray dependencies = version.getDependencies();
-            dependencyIconIds = new Identifier[dependencies.size()];
-            dependencyNames = new String[dependencies.size()];
-            dependencyTypes = new String[dependencies.size()];
-            for (int i = 0; i < dependencies.size(); i++) {
-                String projectId = dependencies.get(i).getAsJsonObject().get("project_id").getAsString();
-                JsonObject jsonObject = EasyInstallClient.getProject(projectId);
-                dependencyIconIds[i] = Identifier.fromNamespaceAndPath(EasyInstall.MOD_ID, "dependency_" + i);
-                dependencyNames[i] = jsonObject.get("title").getAsString();
-                dependencyTypes[i] = dependencies.get(i).getAsJsonObject().get("dependency_type").getAsString();
-                try {
-                    ImageLoader.loadPlaceholder(dependencyIconIds[i]);
-                    ImageLoader.loadImage(URI.create(jsonObject.get("icon_url").getAsString()).toURL(), dependencyIconIds[i], Minecraft.getInstance());
-                } catch (MalformedURLException e) {
-                    throw new RuntimeException(e);
-                }
+            dependencyIconIds = new ArrayList<>();
+            dependencyNames = new ArrayList<>();
+            dependencyTypes = new ArrayList<>();
 
-            }
+            processDependencies(dependencies, new int[]{0});
+
         });
         thread.start();
     }
 
+
+    private void processDependencies(JsonArray dependencies, int[] counter) {
+        for (int i = 0; i < dependencies.size(); i++) {
+            String projectId = dependencies.get(i).getAsJsonObject().get("project_id").getAsString();
+            if (!dependencyProjectIds.contains(projectId)) {
+                dependencyProjectIds.add(projectId);
+                JsonObject jsonObject = EasyInstallClient.getProject(projectId);
+                dependencyIconIds.add(Identifier.fromNamespaceAndPath(EasyInstall.MOD_ID, "dependency_" + counter[0]));
+                dependencyNames.add(jsonObject.get("title").getAsString());
+                dependencyTypes.add(dependencies.get(i).getAsJsonObject().get("dependency_type").getAsString());
+                try {
+                    ImageLoader.loadPlaceholder(dependencyIconIds.get(counter[0]));
+                    ImageLoader.loadImage(URI.create(jsonObject.get("icon_url").getAsString()).toURL(), dependencyIconIds.get(counter[0]), Minecraft.getInstance());
+                    counter[0]++;
+
+                    String response = getVersions(projectId, projectType, true);
+                    JsonArray jsonArray = JsonParser.parseString(response).getAsJsonArray();
+                    for (int j = 0; j < jsonArray.size(); j++) {
+                        JsonObject versionInfo = jsonArray.get(j).getAsJsonObject();
+                        Version version;
+                        try {
+                            version = EasyInstallClient.createVersion(versionInfo, projectType);
+                            processDependencies(version.getDependencies(), counter);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+
+                } catch (MalformedURLException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+    }
 
     @Override
     protected void init() {
@@ -203,16 +229,16 @@ public class VersionDetailsScreen extends Screen implements MarkdownScreenInterf
 
         }
         if (dependencyIconIds != null) {
-            if (dependencyIconIds.length > 0) {
+            if (!dependencyIconIds.isEmpty()) {
                 context.pose().scale(1.2f, 1.2f);
                 context.text(font, Component.nullToEmpty("Dependencies"), 4, (int) (markdownRenderer.getMaxY() / 1.2 + scrollAmount / 1.2), CommonColors.WHITE, true);
                 context.pose().scale(1 / 1.2f, 1 / 1.2f);
             }
-            for (int i = 0; i < dependencyIconIds.length; i++) {
-                if (dependencyIconIds[i] != null) {
-                    context.blit(RenderPipelines.GUI_TEXTURED, dependencyIconIds[i], 4, i * 40 + 20 + (int) scrollAmount + markdownRenderer.getMaxY(), 0, 0, 30, 30, 30, 30);
-                    context.text(font, Component.nullToEmpty(dependencyNames[i]), 40, i * 40 + 20 + (int) scrollAmount + markdownRenderer.getMaxY(), CommonColors.WHITE, true);
-                    context.text(font, Component.nullToEmpty(StringUtils.capitalize(dependencyTypes[i])), 40, i * 40 + 32 + (int) scrollAmount + markdownRenderer.getMaxY(), CommonColors.LIGHTER_GRAY, true);
+            for (int i = 0; i < dependencyIconIds.size(); i++) {
+                if (dependencyIconIds.get(i) != null) {
+                    context.blit(RenderPipelines.GUI_TEXTURED, dependencyIconIds.get(i), 4, i * 40 + 20 + (int) scrollAmount + markdownRenderer.getMaxY(), 0, 0, 30, 30, 30, 30);
+                    context.text(font, Component.nullToEmpty(dependencyNames.get(i)), 40, i * 40 + 20 + (int) scrollAmount + markdownRenderer.getMaxY(), CommonColors.WHITE, true);
+                    context.text(font, Component.nullToEmpty(StringUtils.capitalize(dependencyTypes.get(i))), 40, i * 40 + 32 + (int) scrollAmount + markdownRenderer.getMaxY(), CommonColors.LIGHTER_GRAY, true);
                 }
             }
         }
@@ -236,12 +262,12 @@ public class VersionDetailsScreen extends Screen implements MarkdownScreenInterf
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
-        if (scrollAmount + verticalAmount * 13 < 0 && scrollAmount + verticalAmount * 13 > -markdownRenderer.getMaxY() + height - dependencyNames.length * 40 - 30) {
+        if (scrollAmount + verticalAmount * 13 < 0 && scrollAmount + verticalAmount * 13 > -markdownRenderer.getMaxY() + height - dependencyNames.size() * 40 - 30) {
             scrollAmount += verticalAmount * 13;
         } else if (scrollAmount + verticalAmount * 13 >= 0) {
             scrollAmount = 0;
-        } else if (scrollAmount + verticalAmount * 13 <= -markdownRenderer.getMaxY() + height - dependencyNames.length * 40 - 30 && scrollAmount != 0) {
-            scrollAmount = -markdownRenderer.getMaxY() + height - dependencyNames.length * 40 - 30;
+        } else if (scrollAmount + verticalAmount * 13 <= -markdownRenderer.getMaxY() + height - dependencyNames.size() * 40 - 30 && scrollAmount != 0) {
+            scrollAmount = -markdownRenderer.getMaxY() + height - dependencyNames.size() * 40 - 30;
         }
         return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount);
     }

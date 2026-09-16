@@ -77,7 +77,9 @@ public class Version {
                 for (int i = 0; i < this.dependencies.size(); i++) {
                     if (this.dependencies.get(i).getAsJsonObject().get("dependency_type").getAsString().equals("required")) {
                         String id = this.dependencies.get(i).getAsJsonObject().get("project_id").getAsString();
-                        executorService.submit(() -> EasyInstallClient.downloadVersion(id, EasyInstallClient.getProjectType(id), true));
+                        if (!EasyInstallClient.installedProject(projectType, id)) {
+                            executorService.submit(() -> EasyInstallClient.downloadVersion(id, EasyInstallClient.getProjectType(id), true));
+                        }
                     }
                 }
             }
