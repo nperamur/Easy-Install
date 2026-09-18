@@ -3,7 +3,7 @@ package neelesh.easy_install.gui.screen;
 import neelesh.easy_install.*;
 import neelesh.easy_install.gui.widget.PressableTextWidgetShadowless;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.gui.screens.Screen;
@@ -43,7 +43,7 @@ public class ProjectBrowser extends Screen {
     private static Thread searchThread;
     private final ProjectType projectType;
     private final Button doneButton = Button.builder(Component.nullToEmpty("Done"), button -> {
-        minecraft.gui.setScreen(prevScreen);
+        minecraft.setScreen(prevScreen);
     }).build();
     private Button backButton;
     private Button nextButton;
@@ -107,20 +107,20 @@ public class ProjectBrowser extends Screen {
         });
 //        sortButton.setValue(EasyInstallClient.getSortMethod());
         categoriesButton = Button.builder(Component.nullToEmpty("Select Categories"), button -> {
-            Minecraft.getInstance().gui.setScreen(new CategoryScreen(this, projectType));
+            Minecraft.getInstance().setScreen(new CategoryScreen(this, projectType));
         }).build();
         categoriesButton.setSize(100, 18);
         categoriesButton.setPosition(260, 22);
         this.addWidget(categoriesButton);
         settingsButton = Button.builder(Component.nullToEmpty(""), button -> {
-            Minecraft.getInstance().gui.setScreen(new SettingsScreen(this, this.projectType));
+            Minecraft.getInstance().setScreen(new SettingsScreen(this, this.projectType));
         }).build();
         settingsButton.setSize(20, 20);
         settingsButton.setPosition(width - 30, 0);
         settingsButton.setTooltip(Tooltip.create(Component.nullToEmpty("Settings")));
         this.addWidget(settingsButton);
         updateScreenButton = Button.builder(Component.nullToEmpty(""), button -> {
-            minecraft.gui.setScreen(new UpdateScreen(projectType, this));
+            minecraft.setScreen(new UpdateScreen(projectType, this));
         }).build();
         updateScreenButton.setSize(20, 20);
         updateScreenButton.setPosition(width - 55, 0);
@@ -240,7 +240,7 @@ public class ProjectBrowser extends Screen {
             installButtons[i] = buttonWidget;
             installButtons[i].setX(width - 70);
             Button projectButtonWidget = Button.builder(Component.nullToEmpty("More Info"), button -> {
-                minecraft.gui.setScreen(new ProjectScreen(this, INFO[finalI], this.updatedVersions));
+                minecraft.setScreen(new ProjectScreen(this, INFO[finalI], this.updatedVersions));
             }).build();
             projectButtonWidget.setSize(60, 14);
             projectScreenButtons[i] = projectButtonWidget;
@@ -253,8 +253,8 @@ public class ProjectBrowser extends Screen {
     }
 
     @Override
-    public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
-        super.extractRenderState(context, mouseX, mouseY, delta);
+    public void render(GuiGraphics context, int mouseX, int mouseY, float delta) {
+        super.render(context, mouseX, mouseY, delta);
         if (showingFilterOptions) {
             firstRowY = 55;
         } else {
@@ -262,23 +262,23 @@ public class ProjectBrowser extends Screen {
         }
         updateScreenButton.visible = EasyInstallClient.getNumUpdates() >= 1;
         context.enableScissor(0, firstRowY - 14, width, height);
-        extractMenuBackground(context);
+        renderMenuBackground(context);
         for (int i = 0; i < EasyInstallClient.getNumRows(); i++) {
             try {
                 context.blit(RenderPipelines.GUI_TEXTURED, ICON_TEXTURE_ID[i], 0, firstRowY + (int) scrollAmount + i * 50, 0, 0, 40, 40, 40, 40);
-                context.text(font, INFO[i].getTitle(), 55, firstRowY + (int) scrollAmount + i * 50, CommonColors.WHITE, false);
-                context.text(font, "by ", 75 + font.width(INFO[i].getTitle()), firstRowY + (int) scrollAmount + i * 50, CommonColors.WHITE, false);
+                context.drawString(font, INFO[i].getTitle(), 55, firstRowY + (int) scrollAmount + i * 50, CommonColors.WHITE, false);
+                context.drawString(font, "by ", 75 + font.width(INFO[i].getTitle()), firstRowY + (int) scrollAmount + i * 50, CommonColors.WHITE, false);
                 int finalI = i;
                 if (children().contains(authors[i])) {
                     removeWidget(authors[i]);
                 }
                 authors[i] = new PressableTextWidgetShadowless(0, 0, font.width(Component.translationArg(Component.nullToEmpty(INFO[i].getAuthor()))), 9, Component.literal(INFO[i].getAuthor()), button -> {
-                    minecraft.gui.setScreen(new ProfileScreen(INFO[finalI].getAuthor(), this));
+                    minecraft.setScreen(new ProfileScreen(INFO[finalI].getAuthor(), this));
                 }, font);
                 authors[i].setPosition(75 + font.width(INFO[i].getTitle() + "by "), firstRowY + (int) scrollAmount + i * 50);
-                authors[i].extractRenderState(context, mouseX, mouseY, delta);
+                authors[i].render(context, mouseX, mouseY, delta);
                 this.addWidget(authors[i]);
-                context.textWithWordWrap(font, FormattedText.of(INFO[i].getDescription().replace("\n", "")), 55, firstRowY + (int) scrollAmount + i * 50 + 15, width - 65, CommonColors.WHITE, false);
+                context.drawWordWrap(font, FormattedText.of(INFO[i].getDescription().replace("\n", "")), 55, firstRowY + (int) scrollAmount + i * 50 + 15, width - 65, CommonColors.WHITE, false);
                 installButtons[i].setY(firstRowY + (int) scrollAmount + i * 50 - 3);
                 if (INFO[i].isInstalling()) {
                     installButtons[i].setMessage(Component.nullToEmpty("Installing"));
@@ -290,9 +290,9 @@ public class ProjectBrowser extends Screen {
                     installButtons[i].setMessage(Component.nullToEmpty("Update"));
                 }
                 installButtons[i].active = !INFO[i].isInstalled() && !INFO[i].isInstalling();
-                installButtons[i].extractRenderState(context, mouseX, mouseY, delta);
+                installButtons[i].render(context, mouseX, mouseY, delta);
                 projectScreenButtons[i].setY(firstRowY + (int) scrollAmount + i * 50 - 3);
-                projectScreenButtons[i].extractRenderState(context, mouseX, mouseY, delta);
+                projectScreenButtons[i].render(context, mouseX, mouseY, delta);
 
 
             } catch (NullPointerException ignored) {
@@ -315,7 +315,7 @@ public class ProjectBrowser extends Screen {
                 authors[i].visible = i < showPerPage.getValue() && authors[i].getY() > firstRowY - 26;
             }
         }
-        backButton.extractRenderState(context, mouseX, mouseY, delta);
+        backButton.render(context, mouseX, mouseY, delta);
         backButton.active = pageNumber != 0;
         if (EasyInstallClient.getTotalPages() <= 5) {
             backButton.setPosition(width / 2 - 60 + 12 * (3 - EasyInstallClient.getTotalPages()), firstRowY + (int) scrollAmount + EasyInstallClient.getNumRows() * 50);
@@ -329,7 +329,7 @@ public class ProjectBrowser extends Screen {
             lastPage.setPosition(width / 2 + 65, firstRowY + (int) scrollAmount + EasyInstallClient.getNumRows() * 50);
         }
         lastPage.visible = EasyInstallClient.getTotalPages() > 1;
-        nextButton.extractRenderState(context, mouseX, mouseY, delta);
+        nextButton.render(context, mouseX, mouseY, delta);
         nextButton.active = pageNumber != EasyInstallClient.getTotalPages() - 1;
         for (int i = 0; i < pageButtons.length; i++) {
             if (pageButtons[i] != null) {
@@ -350,37 +350,37 @@ public class ProjectBrowser extends Screen {
                     pageButtons[i].setPosition(width / 2 - 85 + (int) (12.5 * (5 - EasyInstallClient.getTotalPages())) + 25 * (i + 2), firstRowY + (int) scrollAmount + EasyInstallClient.getNumRows() * 50);
                 } else if ((pageNumber < EasyInstallClient.getTotalPages() - 3 && pageNumber >= 3)) {
                     pageButtons[i].setPosition(width / 2 - 85 + 25 * (i + 2), firstRowY + (int) scrollAmount + EasyInstallClient.getNumRows() * 50);
-                    context.text(font, "—", width / 2 - 53, firstRowY + (int) scrollAmount + EasyInstallClient.getNumRows() * 50 + 7, CommonColors.WHITE, true);
-                    context.text(font, "—", width / 2 + 46, firstRowY + (int) scrollAmount + EasyInstallClient.getNumRows() * 50 + 7, CommonColors.WHITE, true);
+                    context.drawString(font, "—", width / 2 - 53, firstRowY + (int) scrollAmount + EasyInstallClient.getNumRows() * 50 + 7, CommonColors.WHITE, true);
+                    context.drawString(font, "—", width / 2 + 46, firstRowY + (int) scrollAmount + EasyInstallClient.getNumRows() * 50 + 7, CommonColors.WHITE, true);
                 } else if (pageNumber < 3) {
                     pageButtons[i].setPosition(width / 2 - 110 + 25 * (i + 2), firstRowY + (int) scrollAmount + EasyInstallClient.getNumRows() * 50);
-                    context.text(font, "—", width / 2 + 29 + 5 * i, firstRowY + (int) scrollAmount + EasyInstallClient.getNumRows() * 50 + 7, CommonColors.WHITE, true);
+                    context.drawString(font, "—", width / 2 + 29 + 5 * i, firstRowY + (int) scrollAmount + EasyInstallClient.getNumRows() * 50 + 7, CommonColors.WHITE, true);
                 } else {
                     pageButtons[i].setPosition(width / 2 - 60 + 25 * (i + 2), firstRowY + (int) scrollAmount + EasyInstallClient.getNumRows() * 50);
-                    context.text(font, "—", width / 2 - 46 + 5 * i, firstRowY + (int) scrollAmount + EasyInstallClient.getNumRows() * 50 + 7, CommonColors.WHITE, true);
+                    context.drawString(font, "—", width / 2 - 46 + 5 * i, firstRowY + (int) scrollAmount + EasyInstallClient.getNumRows() * 50 + 7, CommonColors.WHITE, true);
                 }
                 pageButtons[i].visible = Integer.parseInt(pageButtons[i].getMessage().getString()) < EasyInstallClient.getTotalPages() && Integer.parseInt(pageButtons[i].getMessage().getString()) > 1;
-                pageButtons[i].extractRenderState(context, mouseX, mouseY, delta);
+                pageButtons[i].render(context, mouseX, mouseY, delta);
             }
         }
         lastPage.active = pageNumber != EasyInstallClient.getTotalPages() - 1;
         lastPage.setMessage(Component.nullToEmpty(String.valueOf(EasyInstallClient.getTotalPages())));
-        lastPage.extractRenderState(context, mouseX, mouseY, delta);
+        lastPage.render(context, mouseX, mouseY, delta);
         firstPage.active = pageNumber != 0;
-        firstPage.extractRenderState(context, mouseX, mouseY, delta);
+        firstPage.render(context, mouseX, mouseY, delta);
         context.disableScissor();
         context.blit(RenderPipelines.GUI_TEXTURED, CreateWorldScreen.HEADER_SEPARATOR, 0, firstRowY - 15, 0, 0, width, 2, width, 2);
         showPerPage.visible = showingFilterOptions;
-        showPerPage.extractRenderState(context, mouseX, mouseY, delta);
+        showPerPage.render(context, mouseX, mouseY, delta);
         sortButton.visible = showingFilterOptions;
-        sortButton.extractRenderState(context, mouseX, mouseY, delta);
-        filtersButton.extractRenderState(context, mouseX, mouseY, delta);
-        searchBox.extractRenderState(context, mouseX, mouseY, delta);
-        doneButton.extractRenderState(context, mouseX, mouseY, delta);
-        updateScreenButton.extractRenderState(context, mouseX, mouseY, delta);
+        sortButton.render(context, mouseX, mouseY, delta);
+        filtersButton.render(context, mouseX, mouseY, delta);
+        searchBox.render(context, mouseX, mouseY, delta);
+        doneButton.render(context, mouseX, mouseY, delta);
+        updateScreenButton.render(context, mouseX, mouseY, delta);
         categoriesButton.visible = showingFilterOptions;
-        categoriesButton.extractRenderState(context, mouseX, mouseY, delta);
-        settingsButton.extractRenderState(context, mouseX, mouseY, delta);
+        categoriesButton.render(context, mouseX, mouseY, delta);
+        settingsButton.render(context, mouseX, mouseY, delta);
         context.blit(RenderPipelines.GUI_TEXTURED, FILTER_TEXTURE, filtersButton.getX() + 2, filtersButton.getY() + 2, 0, 0, 16, 16, 16, 16);
         context.blit(RenderPipelines.GUI_TEXTURED, SETTINGS_TEXTURE, settingsButton.getX() + 2, settingsButton.getY() + 2, -0.5f, 0, 16, 16, 16, 16);
 

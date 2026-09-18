@@ -9,8 +9,8 @@ import neelesh.easy_install.gui.tab.GalleryTab;
 import neelesh.easy_install.gui.tab.TabNavigationMixinInterface;
 import neelesh.easy_install.gui.tab.VersionsTab;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.gui.components.tabs.MenuTabBar;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.tabs.TabNavigationBar;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.components.events.GuiEventListener;
@@ -20,7 +20,6 @@ import net.minecraft.client.gui.components.tabs.Tab;
 import net.minecraft.client.gui.components.tabs.TabManager;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.TabButton;
-import net.minecraft.client.gui.components.tabs.MenuTabBar;
 import net.minecraft.network.chat.FormattedText;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.CommonColors;
@@ -84,20 +83,20 @@ public class ProjectScreen extends Screen implements MarkdownScreenInterface {
 
     private final Button siteButton = Button.builder(Component.nullToEmpty("Modrinth↗"), button -> {
         try {
-            Blaze3D.openUri(new URI("https://modrinth.com/project/" + projectInfo.getSlug()));
+            Util.getPlatform().openUri(new URI("https://modrinth.com/project/" + projectInfo.getSlug()));
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }
     }).build();
 
     private final Button doneButton = Button.builder(Component.nullToEmpty("Done"), button -> {
-        Minecraft.getInstance().gui.setScreen(this.prevScreen);
+        Minecraft.getInstance().setScreen(this.prevScreen);
     }).build();
     private DescriptionTab descriptionTab;
     private Tab prevTab;
 
     private TabManager tabManager;
-    private MenuTabBar tabNavigationWidget;
+    private TabNavigationBar tabNavigationWidget;
     private int scrollAmount = 15;
     public static final Identifier VERTICAL_SEPARATOR_TEXTURE = Identifier.fromNamespaceAndPath(EasyInstall.MOD_ID,"textures/gui/vertical_separator.png");
     protected ProjectScreen(Screen parent, ProjectInfo projectInfo, ArrayList<Version> updatedVersions) {
@@ -109,17 +108,17 @@ public class ProjectScreen extends Screen implements MarkdownScreenInterface {
         this.filteredByGameVersion = ((ProjectBrowser) parent).isFilteredByGameVersion();
     }
 
-    public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
-        super.extractRenderState(context, mouseX, mouseY, delta);
+    public void render(GuiGraphics context, int mouseX, int mouseY, float delta) {
+        super.render(context, mouseX, mouseY, delta);
         doneButton.setWidth(110);
         doneButton.setHeight(17);
         doneButton.setPosition(10, height - doneButton.getHeight());
-        doneButton.extractRenderState(context, mouseX, mouseY, delta);
+        doneButton.render(context, mouseX, mouseY, delta);
         if (tabManager.getCurrentTab() instanceof VersionsTab && tabManager.getCurrentTab() != prevTab) {
             ((VersionsTab) (tabManager.getCurrentTab())).setInitialized(false);
         }
         prevTab = tabManager.getCurrentTab();
-        ((Renderable) tabManager.getCurrentTab()).extractRenderState(context, mouseX, mouseY, delta);
+        ((Renderable) tabManager.getCurrentTab()).render(context, mouseX, mouseY, delta);
         descriptionTab.setLinksActive(tabManager.getCurrentTab() instanceof DescriptionTab);
         versionsTab.setActive(tabManager.getCurrentTab() instanceof VersionsTab);
         for (int i = 0; i < tabNavigationWidget.children().size(); i++) {
@@ -127,19 +126,19 @@ public class ProjectScreen extends Screen implements MarkdownScreenInterface {
                 ((TabNavigationMixinInterface) tabNavigationWidget).setX(131);
                 ((TabNavigationMixinInterface) tabNavigationWidget).setY(scrollAmount - 10);
             }
-            ((TabButton) tabNavigationWidget.children().get(i)).extractRenderState(context, mouseX, mouseY, delta);
+            ((TabButton) tabNavigationWidget.children().get(i)).render(context, mouseX, mouseY, delta);
         }
         float titleSize = 1.4f;
         context.pose().scale(titleSize, titleSize);
-        context.textWithWordWrap(font, FormattedText.of(projectInfo.getTitle()), (int) (10 /titleSize), 40, (int) (110/titleSize), CommonColors.WHITE, false);
+        context.drawWordWrap(font, FormattedText.of(projectInfo.getTitle()), (int) (10 /titleSize), 40, (int) (110/titleSize), CommonColors.WHITE, false);
         int wrappedHeight =  font.wordWrapHeight(FormattedText.of(projectInfo.getTitle()), (int) (110/titleSize));
         context.pose().scale(1/titleSize, 1/titleSize);
         context.blit(RenderPipelines.GUI_TEXTURED, iconTextureId, 10, 0, 0, 0, 50, 50, 50, 50);
-        context.textWithWordWrap(font, FormattedText.of(projectInfo.getDescription()), 10, (int) (65 + wrappedHeight*titleSize), 110, CommonColors.WHITE, false);
+        context.drawWordWrap(font, FormattedText.of(projectInfo.getDescription()), 10, (int) (65 + wrappedHeight*titleSize), 110, CommonColors.WHITE, false);
         installButton.setPosition(10, (int) ((65 + font.wordWrapHeight(FormattedText.of(projectInfo.getDescription()), 110) + wrappedHeight * titleSize + 10)));
         siteButton.setPosition(65, (int) ((65 + font.wordWrapHeight(FormattedText.of(projectInfo.getDescription()), 110) + wrappedHeight * titleSize + 10)));
-        installButton.extractRenderState(context, mouseX, mouseY, delta);
-        siteButton.extractRenderState(context, mouseX, mouseY, delta);
+        installButton.render(context, mouseX, mouseY, delta);
+        siteButton.render(context, mouseX, mouseY, delta);
 
         if (projectInfo.isInstalling()) {
             installButton.setMessage(Component.nullToEmpty("Installing"));
@@ -205,14 +204,14 @@ public class ProjectScreen extends Screen implements MarkdownScreenInterface {
         this.versionsTab = new VersionsTab(Component.nullToEmpty("Versions"), this);
         tabManager = new TabManager(this::addSelectableChild, this::removeWidget);
         if (!galleryImages.isEmpty()) {
-            tabNavigationWidget = MenuTabBar.builder(this.tabManager, width - 131)
+            tabNavigationWidget = TabNavigationBar.builder(this.tabManager, width - 131)
                     .addTabs(new Tab[]{descriptionTab, galleryTab, versionsTab}).build(); //width - 131
         } else {
-            tabNavigationWidget = MenuTabBar.builder(this.tabManager, width - 131)
+            tabNavigationWidget = TabNavigationBar.builder(this.tabManager, width - 131)
                     .addTabs(new Tab[]{descriptionTab, versionsTab}).build(); // width - 131
 
         }
-        tabNavigationWidget.arrangeElements(width - 131);
+        //tabNavigationWidget.arrangeElements(width - 131);
         if (tabNavigationWidget instanceof TabNavigationMixinInterface) {
             ((TabNavigationMixinInterface) tabNavigationWidget).setButtonWidth((this.width - 130)/(tabNavigationWidget.children().size()));
         }
@@ -234,14 +233,14 @@ public class ProjectScreen extends Screen implements MarkdownScreenInterface {
     }
 
     @Override
-    protected void extractMenuBackground(GuiGraphicsExtractor context) {
+    protected void renderMenuBackground(GuiGraphics context) {
         context.blit(RenderPipelines.GUI_TEXTURED, TAB_HEADER_BACKGROUND, 0, 0, 0.0F, 0.0F, this.width, ((TabButton) this.tabNavigationWidget.children().getFirst()).getHeight(), 16, 16);
     }
 
     @Override
-    public void extractBackground(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
-        super.extractBackground(context, mouseX, mouseY, delta);
-        super.extractMenuBackground(context);
+    public void renderBackground(GuiGraphics context, int mouseX, int mouseY, float delta) {
+        super.renderBackground(context, mouseX, mouseY, delta);
+        super.renderMenuBackground(context);
 
     }
 
@@ -253,13 +252,13 @@ public class ProjectScreen extends Screen implements MarkdownScreenInterface {
         return this.scrollAmount;
     }
 
-    @Override
-    protected void extractMenuBackground(GuiGraphicsExtractor graphics, int x, int y, int width, int height) {
-        super.extractMenuBackground(graphics, x, y, width, height);
+
+    protected void renderBackground(GuiGraphics graphics, int x, int y, int width, int height) {
+        super.renderMenuBackground(graphics, x, y, width, height);
     }
 
-    public void renderMenuBackground(GuiGraphicsExtractor graphics, int x, int y, int width, int height) {
-        extractMenuBackground(graphics, x, y, width, height);
+    public void renderMenuBackground(GuiGraphics graphics, int x, int y, int width, int height) {
+        renderBackground(graphics, x, y, width, height);
     }
 
 
@@ -279,7 +278,7 @@ public class ProjectScreen extends Screen implements MarkdownScreenInterface {
         return tabManager;
     }
 
-    public MenuTabBar getTabNavigationWidget() {
+    public TabNavigationBar getTabNavigationWidget() {
         return tabNavigationWidget;
     }
 

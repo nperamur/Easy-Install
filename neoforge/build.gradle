@@ -10,8 +10,14 @@ plugins {
 neoForge {
     version = rootProject.neoforge_version
     runs {
-        client { client() }
-        server { server() }
+        client {
+            client()
+            disableIdeRun()
+        }
+        server {
+            server()
+            disableIdeRun()
+        }
     }
     mods {
         easy_install {
@@ -93,5 +99,5 @@ jar {
 
 
 //jar {
-  //  inputFile.set shadowJar.archiveFile
+//  inputFile.set shadowJar.archiveFile
 //}

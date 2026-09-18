@@ -4,7 +4,7 @@ import com.google.gson.JsonArray;
 import neelesh.easy_install.EasyInstallClient;
 import neelesh.easy_install.Environment;
 import neelesh.easy_install.ProjectType;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.ConfirmScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.components.Tooltip;
@@ -53,9 +53,9 @@ public class CategoryScreen extends Screen {
             if (checked) {
                 ConfirmScreen confirmScreen = new ConfirmScreen(bool -> {
                     browser.setFilteredByGameVersion(!bool);
-                    minecraft.gui.setScreen(this);
+                    minecraft.setScreen(this);
                 }, Component.nullToEmpty("Are you sure you want to disable the game version filter?"), Component.literal("Disabling the game version filter may allow you to install incompatible content.").withColor(0xFFA500));
-                minecraft.gui.setScreen(confirmScreen);
+                minecraft.setScreen(confirmScreen);
             } else {
                 browser.setFilteredByGameVersion(true);
             }
@@ -106,7 +106,7 @@ public class CategoryScreen extends Screen {
         doneButton = Button.builder(Component.nullToEmpty("Done"), button -> {
             browser.setPage(0);
             browser.setInitialized(false);
-            minecraft.gui.setScreen(browser);
+            minecraft.setScreen(browser);
         }).build();
         doneButton.setPosition(width/2 - 70, height - 25);
         this.addWidget(doneButton);
@@ -145,9 +145,9 @@ public class CategoryScreen extends Screen {
 
 
     @Override
-    public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
-        super.extractRenderState(context, mouseX, mouseY, delta);
-        this.extractMenuBackground(context);
+    public void render(GuiGraphics context, int mouseX, int mouseY, float delta) {
+        super.render(context, mouseX, mouseY, delta);
+        this.renderMenuBackground(context);
         clearButton.active = false;
         clearButton.setPosition(width - 115, 8);
         if (checkBoxes != null) {
@@ -156,12 +156,12 @@ public class CategoryScreen extends Screen {
             for (String header : checkBoxes.sequencedKeySet()) {
                 ArrayList<Checkbox> boxes = checkBoxes.get(header);
                 context.pose().scale(1.4f, 1.4f);
-                context.text(font, StringUtils.capitalize(header), (int)(20 /1.4f), (int) ((i * 25 + offset + scrollAmount)/1.4f), CommonColors.WHITE, true);
+                context.drawString(font, StringUtils.capitalize(header), (int)(20 /1.4f), (int) ((i * 25 + offset + scrollAmount)/1.4f), CommonColors.WHITE, true);
                 context.pose().scale(1/1.4f,1/1.4f);
                 offset += 20;
                 for (Checkbox box : boxes) {
                     box.setPosition(20, i * 25 + offset + (int) scrollAmount);
-                    box.extractRenderState(context, mouseX, mouseY, delta);
+                    box.render(context, mouseX, mouseY, delta);
                     if (box.selected()) {
                         clearButton.active = true;
                     }
@@ -174,18 +174,18 @@ public class CategoryScreen extends Screen {
 
         if (browser.getProjectType() == ProjectType.MOD) {
             context.pose().scale(1.4f, 1.4f);
-            context.text(font, "Environments", (int)(20/1.4f), (int) ((maxY + scrollAmount)/1.4f), CommonColors.WHITE, true);
+            context.drawString(font, "Environments", (int)(20/1.4f), (int) ((maxY + scrollAmount)/1.4f), CommonColors.WHITE, true);
             context.pose().scale(1/1.4f,1/1.4f);
             maxY += 20;
             requiresClientSide.setPosition(20, (int) (maxY + scrollAmount));
-            requiresClientSide.extractRenderState(context, mouseX, mouseY, delta);
+            requiresClientSide.render(context, mouseX, mouseY, delta);
             maxY += 20;
             requiresServerSide.setPosition(20, (int) (maxY + scrollAmount));
-            requiresServerSide.extractRenderState(context, mouseX, mouseY, delta);
+            requiresServerSide.render(context, mouseX, mouseY, delta);
             maxY += 25;
         }
         context.pose().scale(1.4f, 1.4f);
-        context.text(font, "Game Version", (int)(20/1.4f), (int) ((maxY + scrollAmount)/1.4f), CommonColors.WHITE, true);
+        context.drawString(font, "Game Version", (int)(20/1.4f), (int) ((maxY + scrollAmount)/1.4f), CommonColors.WHITE, true);
         context.pose().scale(1/1.4f,1/1.4f);
         disableGameVersionFilter.setPosition(20, (int) (maxY + scrollAmount + 20));
         maxY += 45;
@@ -193,9 +193,9 @@ public class CategoryScreen extends Screen {
         if (disableGameVersionFilter.selected() || requiresClientSide.selected() || requiresServerSide.selected()) {
             clearButton.active = true;
         }
-        disableGameVersionFilter.extractRenderState(context, mouseX, mouseY, delta);
-        doneButton.extractRenderState(context, mouseX, mouseY, delta);
-        clearButton.extractRenderState(context, mouseX, mouseY, delta);
+        disableGameVersionFilter.render(context, mouseX, mouseY, delta);
+        doneButton.render(context, mouseX, mouseY, delta);
+        clearButton.render(context, mouseX, mouseY, delta);
     }
 
     @Override

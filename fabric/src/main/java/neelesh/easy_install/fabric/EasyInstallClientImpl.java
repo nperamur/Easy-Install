@@ -21,6 +21,6 @@ public class EasyInstallClientImpl implements Platform {
     }
 
     public String getModLoaderDisplayText() {
-        return "Minecraft " + EasyInstallClient.getGameVersion() + " (Modded)";
+        return "Minecraft " + Minecraft.getInstance().name() + "/Fabric (Modded)";
     }
 }

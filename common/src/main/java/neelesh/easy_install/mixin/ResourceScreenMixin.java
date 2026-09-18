@@ -4,7 +4,7 @@ import neelesh.easy_install.EasyInstallClient;
 import neelesh.easy_install.ProjectType;
 import neelesh.easy_install.gui.screen.ProjectBrowser;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.packs.PackSelectionScreen;
 import net.minecraft.client.gui.components.Button;
@@ -41,7 +41,7 @@ public class ResourceScreenMixin extends Screen {
         }
         this.buttonWidget = new Button.Builder(Component.nullToEmpty(buttonText), button -> {
             ProjectBrowser browser = new ProjectBrowser(this, projectType);
-            Minecraft.getInstance().gui.setScreen(browser);
+            Minecraft.getInstance().setScreen(browser);
         }).build();
         buttonWidget.setHeight(15);
         buttonWidget.setWidth(110);
@@ -50,8 +50,8 @@ public class ResourceScreenMixin extends Screen {
     }
 
     @Override
-    public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
-        super.extractRenderState(context, mouseX, mouseY, delta);
-        buttonWidget.extractRenderState(context, mouseX, mouseY, delta);
+    public void render(GuiGraphics context, int mouseX, int mouseY, float delta) {
+        super.render(context, mouseX, mouseY, delta);
+        buttonWidget.render(context, mouseX, mouseY, delta);
     }
 }

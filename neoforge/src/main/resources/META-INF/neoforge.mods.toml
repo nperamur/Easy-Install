@@ -9,23 +9,28 @@ version = "${version}"
 displayName = "Easy Install"
 authors = "blue_cube78"
 description = "Browse, install, and update mods, resource packs, data packs, and shaders from Modrinth directly in-game!"
-bannerFile = "assets/easy_install/icon.png"
-iconFile = "assets/easy_install/icon.png"
+logoFile = "assets/easy_install/icon.png"
 
 [[dependencies.easy-install]]
 modId = "neoforge"
 type = "required"
-versionRange = "[26.3,)"
+versionRange = "[21.11,)"
 ordering = "NONE"
 side = "BOTH"
 
 [[dependencies.easy-install]]
 modId = "minecraft"
 type = "required"
-versionRange = "[26.3,)"
+versionRange = "[1.21.11]"
 ordering = "NONE"
 side = "BOTH"
 
+[[dependencies.easy-install]]
+modId = "architectury"
+type = "required"
+versionRange = "[15.0.1,)"
+ordering = "AFTER"
+side = "BOTH"
 
 [[mixins]]
 config = "easy-install.mixins.json"

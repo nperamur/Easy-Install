@@ -2,7 +2,7 @@ package neelesh.easy_install;
 
 import neelesh.easy_install.gui.screen.MarkdownScreenInterface;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.gui.screens.ConfirmLinkScreen;
 import net.minecraft.client.gui.screens.Screen;
@@ -137,7 +137,7 @@ public class MarkdownRenderer {
     }
 
 
-    public void render(GuiGraphicsExtractor context, int scrollAmount) {
+    public void render(GuiGraphics context, int scrollAmount) {
         int j = 0;
         for (Button linkButton : linkButtons) {
             linkButton.setY(scrollAmount + originalY.get(j));
@@ -197,7 +197,7 @@ public class MarkdownRenderer {
                 if (count == 0) {
                     putLinkButtons(text, x, y, (int) ((endX-x-10) / scale), scale);
                 }
-                context.textWithWordWrap(screen.getFont(), text, (int) (x/scale), (int) (y/scale + scrollAmount / scale), (int) ((endX-x-10) / scale), CommonColors.WHITE, false);
+                context.drawWordWrap(screen.getFont(), text, (int) (x/scale), (int) (y/scale + scrollAmount / scale), (int) ((endX-x-10) / scale), CommonColors.WHITE, false);
                 int wrappedSize = screen.getFont().wordWrapHeight(text, (int) ((endX-x-10) / scale));
                 if (scale == 1) {
                     scale = 1.4f;
@@ -221,7 +221,7 @@ public class MarkdownRenderer {
                 if (count == 0) {
                     putLinkButtons(text, x, y, (int) ((endX-x-10) / scale), scale);
                 }
-                context.textWithWordWrap(screen.getFont(), text, (int) (x/(scale)), (int) (y/scale + scrollAmount / scale), (int) ((endX-x-10) / scale), CommonColors.WHITE, false);
+                context.drawWordWrap(screen.getFont(), text, (int) (x/(scale)), (int) (y/scale + scrollAmount / scale), (int) ((endX-x-10) / scale), CommonColors.WHITE, false);
                 if (scale > 1) {
                     context.pose().scale(1/scale, 1/scale);
                 }

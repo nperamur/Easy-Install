@@ -1,13 +1,12 @@
 plugins {
-    id 'net.fabricmc.fabric-loom' version '1.17-SNAPSHOT' apply false
-//    id 'architectury-plugin' version '3.4-SNAPSHOT'
-    id 'net.neoforged.moddev' version '2.0.147' apply false
+    id 'dev.architectury.loom' version '1.13-SNAPSHOT' apply false
+    id 'architectury-plugin' version '3.4-SNAPSHOT'
     id 'com.github.johnrengelman.shadow' version '8.1.1' apply false
 }
 
-//architectury {
-//    minecraft = project.minecraft_version
-//}
+architectury {
+    minecraft = project.minecraft_version
+}
 
 allprojects {
     group = rootProject.maven_group
@@ -15,9 +14,14 @@ allprojects {
 }
 
 subprojects {
-//    apply plugin: 'architectury-plugin'
+    apply plugin: 'architectury-plugin'
     apply plugin: 'maven-publish'
     apply plugin: 'java'
+
+    base {
+        // Set up a suffixed format for the mod jar names, e.g. `example-fabric`.
+        archivesName = "$rootProject.archives_name-$project.name"
+    }
 
     repositories {
         // Add repositories to retrieve artifacts from in here.
@@ -47,12 +51,12 @@ subprojects {
         // If you remove this line, sources will not be generated.
         withSourcesJar()
 
-        sourceCompatibility = JavaVersion.VERSION_25
-        targetCompatibility = JavaVersion.VERSION_25
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
     }
 
     tasks.withType(JavaCompile).configureEach {
-        it.options.release = 25
+        it.options.release = 21
     }
 
     // Configure Maven publishing.
@@ -71,5 +75,24 @@ subprojects {
             // The repositories here will be used for publishing your artifact, not for
             // retrieving dependencies.
         }
+    }
+}
+
+configure(subprojects.findAll { it.name != 'neoforge' }) {
+    apply plugin: 'dev.architectury.loom'
+
+    dependencies {
+        minecraft "net.minecraft:minecraft:$rootProject.minecraft_version"
+        mappings loom.officialMojangMappings()
+
+        modImplementation("maven.modrinth:iris:${project.iris_version}")
+        include(implementation("com.github.zakgof:webp4j:0.0.2"))
+        include(implementation("org.scijava:native-lib-loader:2.3.2"))
+        include(implementation 'org.commonmark:commonmark:0.19.0')
+        include(implementation 'org.jsoup:jsoup:1.15.4')
+        include(implementation("com.github.weisj:jsvg:1.7.1"))
+        testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.2'
+        testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.2'
+        testImplementation 'org.mockito:mockito-core:4.2.0'
     }
 }

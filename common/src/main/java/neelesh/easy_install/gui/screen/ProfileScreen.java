@@ -5,7 +5,7 @@ import neelesh.easy_install.EasyInstall;
 import neelesh.easy_install.EasyInstallClient;
 import neelesh.easy_install.ImageLoader;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.components.Button;
@@ -27,7 +27,7 @@ public class ProfileScreen extends Screen {
     protected ProfileScreen(String name, Screen parent) {
         super(Component.nullToEmpty("Profile Screen"));
         doneButton = Button.builder(Component.nullToEmpty("Done"), button -> {
-            minecraft.gui.setScreen(parent);
+            minecraft.setScreen(parent);
         }).build();
         this.userName = name;
         Thread thread = new Thread(() -> {
@@ -54,19 +54,19 @@ public class ProfileScreen extends Screen {
     }
 
     @Override
-    public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
-        super.extractRenderState(context, mouseX, mouseY, delta);
+    public void render(GuiGraphics context, int mouseX, int mouseY, float delta) {
+        super.render(context, mouseX, mouseY, delta);
         context.pose().scale(1.4f, 1.4f);
-        context.text(font, userName, 50, 5, CommonColors.WHITE, true);
+        context.drawString(font, userName, 50, 5, CommonColors.WHITE, true);
         context.pose().scale(1 / 1.4f, 1 / 1.4f);
         if (avatarId != null) {
             context.blit(RenderPipelines.GUI_TEXTURED, avatarId, 10, 5, 0, 0, 50, 50, 50, 50, CommonColors.WHITE);
         }
         if (bio != null) {
-            context.textWithWordWrap(font, Component.nullToEmpty(bio), 70, 25, this.width - 70, CommonColors.WHITE, false);
+            context.drawWordWrap(font, Component.nullToEmpty(bio), 70, 25, this.width - 70, CommonColors.WHITE, false);
         }
         doneButton.setPosition(width / 2 - doneButton.getWidth() / 2, height - 25);
-        doneButton.extractRenderState(context, mouseX, mouseY, delta);
+        doneButton.render(context, mouseX, mouseY, delta);
     }
 
 
