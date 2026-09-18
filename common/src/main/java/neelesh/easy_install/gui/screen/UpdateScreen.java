@@ -142,6 +142,9 @@ public class UpdateScreen extends Screen {
         for (int i = 0; i < versions.size(); i++) {
             this.addWidget(installButtons.get(i));
         }
+        if (fileWriteScheduler == null) {
+            fileWriteScheduler = Executors.newSingleThreadExecutor();
+        }
 
     }
 
@@ -253,12 +256,14 @@ public class UpdateScreen extends Screen {
     public void onClose() {
         super.onClose();
         fileWriteScheduler.shutdown();
+        fileWriteScheduler = null;
     }
 
     @Override
     public void removed() {
         super.removed();
         fileWriteScheduler.shutdown();
+        fileWriteScheduler = null;
     }
 
 
