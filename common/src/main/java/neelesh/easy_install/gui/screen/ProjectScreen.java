@@ -48,6 +48,7 @@ public class ProjectScreen extends Screen implements MarkdownScreenInterface {
     private ArrayList<Version> updatedVersions;
     private final Button installButton = Button.builder(Component.nullToEmpty("Install"), button -> {
         Thread thread = new Thread(() -> {
+            this.updatedVersions = EasyInstallClient.getUpdatedVersions(projectInfo.getProjectType());
             projectInfo.setInstalling(true);
             Thread thread2 = null;
             if (!projectInfo.isUpdated()) {
