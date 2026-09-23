@@ -49,6 +49,7 @@ public class ProjectScreen extends Screen implements MarkdownScreenInterface {
         Thread thread = new Thread(() -> {
             projectInfo.setInstalling(true);
             Thread thread2 = null;
+            this.updatedVersions = EasyInstallClient.getUpdatedVersions(projectInfo.getProjectType());
             if (!projectInfo.isUpdated()) {
                 thread2 = new Thread(() -> {
                     EasyInstallClient.deleteOldFiles(projectInfo.getProjectType(), projectInfo.getLatestHash());
