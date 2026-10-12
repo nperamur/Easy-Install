@@ -121,6 +121,7 @@ public class VersionDetailsScreen extends Screen implements MarkdownScreenInterf
             if (!dependencyProjectIds.contains(projectId)) {
                 dependencyProjectIds.add(projectId);
                 JsonObject jsonObject = EasyInstallClient.getProject(projectId);
+                if (jsonObject == null) continue;
                 dependencyIconIds.add(Identifier.fromNamespaceAndPath(EasyInstall.MOD_ID, "dependency_" + counter[0]));
                 dependencyNames.add(jsonObject.get("title").getAsString());
                 dependencyTypes.add(dependencies.get(i).getAsJsonObject().get("dependency_type").getAsString());

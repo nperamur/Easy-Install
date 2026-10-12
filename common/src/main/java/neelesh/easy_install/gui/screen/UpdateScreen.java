@@ -5,6 +5,7 @@ import com.google.gson.JsonParser;
 import neelesh.easy_install.*;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.toasts.SystemToast;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.PlainTextButton;
@@ -35,8 +36,6 @@ public class UpdateScreen extends Screen {
     private double scrollAmount;
     private Screen parent;
     private ProjectType projectType;
-    private ExecutorService fileWriteScheduler = Executors.newSingleThreadExecutor();
-
 
     protected UpdateScreen(ProjectType projectType, Screen parent) {
         super(Component.nullToEmpty("Update Screen"));
@@ -56,6 +55,8 @@ public class UpdateScreen extends Screen {
                 URL url = URI.create("https://api.modrinth.com/v2/projects?ids=" + URLEncoder.encode(projectIds.toString(), StandardCharsets.UTF_8)).toURL();
                 HttpURLConnection connection = (HttpURLConnection) url.openConnection();
                 connection.setRequestMethod("GET");
+                connection.setConnectTimeout(5000);
+                connection.setReadTimeout(10000);
                 int responseCode = connection.getResponseCode();
                 if (responseCode == HttpURLConnection.HTTP_OK) {
                     try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
@@ -142,9 +143,7 @@ public class UpdateScreen extends Screen {
         for (int i = 0; i < versions.size(); i++) {
             this.addWidget(installButtons.get(i));
         }
-        if (fileWriteScheduler == null) {
-            fileWriteScheduler = Executors.newSingleThreadExecutor();
-        }
+
 
     }
 
@@ -232,11 +231,21 @@ public class UpdateScreen extends Screen {
 
     public void updateVersion(ProjectType projectType, Version version) {
         Thread thread = new Thread(() -> {
-            version.download(false);
+            boolean successful = version.download(false);
+            if (successful) {
+                EasyInstallClient.deleteOldFiles(projectType, version.getHash());
+            } else {
+                minecraft.gui.toastManager().addToast(
+                        new SystemToast(
+                                SystemToast.SystemToastId.WORLD_ACCESS_FAILURE,
+                                Component.literal("Download Failed").withStyle(ChatFormatting.RED, ChatFormatting.BOLD),
+                                Component.literal("Could not download update: " + version.getFilename()).withStyle(ChatFormatting.WHITE)
+                        )
+                );
+            }
             EasyInstallClient.checkStatus(projectType);
         });
         thread.start();
-        fileWriteScheduler.submit(() -> EasyInstallClient.deleteOldFiles(projectType, version.getHash()));
         EasyInstallClient.setNumUpdates(EasyInstallClient.getNumUpdates() - 1);
     }
 
@@ -251,21 +260,6 @@ public class UpdateScreen extends Screen {
         }
         return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount);
     }
-
-    @Override
-    public void onClose() {
-        super.onClose();
-        fileWriteScheduler.shutdown();
-        fileWriteScheduler = null;
-    }
-
-    @Override
-    public void removed() {
-        super.removed();
-        fileWriteScheduler.shutdown();
-        fileWriteScheduler = null;
-    }
-
 
 
 

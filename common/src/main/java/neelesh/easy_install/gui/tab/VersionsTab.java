@@ -9,6 +9,7 @@ import neelesh.easy_install.gui.screen.ProjectScreen;
 import neelesh.easy_install.gui.screen.VersionDetailsScreen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.toasts.SystemToast;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.components.tabs.GridLayoutTab;
@@ -87,14 +88,27 @@ public class VersionsTab extends GridLayoutTab implements Renderable {
                                 }
                                 versionButtons[finalI].setMessage(Component.nullToEmpty("Installing"));
                             });
-                            versions[finalI].download(true);
+                            boolean successful = versions[finalI].download(true);
                             Minecraft.getInstance().schedule(() -> {
                                 if (case1 || case2) {
                                     projectScreen.getProjectInfo().setInstalling(false);
-                                    projectScreen.getProjectInfo().setInstalled(true);
+                                    projectScreen.getProjectInfo().setInstalled(successful);
                                 }
-                                versionButtons[finalI].active = false;
-                                versionButtons[finalI].setMessage(Component.nullToEmpty("Installed"));
+                                versionButtons[finalI].active = !successful;
+                                if (successful) {
+                                    versionButtons[finalI].setMessage(Component.nullToEmpty("Installed"));
+                                } else {
+                                    versionButtons[finalI].setMessage(Component.nullToEmpty("Install"));
+                                }
+                                if (!successful) {
+                                    Minecraft.getInstance().gui.toastManager().addToast(
+                                            new SystemToast(
+                                                    SystemToast.SystemToastId.WORLD_ACCESS_FAILURE,
+                                                    Component.literal("Download Failed").withStyle(ChatFormatting.RED, ChatFormatting.BOLD),
+                                                    Component.literal("Could not download project: " + projectScreen.getProjectInfo().getTitle()).withStyle(ChatFormatting.WHITE)
+                                            )
+                                    );
+                                }
                                 initialized = false;
                             });
                             EasyInstallClient.checkStatus(projectScreen.getProjectInfo().getProjectType());

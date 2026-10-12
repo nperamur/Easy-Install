@@ -8,9 +8,11 @@ import neelesh.easy_install.gui.tab.DescriptionTab;
 import neelesh.easy_install.gui.tab.GalleryTab;
 import neelesh.easy_install.gui.tab.TabNavigationMixinInterface;
 import neelesh.easy_install.gui.tab.VersionsTab;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.tabs.MenuTabBar;
+import net.minecraft.client.gui.components.toasts.SystemToast;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.components.events.GuiEventListener;
@@ -50,32 +52,34 @@ public class ProjectScreen extends Screen implements MarkdownScreenInterface {
         Thread thread = new Thread(() -> {
             this.updatedVersions = EasyInstallClient.getUpdatedVersions(projectInfo.getProjectType());
             projectInfo.setInstalling(true);
-            Thread thread2 = null;
+            boolean downloadSuccessful = false;
             if (!projectInfo.isUpdated()) {
-                thread2 = new Thread(() -> {
-                    EasyInstallClient.deleteOldFiles(projectInfo.getProjectType(), projectInfo.getLatestHash());
-                });
-                thread2.start();
                 for (Version version : updatedVersions) {
                     if (version.getId().equals(projectInfo.getId())) {
-                        version.download(false);
+                        downloadSuccessful = version.download(false);
                     }
                 }
+                if (downloadSuccessful) {
+                    EasyInstallClient.deleteOldFiles(projectInfo.getProjectType(), projectInfo.getLatestHash());
+                }
             } else {
-                EasyInstallClient.downloadVersion(projectInfo.getSlug(), projectInfo.getProjectType(), ((ProjectBrowser) prevScreen).isFilteredByGameVersion());
+                downloadSuccessful = EasyInstallClient.downloadVersion(projectInfo.getSlug(), projectInfo.getProjectType(), ((ProjectBrowser) prevScreen).isFilteredByGameVersion());
             }
+            boolean finalDownloadSuccessful = downloadSuccessful;
             Minecraft.getInstance().schedule(() -> {
-                projectInfo.setInstalled(true);
+                projectInfo.setInstalled(finalDownloadSuccessful);
+                if (!finalDownloadSuccessful) {
+                    minecraft.gui.toastManager().addToast(
+                            new SystemToast(
+                                    SystemToast.SystemToastId.WORLD_ACCESS_FAILURE,
+                                    Component.literal("Download Failed").withStyle(ChatFormatting.RED, ChatFormatting.BOLD),
+                                    Component.literal("Could not download project: " + projectInfo.getTitle()).withStyle(ChatFormatting.WHITE)
+                            )
+                    );
+                }
                 projectInfo.setInstalling(false);
                 versionsTab.setInitialized(false);
             });
-            if (thread2 != null) {
-                try {
-                    thread2.join();
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-            }
             EasyInstallClient.checkStatus(projectInfo.getProjectType());
             Thread thread3 = new Thread(() -> this.updatedVersions = EasyInstallClient.getUpdatedVersions(projectInfo.getProjectType()));
             thread3.start();
@@ -116,6 +120,7 @@ public class ProjectScreen extends Screen implements MarkdownScreenInterface {
         doneButton.setHeight(17);
         doneButton.setPosition(10, height - doneButton.getHeight());
         doneButton.extractRenderState(context, mouseX, mouseY, delta);
+        if (this.tabManager == null) return;
         if (tabManager.getCurrentTab() instanceof VersionsTab && tabManager.getCurrentTab() != prevTab) {
             ((VersionsTab) (tabManager.getCurrentTab())).setInitialized(false);
         }
@@ -177,6 +182,7 @@ public class ProjectScreen extends Screen implements MarkdownScreenInterface {
         thread.start();
         if (!initialized) {
             JsonObject jsonObject = EasyInstallClient.getProject(this.projectInfo.getSlug());
+            if (jsonObject == null) return;
             String body = jsonObject.get("body").getAsString();
             projectInfo.setBody(body);
             JsonArray gallery = jsonObject.get("gallery").getAsJsonArray();
@@ -236,6 +242,7 @@ public class ProjectScreen extends Screen implements MarkdownScreenInterface {
 
     @Override
     protected void extractMenuBackground(GuiGraphicsExtractor context) {
+        if (this.tabNavigationWidget == null) return;
         context.blit(RenderPipelines.GUI_TEXTURED, TAB_HEADER_BACKGROUND, 0, 0, 0.0F, 0.0F, this.width, ((TabButton) this.tabNavigationWidget.children().getFirst()).getHeight(), 16, 16);
     }
 
@@ -303,6 +310,7 @@ public class ProjectScreen extends Screen implements MarkdownScreenInterface {
 
     @Nullable
     public Version getUpdatedVersion() {
+        if (updatedVersions == null) return null;
         for (Version version : updatedVersions) {
             if (version.getId().equals(projectInfo.getId())) {
                 return version;

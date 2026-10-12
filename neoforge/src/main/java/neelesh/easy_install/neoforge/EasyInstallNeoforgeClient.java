@@ -9,8 +9,7 @@ import net.neoforged.fml.common.Mod;
 
 import java.io.File;
 
-import static neelesh.easy_install.EasyInstallClient.checkStatus;
-import static neelesh.easy_install.EasyInstallClient.initializeDatapacks;
+import static neelesh.easy_install.EasyInstallClient.*;
 
 @Mod(EasyInstall.MOD_ID)
 public class EasyInstallNeoforgeClient {
@@ -21,6 +20,7 @@ public class EasyInstallNeoforgeClient {
 			file.delete();
 		}
 		EasyInstallJsonHandler.clearDeletedFiles();
+		cleanUpTempFiles();
 		for (ProjectType projectType : ProjectType.values()) {
 			if (projectType != ProjectType.DATA_PACK) {
 				checkStatus(projectType);

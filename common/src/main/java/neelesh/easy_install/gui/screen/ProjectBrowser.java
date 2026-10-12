@@ -2,8 +2,10 @@ package neelesh.easy_install.gui.screen;
 
 import neelesh.easy_install.*;
 import neelesh.easy_install.gui.widget.PressableTextWidgetShadowless;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.toasts.SystemToast;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.gui.screens.Screen;
@@ -76,7 +78,7 @@ public class ProjectBrowser extends Screen {
     public ProjectBrowser(Screen parent, ProjectType projectType) {
         super(Component.literal(""));
         EasyInstallClient.setNumUpdates(0);
-        filtersButton.setTooltip(Tooltip.create(Component.nullToEmpty("Show Filter Options")));
+//        filtersButton.setTooltip(Tooltip.create(Component.nullToEmpty("Show Filter Options")));
         EasyInstallClient.search("", projectType);
         prevScreen = parent;
         this.projectType = projectType;
@@ -212,21 +214,33 @@ public class ProjectBrowser extends Screen {
             Button buttonWidget = Button.builder(Component.nullToEmpty("Install"), button -> {
                 INFO[finalI].setInstalling(true);
                 Thread thread = new Thread(() -> {
+                    boolean successful = false;
                     if (!INFO[finalI].isUpdated()) {
-                        Thread thread2 = new Thread(() -> {
-                            EasyInstallClient.deleteOldFiles(projectType, INFO[finalI].getLatestHash());
-                        });
-                        thread2.start();
+                        if (updatedVersions == null) {
+                            this.updatedVersions = EasyInstallClient.getUpdatedVersions(projectType);
+                        }
                         for (Version version : updatedVersions) {
                             if (version.getId().equals(INFO[finalI].getId())) {
-                                version.download(false);
+                                successful = version.download(false);
                             }
                         }
+                        if (successful) {
+                            EasyInstallClient.deleteOldFiles(projectType, INFO[finalI].getLatestHash());
+                        }
                     } else {
-                        EasyInstallClient.downloadVersion(INFO[finalI].getSlug(), projectType, filteredByGameVersion);
+                        successful = EasyInstallClient.downloadVersion(INFO[finalI].getSlug(), projectType, filteredByGameVersion);
                     }
                     INFO[finalI].setInstalling(false);
-                    INFO[finalI].setInstalled(true);
+                    INFO[finalI].setInstalled(successful);
+                    if (!successful) {
+                        minecraft.gui.toastManager().addToast(
+                                new SystemToast(
+                                        SystemToast.SystemToastId.WORLD_ACCESS_FAILURE,
+                                        Component.literal("Download Failed").withStyle(ChatFormatting.RED, ChatFormatting.BOLD),
+                                        Component.literal("Could not download project: " + INFO[finalI].getTitle()).withStyle(ChatFormatting.WHITE)
+                                )
+                        );
+                    }
                     t = new Thread(() -> EasyInstallClient.checkStatus(projectType));
                     t.start();
                     Thread thread2 = new Thread(() -> this.updatedVersions = EasyInstallClient.getUpdatedVersions(projectType));

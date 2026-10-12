@@ -8,8 +8,7 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.HashSet;
 
-import static neelesh.easy_install.EasyInstallClient.checkStatus;
-import static neelesh.easy_install.EasyInstallClient.initializeDatapacks;
+import static neelesh.easy_install.EasyInstallClient.*;
 
 public class EasyInstallFabricClient implements ClientModInitializer {
 	@Override
@@ -20,6 +19,7 @@ public class EasyInstallFabricClient implements ClientModInitializer {
 			file.delete();
 		}
 		EasyInstallJsonHandler.clearDeletedFiles();
+		cleanUpTempFiles();
 		for (ProjectType projectType : ProjectType.values()) {
 			if (projectType != ProjectType.DATA_PACK) {
 				checkStatus(projectType);

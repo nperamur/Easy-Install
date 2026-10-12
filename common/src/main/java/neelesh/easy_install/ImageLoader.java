@@ -48,6 +48,8 @@ public class ImageLoader {
                 HttpURLConnection connection = (HttpURLConnection) url.openConnection();
                 connection.setInstanceFollowRedirects(true);
                 connection.setRequestMethod("GET");
+                connection.setConnectTimeout(5000);
+                connection.setReadTimeout(40000);
                 try (InputStream inputStream = connection.getInputStream()) {
                     image = loadImage(inputStream, isWebp, true);
 
@@ -134,6 +136,8 @@ public class ImageLoader {
                 HttpURLConnection connection = (HttpURLConnection) url.openConnection();
                 connection.setInstanceFollowRedirects(true);
                 connection.setRequestMethod("GET");
+                connection.setConnectTimeout(5000);
+                connection.setReadTimeout(40000);
                 try (InputStream inputStream = connection.getInputStream()) {
                     image = loadImage(inputStream, isWebp, false);
                     if (image == null && !url.toString().endsWith("webp") && !url.toString().endsWith("png") && !url.toString().endsWith("jpg")) {
