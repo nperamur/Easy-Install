@@ -341,9 +341,6 @@ public class EasyInstallClient {
                          EasyInstall.LOGGER.info("Download failed: {}", savePath);
                          successful = false;
                      }
-                } catch(Exception e) {
-                    EasyInstall.LOGGER.info("Download failed: {}, Status Code: {}" , savePath, connection.getResponseCode());
-                    successful = false;
                 } finally {
                     if (inputStream != null) {
                         downloadStreams.remove(inputStream);
