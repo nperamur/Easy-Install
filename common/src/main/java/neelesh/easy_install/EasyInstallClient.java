@@ -2,6 +2,7 @@ package neelesh.easy_install;
 
 import com.google.common.hash.Hashing;
 import com.google.common.io.Files;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.gson.*;
 import net.minecraft.SharedConstants;
 import org.jetbrains.annotations.NotNull;
@@ -13,10 +14,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
@@ -31,9 +29,14 @@ public class EasyInstallClient {
     private static int numUpdates;
     private static HashMap<ProjectType, HashSet<String>> updatesNeeded = new HashMap<>();
     private static HashMap<ProjectType, HashSet<String>> installedProjects = new HashMap<>();
+
     //private static String GAME_VERSION = SharedConstants.getCurrentVersion().name();
     private static String currentTargetUpdateVersion = null;
-    
+
+    private static boolean isShuttingDown = false;
+
+    private static ArrayList<InputStream> downloadStreams = new ArrayList<InputStream>();
+
     public static String getGameVersion() {
         return SharedConstants.getCurrentVersion().name();
     }
@@ -148,6 +151,7 @@ public class EasyInstallClient {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
+
             return successful.get();
         }
     }
@@ -311,34 +315,46 @@ public class EasyInstallClient {
                 e.printStackTrace();
             }
         }
-
         HttpURLConnection connection = null;
         try {
+            if (isShuttingDown) {
+                return false;
+            }
             Path tempFilePath = Paths.get(String.valueOf(tempPath), fileName + UUID.randomUUID());
             connection = (HttpURLConnection) url.openConnection();
             connection.setConnectTimeout(10000);
             connection.setReadTimeout(30000);
             int responseCode = connection.getResponseCode();
             if (responseCode == HttpURLConnection.HTTP_OK) {
+                InputStream inputStream = null;
                 try (InputStream in = new BufferedInputStream(connection.getInputStream());
                      FileOutputStream out = new FileOutputStream(tempFilePath.toFile())) {
-
+                     inputStream = in;
+                     downloadStreams.add(in);
                      long transferByteCount = in.transferTo(out);
                      out.close();
                      if (connection.getContentLengthLong() == transferByteCount || connection.getContentLengthLong() == -1) {
                          java.nio.file.Files.move(tempFilePath, Path.of(savePath), StandardCopyOption.ATOMIC_MOVE);
                          EasyInstall.LOGGER.info("Download complete: {}", savePath);
+
                      } else {
                          EasyInstall.LOGGER.info("Download failed: {}", savePath);
                          successful = false;
                      }
+                } catch(Exception e) {
+                    EasyInstall.LOGGER.info("Download failed: {}, Status Code: {}" , savePath, connection.getResponseCode());
+                    successful = false;
+                } finally {
+                    if (inputStream != null) {
+                        downloadStreams.remove(inputStream);
+                    }
                 }
 
             } else {
                 EasyInstall.LOGGER.info("Download failed: {}, Status Code: {}" , savePath, connection.getResponseCode());
                 successful = false;
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             EasyInstall.LOGGER.info("Download failed: {}", savePath);
             successful = false;
@@ -350,6 +366,19 @@ public class EasyInstallClient {
 
         return successful;
 
+    }
+
+    public static void stopAllDownloads() {
+        ArrayList<InputStream> inputStreams = new ArrayList<>(downloadStreams);
+        isShuttingDown = true;
+        for (InputStream in : inputStreams) {
+            try {
+                in.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+        }
     }
 
     public static void cleanUpTempFiles() {
