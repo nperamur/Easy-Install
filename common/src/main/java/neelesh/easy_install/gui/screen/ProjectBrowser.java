@@ -233,12 +233,14 @@ public class ProjectBrowser extends Screen {
                     INFO[finalI].setInstalling(false);
                     INFO[finalI].setInstalled(successful);
                     if (!successful) {
-                        minecraft.gui.toastManager().addToast(
-                                new SystemToast(
-                                        SystemToast.SystemToastId.WORLD_ACCESS_FAILURE,
-                                        Component.literal("Download Failed").withStyle(ChatFormatting.RED, ChatFormatting.BOLD),
-                                        Component.literal("Could not download project: " + INFO[finalI].getTitle()).withStyle(ChatFormatting.WHITE)
-                                )
+                        minecraft.schedule(() ->
+                            minecraft.gui.toastManager().addToast(
+                                    new SystemToast(
+                                            SystemToast.SystemToastId.WORLD_ACCESS_FAILURE,
+                                            Component.literal("Download Failed").withStyle(ChatFormatting.RED, ChatFormatting.BOLD),
+                                            Component.literal("Could not download project: " + INFO[finalI].getTitle()).withStyle(ChatFormatting.WHITE)
+                                    )
+                            )
                         );
                     }
                     t = new Thread(() -> EasyInstallClient.checkStatus(projectType));

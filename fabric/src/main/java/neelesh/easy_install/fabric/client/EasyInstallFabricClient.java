@@ -3,6 +3,7 @@ package neelesh.easy_install.fabric.client;
 import com.google.gson.JsonArray;
 import neelesh.easy_install.*;
 import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -27,7 +28,9 @@ public class EasyInstallFabricClient implements ClientModInitializer {
 		}
 		initializeDatapacks();
 
-
+		ClientLifecycleEvents.CLIENT_STOPPING.register(client -> {
+			EasyInstallClient.stopAllDownloads();
+		});
 
 
 	}

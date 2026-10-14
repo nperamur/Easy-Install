@@ -72,7 +72,7 @@ public class Version {
 
     public boolean download(boolean installDependencies) {
         int numberOfThreads = 5;
-        AtomicBoolean successful = new AtomicBoolean(false);
+        AtomicBoolean successful = new AtomicBoolean(true);
         try (ExecutorService executorService = Executors.newFixedThreadPool(numberOfThreads)) {
             executorService.submit(() -> {
                 successful.set(EasyInstallClient.downloadVersion(this.downloadUrl, this.filename, this.projectType));

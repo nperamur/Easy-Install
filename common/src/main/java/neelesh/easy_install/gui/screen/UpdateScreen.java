@@ -235,13 +235,16 @@ public class UpdateScreen extends Screen {
             if (successful) {
                 EasyInstallClient.deleteOldFiles(projectType, version.getHash());
             } else {
-                minecraft.gui.toastManager().addToast(
-                        new SystemToast(
-                                SystemToast.SystemToastId.WORLD_ACCESS_FAILURE,
-                                Component.literal("Download Failed").withStyle(ChatFormatting.RED, ChatFormatting.BOLD),
-                                Component.literal("Could not download update: " + version.getFilename()).withStyle(ChatFormatting.WHITE)
-                        )
-                );
+                minecraft.schedule(() -> {
+                    minecraft.gui.toastManager().addToast(
+                            new SystemToast(
+                                    SystemToast.SystemToastId.WORLD_ACCESS_FAILURE,
+                                    Component.literal("Download Failed").withStyle(ChatFormatting.RED, ChatFormatting.BOLD),
+                                    Component.literal("Could not download update: " + version.getFilename()).withStyle(ChatFormatting.WHITE)
+                            )
+                    );
+                });
+
             }
             EasyInstallClient.checkStatus(projectType);
         });
