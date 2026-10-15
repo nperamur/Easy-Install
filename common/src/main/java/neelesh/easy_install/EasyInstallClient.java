@@ -2,7 +2,6 @@ package neelesh.easy_install;
 
 import com.google.common.hash.Hashing;
 import com.google.common.io.Files;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.gson.*;
 import net.minecraft.SharedConstants;
 import org.jetbrains.annotations.NotNull;
@@ -27,9 +26,13 @@ public class EasyInstallClient {
     private static int numRows = 20;
     private static HashMap<String, String> oldHashes = new HashMap<>();
     private static int numUpdates;
-    private static HashMap<ProjectType, HashSet<String>> updatesNeeded = new HashMap<>();
-    private static HashMap<ProjectType, HashSet<String>> installedProjects = new HashMap<>();
+    private static HashMap<ProjectType, InstallationState> installationStates = new HashMap<>();
 
+    static {
+        for (ProjectType type : ProjectType.values()) {
+            installationStates.put(type, new InstallationState());
+        }
+    }
     //private static String GAME_VERSION = SharedConstants.getCurrentVersion().name();
     private static String currentTargetUpdateVersion = null;
 
@@ -56,8 +59,11 @@ public class EasyInstallClient {
     }
 
     public static void initializeDatapacks() {
-        installedProjects.put(ProjectType.DATA_PACK, new HashSet<>());
-        updatesNeeded.put(ProjectType.DATA_PACK, new HashSet<>());
+        installationStates.get(ProjectType.DATA_PACK).clear();
+    }
+
+    public static InstallationState getInstallationState(ProjectType projectType) {
+        return installationStates.get(projectType);
     }
     
     public static String getCurrentTargetUpdateVersion() {
@@ -139,8 +145,9 @@ public class EasyInstallClient {
                 JsonObject dependency = dependencies.get(i).getAsJsonObject();
                 if (dependency.get("dependency_type").getAsString().equals("required")) {
                     String id = dependency.get("project_id").getAsString();
-                    if (!installedProject(projectType, id)) {
-                        executorService.submit(() -> downloadVersion(id, getProjectType(id), true));
+                    ProjectType dependencyProjectType = getProjectType(id);
+                    if (!installedProject(dependencyProjectType, id)) {
+                        executorService.submit(() -> downloadVersion(id, dependencyProjectType, true));
                     }
 
                 }
@@ -157,7 +164,7 @@ public class EasyInstallClient {
     }
 
     public static boolean installedProject(ProjectType projectType, String id) {
-        return installedProjects.get(projectType).contains(id) || updatesNeeded.get(projectType).contains(id);
+        return installationStates.get(projectType).isInstalled(id);
     }
 
 
@@ -285,19 +292,8 @@ public class EasyInstallClient {
 
 
         numUpdates = updateNeededProjectIds.size();
-        updatesNeeded.put(projectType, updateNeededProjectIds);
-        installedProjects.put(projectType, installedProjectIds);
-        for (ProjectInfo info : projectInfo) {
-            if (info != null) {
-                info.setInstalled(installedProjectIds.contains(info.getId()));
-                if (updateNeededProjectIds.contains(info.getId())) {
-                    info.setLatestHash(hashMap.get(info.getId()));
-                }
-                info.setUpdated(!updateNeededProjectIds.contains(info.getId()));
-            } else {
-                break;
-            }
-        }
+        installationStates.get(projectType).loadInstallationState(installedProjectIds, updateNeededProjectIds);
+
 
     }
     public static String getTempPath() {
@@ -436,12 +432,6 @@ public class EasyInstallClient {
                             jsonObject.get("project_id").getAsString(),
                             false, projectType);
 
-                }
-                try {
-                    projectInfo[x].setInstalled(installedProjects.get(projectType).contains(projectInfo[x].getId()));
-                    projectInfo[x].setUpdated(!updatesNeeded.get(projectType).contains(projectInfo[x].getId()));
-                } catch (NullPointerException e) {
-                    e.printStackTrace();
                 }
                 rows++;
             }

@@ -16,9 +16,6 @@
 	"icon": "assets/easy_install/icon.png",
 	"environment": "client",
 	"entrypoints": {
-		"main": [
-			"neelesh.easy_install.EasyInstall"
-		],
 		"client": [
 			"neelesh.easy_install.fabric.client.EasyInstallFabricClient"
 		],

@@ -4,6 +4,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import neelesh.easy_install.EasyInstallClient;
+import neelesh.easy_install.ProjectStatus;
 import neelesh.easy_install.Version;
 import neelesh.easy_install.gui.screen.ProjectScreen;
 import neelesh.easy_install.gui.screen.VersionDetailsScreen;
@@ -43,21 +44,19 @@ public class VersionsTab extends GridLayoutTab implements Renderable {
         this.projectScreen = projectScreen;
         Thread thread = new Thread(() -> {
             String response = EasyInstallClient.getVersions(projectScreen.getProjectInfo().getSlug(), projectScreen.getProjectInfo().getProjectType(), projectScreen.isFilteredByGameVersion());
-            if (!projectScreen.isFilteredByGameVersion()) {
-                Thread thread2 = new Thread(() -> {
-                    String response2 = EasyInstallClient.getVersions(projectScreen.getProjectInfo().getSlug(), projectScreen.getProjectInfo().getProjectType(), true);
-                    if (response2 == null || JsonParser.parseString(response2).getAsJsonArray().isEmpty()) {
-                        return;
-                    }
-                    JsonObject jsonObject = JsonParser.parseString(response2).getAsJsonArray().get(0).getAsJsonObject();
-                    try {
-                        this.projectInstallVersion = EasyInstallClient.createVersion(jsonObject, projectScreen.getProjectInfo().getProjectType());
-                    } catch (MalformedURLException e) {
-                        e.printStackTrace();
-                    }
-                });
-                thread2.start();
-            }
+            Thread thread2 = new Thread(() -> {
+                String response2 = EasyInstallClient.getVersions(projectScreen.getProjectInfo().getSlug(), projectScreen.getProjectInfo().getProjectType(), true);
+                if (response2 == null || JsonParser.parseString(response2).getAsJsonArray().isEmpty()) {
+                    return;
+                }
+                JsonObject jsonObject = JsonParser.parseString(response2).getAsJsonArray().get(0).getAsJsonObject();
+                try {
+                    this.projectInstallVersion = EasyInstallClient.createVersion(jsonObject, projectScreen.getProjectInfo().getProjectType());
+                } catch (MalformedURLException e) {
+                    e.printStackTrace();
+                }
+            });
+            thread2.start();
             JsonArray jsonArray = JsonParser.parseString(response).getAsJsonArray();
             versions = new Version[jsonArray.size()];
             versionButtons = new Button[jsonArray.size()];
@@ -76,23 +75,35 @@ public class VersionsTab extends GridLayoutTab implements Renderable {
                     versionButtons[finalI] = Button.builder(Component.nullToEmpty("Install"), buttonWidget -> {
                         Thread t = new Thread(() -> {
                             @Nullable Version updatedVersion = projectScreen.getUpdatedVersion();
-                            boolean case1 = this.projectInstallVersion != null && this.projectInstallVersion.getHash().equals(versions[finalI].getHash()) && projectScreen.getProjectInfo().isUpdated();
-                            boolean case2 = updatedVersion != null && versions[finalI].getHash().equals(updatedVersion.getHash()) && !projectScreen.getProjectInfo().isUpdated();
+                            boolean needsUpdate = projectScreen.getInstallationState().needsUpdate(projectScreen.getProjectId());
+                            boolean case1 = this.projectInstallVersion != null && this.projectInstallVersion.getHash().equals(versions[finalI].getHash()) && !needsUpdate;
+                            boolean case2 = updatedVersion != null && versions[finalI].getHash().equals(updatedVersion.getHash()) && needsUpdate;
 
 
                             Minecraft.getInstance().schedule(() -> {
                                 versionButtons[finalI].active = false;
                                 versionButtons[finalI].setMessage(Component.nullToEmpty("Installed"));
-                                if (case1 || case2) {
-                                    projectScreen.getProjectInfo().setInstalling(true);
+                                if (case1) {
+                                    projectScreen.getInstallationState()
+                                            .setProjectStatus(projectScreen.getProjectId(), ProjectStatus.INSTALLING_REGULAR);
+                                }
+
+                                if (case2) {
+                                    projectScreen.getInstallationState()
+                                            .setProjectStatus(projectScreen.getProjectId(), ProjectStatus.INSTALLING_UPDATE);
                                 }
                                 versionButtons[finalI].setMessage(Component.nullToEmpty("Installing"));
                             });
                             boolean successful = versions[finalI].download(true);
                             Minecraft.getInstance().schedule(() -> {
                                 if (case1 || case2) {
-                                    projectScreen.getProjectInfo().setInstalling(false);
-                                    projectScreen.getProjectInfo().setInstalled(successful);
+                                    if (successful) {
+                                        projectScreen.getInstallationState()
+                                                .setProjectStatus(projectScreen.getProjectId(), ProjectStatus.INSTALLED);
+                                    } else {
+                                        projectScreen.getInstallationState()
+                                                .removeProject(projectScreen.getProjectId());
+                                    }
                                 }
                                 versionButtons[finalI].active = !successful;
                                 if (successful) {
@@ -144,10 +155,12 @@ public class VersionsTab extends GridLayoutTab implements Renderable {
             if (versions[i] == null || versionDetailButtons[i] == null) {
                 break;
             }
-            if (projectScreen.getProjectInfo().isInstalling() && versionButtons.length != 0) {
+
+            if (projectScreen.getInstallationState().isInstalling(projectScreen.getProjectId()) && versionButtons.length != 0) {
                 @Nullable Version updatedVersion = projectScreen.getUpdatedVersion();
-                boolean case1 = this.projectInstallVersion != null && this.projectInstallVersion.getHash().equals(versions[i].getHash()) && projectScreen.getProjectInfo().isUpdated();
-                boolean case2 = updatedVersion != null && versions[i].getHash().equals(updatedVersion.getHash()) && !projectScreen.getProjectInfo().isUpdated();
+                boolean needsUpdate = projectScreen.getInstallationState().needsUpdate(projectScreen.getProjectId());
+                boolean case1 = this.projectInstallVersion != null && this.projectInstallVersion.getHash().equals(versions[i].getHash()) && !needsUpdate;
+                boolean case2 = updatedVersion != null && versions[i].getHash().equals(updatedVersion.getHash()) && needsUpdate;
                 if (case1 || case2) {
                     versionButtons[i].active = false;
                     versionButtons[i].setMessage(Component.nullToEmpty("Installing"));
