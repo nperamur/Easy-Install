@@ -48,27 +48,34 @@ public class ProjectScreen extends Screen implements MarkdownScreenInterface {
     private Screen prevScreen;
     private boolean filteredByGameVersion;
     private ArrayList<Version> updatedVersions;
+    private InstallationState installationState;
     private final Button installButton = Button.builder(Component.nullToEmpty("Install"), button -> {
         Thread thread = new Thread(() -> {
-            this.updatedVersions = EasyInstallClient.getUpdatedVersions(projectInfo.getProjectType());
-            projectInfo.setInstalling(true);
             boolean downloadSuccessful = false;
-            if (!projectInfo.isUpdated()) {
+            if (installationState.needsUpdate(projectInfo.getId())) {
+                installationState.setProjectStatus(projectInfo.getId(), ProjectStatus.INSTALLING_UPDATE);
+                this.updatedVersions = EasyInstallClient.getUpdatedVersions(projectInfo.getProjectType());
+                String versionDownloadedHash = null;
                 for (Version version : updatedVersions) {
                     if (version.getId().equals(projectInfo.getId())) {
                         downloadSuccessful = version.download(false);
+                        versionDownloadedHash = version.getHash();
+                        break;
                     }
                 }
                 if (downloadSuccessful) {
-                    EasyInstallClient.deleteOldFiles(projectInfo.getProjectType(), projectInfo.getLatestHash());
+                    EasyInstallClient.deleteOldFiles(projectInfo.getProjectType(), versionDownloadedHash);
                 }
             } else {
+                installationState.setProjectStatus(projectInfo.getId(), ProjectStatus.INSTALLING_REGULAR);
                 downloadSuccessful = EasyInstallClient.downloadVersion(projectInfo.getSlug(), projectInfo.getProjectType(), ((ProjectBrowser) prevScreen).isFilteredByGameVersion());
             }
             boolean finalDownloadSuccessful = downloadSuccessful;
             Minecraft.getInstance().schedule(() -> {
-                projectInfo.setInstalled(finalDownloadSuccessful);
-                if (!finalDownloadSuccessful) {
+                if (finalDownloadSuccessful) {
+                    installationState.setProjectStatus(projectInfo.getId(),  ProjectStatus.INSTALLED);
+                } else {
+                    installationState.removeProject(projectInfo.getId());
                     minecraft.gui.toastManager().addToast(
                             new SystemToast(
                                     SystemToast.SystemToastId.WORLD_ACCESS_FAILURE,
@@ -77,7 +84,6 @@ public class ProjectScreen extends Screen implements MarkdownScreenInterface {
                             )
                     );
                 }
-                projectInfo.setInstalling(false);
                 versionsTab.setInitialized(false);
             });
             EasyInstallClient.checkStatus(projectInfo.getProjectType());
@@ -105,12 +111,14 @@ public class ProjectScreen extends Screen implements MarkdownScreenInterface {
     private MenuTabBar tabNavigationWidget;
     private int scrollAmount = 15;
     public static final Identifier VERTICAL_SEPARATOR_TEXTURE = Identifier.fromNamespaceAndPath(EasyInstall.MOD_ID,"textures/gui/vertical_separator.png");
-    protected ProjectScreen(Screen parent, ProjectInfo projectInfo, ArrayList<Version> updatedVersions) {
+
+    protected ProjectScreen(Screen parent, ProjectInfo projectInfo, InstallationState installationState, ArrayList<Version> updatedVersions) {
         super(Component.literal(projectInfo.getTitle()));
         this.projectInfo = projectInfo;
         this.updatedVersions = updatedVersions;
         iconTextureId = Identifier.parse("project_texture_id");
         this.prevScreen = parent;
+        this.installationState = installationState;
         this.filteredByGameVersion = ((ProjectBrowser) parent).isFilteredByGameVersion();
     }
 
@@ -147,16 +155,18 @@ public class ProjectScreen extends Screen implements MarkdownScreenInterface {
         installButton.extractRenderState(context, mouseX, mouseY, delta);
         siteButton.extractRenderState(context, mouseX, mouseY, delta);
 
-        if (projectInfo.isInstalling()) {
+        ProjectStatus projectStatus = installationState.getProjectStatus(projectInfo.getId());
+        if (projectStatus == ProjectStatus.INSTALLING_REGULAR || projectStatus == ProjectStatus.INSTALLING_UPDATE) {
             installButton.setMessage(Component.nullToEmpty("Installing"));
-        } else if (projectInfo.isInstalled()) {
+        } else if (projectStatus == ProjectStatus.INSTALLED) {
             installButton.setMessage(Component.nullToEmpty("Installed"));
-        } else if (projectInfo.isUpdated()) {
+        } else if (projectStatus == ProjectStatus.NONE) {
             installButton.setMessage(Component.nullToEmpty("Install"));
-        } else {
+        } else if (projectStatus == ProjectStatus.NEEDS_UPDATE) {
             installButton.setMessage(Component.nullToEmpty("Update"));
         }
-        installButton.active = !projectInfo.isInstalled() && !projectInfo.isInstalling();
+        installButton.active = projectStatus != ProjectStatus.INSTALLED && projectStatus != ProjectStatus.INSTALLING_REGULAR
+                                                            && projectStatus != ProjectStatus.INSTALLING_UPDATE;
         if (scrollAmount < - maxY + height - 10 && maxY > height - 10) {
             scrollAmount = - maxY + height - 10;
         } else if (scrollAmount < - maxY + height - 10 && maxY <= height - 10) {
@@ -210,6 +220,7 @@ public class ProjectScreen extends Screen implements MarkdownScreenInterface {
         descriptionTab.refreshLinkPositions();
         GalleryTab galleryTab = new GalleryTab(Component.nullToEmpty("Gallery"), this);
         this.versionsTab = new VersionsTab(Component.nullToEmpty("Versions"), this);
+        EasyInstallClient.registerVersionsTab(versionsTab);
         tabManager = new TabManager(this::addSelectableChild, this::removeWidget);
         if (!galleryImages.isEmpty()) {
             tabNavigationWidget = MenuTabBar.builder(this.tabManager, width - 131)
@@ -308,9 +319,17 @@ public class ProjectScreen extends Screen implements MarkdownScreenInterface {
         return this.maxY;
     }
 
+    public InstallationState getInstallationState() {
+        return installationState;
+    }
+
+    public String getProjectId() {
+        return projectInfo.getId();
+    }
+
     @Nullable
     public Version getUpdatedVersion() {
-        if (updatedVersions == null) return null;
+        updatedVersions = EasyInstallClient.getUpdatedVersions(projectInfo.getProjectType());
         for (Version version : updatedVersions) {
             if (version.getId().equals(projectInfo.getId())) {
                 return version;

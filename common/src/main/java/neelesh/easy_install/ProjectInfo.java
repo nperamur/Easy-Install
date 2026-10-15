@@ -9,13 +9,10 @@ public class ProjectInfo {
     private String author;
     private String slug;
 
-    private boolean installed;
     private String body;
     private ProjectType projectType;
-    private boolean updated;
     private String id;
     private String latestHash;
-    private boolean installing;
 
     public ProjectInfo(URL iconUrl, String title, String description, String author, String slug, String id, boolean installed, ProjectType projectType) {
         this.iconUrl = iconUrl;
@@ -23,11 +20,9 @@ public class ProjectInfo {
         this.description = description;
         this.author = author;
         this.slug = slug;
-        this.installed = installed;
         this.id = id;
         this.body = "";
         this.projectType = projectType;
-        this.updated = true;
     }
 
     public URL getIconUrl() {
@@ -67,14 +62,6 @@ public class ProjectInfo {
         this.slug = slug;
     }
 
-    public boolean isInstalled() {
-        return installed;
-    }
-
-    public void setInstalled(boolean installed) {
-        this.installed = installed;
-    }
-
     public String getBody() {
         return body;
     }
@@ -91,13 +78,6 @@ public class ProjectInfo {
         return id;
     }
 
-    public boolean isUpdated() {
-        return updated;
-    }
-
-    public void setUpdated(boolean updated) {
-        this.updated = updated;
-    }
 
     public void setLatestHash(String hash) {
         this.latestHash = hash;
@@ -107,11 +87,4 @@ public class ProjectInfo {
         return latestHash;
     }
 
-    public void setInstalling(boolean installing) {
-        this.installing = installing;
-    }
-
-    public boolean isInstalling() {
-        return this.installing;
-    }
 }

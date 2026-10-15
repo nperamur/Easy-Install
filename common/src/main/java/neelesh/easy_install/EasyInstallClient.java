@@ -2,8 +2,8 @@ package neelesh.easy_install;
 
 import com.google.common.hash.Hashing;
 import com.google.common.io.Files;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.gson.*;
+import neelesh.easy_install.gui.tab.VersionsTab;
 import net.minecraft.SharedConstants;
 import org.jetbrains.annotations.NotNull;
 
@@ -27,9 +27,16 @@ public class EasyInstallClient {
     private static int numRows = 20;
     private static HashMap<String, String> oldHashes = new HashMap<>();
     private static int numUpdates;
-    private static HashMap<ProjectType, HashSet<String>> updatesNeeded = new HashMap<>();
-    private static HashMap<ProjectType, HashSet<String>> installedProjects = new HashMap<>();
 
+    private static VersionsTab versionsTab = null;
+
+    private static HashMap<ProjectType, InstallationState> installationStates = new HashMap<>();
+
+    static {
+        for (ProjectType type : ProjectType.values()) {
+            installationStates.put(type, new InstallationState());
+        }
+    }
     //private static String GAME_VERSION = SharedConstants.getCurrentVersion().name();
     private static String currentTargetUpdateVersion = null;
 
@@ -56,8 +63,11 @@ public class EasyInstallClient {
     }
 
     public static void initializeDatapacks() {
-        installedProjects.put(ProjectType.DATA_PACK, new HashSet<>());
-        updatesNeeded.put(ProjectType.DATA_PACK, new HashSet<>());
+        installationStates.get(ProjectType.DATA_PACK).clear();
+    }
+
+    public static InstallationState getInstallationState(ProjectType projectType) {
+        return installationStates.get(projectType);
     }
     
     public static String getCurrentTargetUpdateVersion() {
@@ -66,6 +76,11 @@ public class EasyInstallClient {
         }
         return currentTargetUpdateVersion;
     }
+
+    public static void registerVersionsTab(VersionsTab tab) {
+        versionsTab = tab;
+    }
+
 
 
 
@@ -124,6 +139,8 @@ public class EasyInstallClient {
         JsonObject jsonObject = JsonParser.parseString(response).getAsJsonArray().get(0).getAsJsonObject().get("files").getAsJsonArray().get(0).getAsJsonObject();
         String filename = jsonObject.get("filename").getAsString();
         AtomicBoolean successful = new AtomicBoolean(true);
+        String fileHash = jsonObject.get("hashes").getAsJsonObject().get("sha1").getAsString();
+        installationStates.get(projectType).addInstallingHash(fileHash);
         int numberOfThreads = 5;
         try(ExecutorService executorService = Executors.newFixedThreadPool(numberOfThreads)) {
             try {
@@ -139,8 +156,17 @@ public class EasyInstallClient {
                 JsonObject dependency = dependencies.get(i).getAsJsonObject();
                 if (dependency.get("dependency_type").getAsString().equals("required")) {
                     String id = dependency.get("project_id").getAsString();
-                    if (!installedProject(projectType, id)) {
-                        executorService.submit(() -> downloadVersion(id, getProjectType(id), true));
+                    ProjectType dependencyProjectType = getProjectType(id);
+                    if (!installedProject(dependencyProjectType, id)) {
+                        installationStates.get(projectType).setProjectStatus(id, ProjectStatus.INSTALLING_REGULAR);
+                        executorService.submit(() -> {
+                            boolean dependencyDownloadSuccess = downloadVersion(id, dependencyProjectType, true);
+                            if (dependencyDownloadSuccess) {
+                                installationStates.get(projectType).setProjectStatus(id, ProjectStatus.INSTALLED);
+                            } else {
+                                installationStates.get(projectType).removeProject(id);
+                            }
+                        });
                     }
 
                 }
@@ -151,13 +177,13 @@ public class EasyInstallClient {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-
+            installationStates.get(projectType).removeInstallingHash(fileHash);
             return successful.get();
         }
     }
 
     public static boolean installedProject(ProjectType projectType, String id) {
-        return installedProjects.get(projectType).contains(id) || updatesNeeded.get(projectType).contains(id);
+        return installationStates.get(projectType).isInstalled(id);
     }
 
 
@@ -236,6 +262,9 @@ public class EasyInstallClient {
 
 
     public static void checkStatus(ProjectType projectType) {
+        if (versionsTab != null) {
+            versionsTab.setInitialized(false);
+        }
         HashSet<String> hashes = getFileHashes(projectType);
         if (Thread.currentThread().isInterrupted() || hashes == null) {
             return;
@@ -285,19 +314,7 @@ public class EasyInstallClient {
 
 
         numUpdates = updateNeededProjectIds.size();
-        updatesNeeded.put(projectType, updateNeededProjectIds);
-        installedProjects.put(projectType, installedProjectIds);
-        for (ProjectInfo info : projectInfo) {
-            if (info != null) {
-                info.setInstalled(installedProjectIds.contains(info.getId()));
-                if (updateNeededProjectIds.contains(info.getId())) {
-                    info.setLatestHash(hashMap.get(info.getId()));
-                }
-                info.setUpdated(!updateNeededProjectIds.contains(info.getId()));
-            } else {
-                break;
-            }
-        }
+        installationStates.get(projectType).loadInstallationState(installedProjectIds, updateNeededProjectIds);
 
     }
     public static String getTempPath() {
@@ -436,12 +453,6 @@ public class EasyInstallClient {
                             jsonObject.get("project_id").getAsString(),
                             false, projectType);
 
-                }
-                try {
-                    projectInfo[x].setInstalled(installedProjects.get(projectType).contains(projectInfo[x].getId()));
-                    projectInfo[x].setUpdated(!updatesNeeded.get(projectType).contains(projectInfo[x].getId()));
-                } catch (NullPointerException e) {
-                    e.printStackTrace();
                 }
                 rows++;
             }

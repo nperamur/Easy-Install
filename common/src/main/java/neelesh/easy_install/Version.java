@@ -8,6 +8,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static neelesh.easy_install.EasyInstallClient.getProjectType;
+
 public class Version {
     private final String name;
     private final String versionNumber;
@@ -75,14 +77,24 @@ public class Version {
         AtomicBoolean successful = new AtomicBoolean(true);
         try (ExecutorService executorService = Executors.newFixedThreadPool(numberOfThreads)) {
             executorService.submit(() -> {
+                EasyInstallClient.getInstallationState(projectType).addInstallingHash(hash);
                 successful.set(EasyInstallClient.downloadVersion(this.downloadUrl, this.filename, this.projectType));
             });
             if (installDependencies) {
                 for (int i = 0; i < this.dependencies.size(); i++) {
                     if (this.dependencies.get(i).getAsJsonObject().get("dependency_type").getAsString().equals("required")) {
                         String id = this.dependencies.get(i).getAsJsonObject().get("project_id").getAsString();
-                        if (!EasyInstallClient.installedProject(projectType, id)) {
-                            executorService.submit(() -> EasyInstallClient.downloadVersion(id, EasyInstallClient.getProjectType(id), true));
+                        ProjectType dependencyProjectType = getProjectType(id);
+                        if (!EasyInstallClient.installedProject(dependencyProjectType, id)) {
+                            EasyInstallClient.getInstallationState(projectType).setProjectStatus(id, ProjectStatus.INSTALLING_REGULAR);
+                            executorService.submit(() ->{
+                                boolean dependencyDownloadSuccess = EasyInstallClient.downloadVersion(id, dependencyProjectType, true);
+                                if (dependencyDownloadSuccess) {
+                                    EasyInstallClient.getInstallationState(projectType).setProjectStatus(id, ProjectStatus.INSTALLED);
+                                } else {
+                                    EasyInstallClient.getInstallationState(projectType).removeProject(id);
+                                }
+                            });
                         }
                     }
                 }
@@ -93,6 +105,7 @@ public class Version {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
+            EasyInstallClient.getInstallationState(projectType).removeInstallingHash(hash);
         }
         return successful.get();
     }

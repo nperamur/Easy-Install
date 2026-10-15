@@ -230,10 +230,12 @@ public class UpdateScreen extends Screen {
 
 
     public void updateVersion(ProjectType projectType, Version version) {
+        EasyInstallClient.getInstallationState(projectType).setProjectStatus(version.getId(), ProjectStatus.INSTALLING_UPDATE);
         Thread thread = new Thread(() -> {
             boolean successful = version.download(false);
             if (successful) {
                 EasyInstallClient.deleteOldFiles(projectType, version.getHash());
+                EasyInstallClient.getInstallationState(projectType).setProjectStatus(version.getId(), ProjectStatus.INSTALLED);
             } else {
                 minecraft.schedule(() -> {
                     minecraft.gui.toastManager().addToast(
@@ -244,6 +246,7 @@ public class UpdateScreen extends Screen {
                             )
                     );
                 });
+                EasyInstallClient.getInstallationState(projectType).removeProject(version.getId());
 
             }
             EasyInstallClient.checkStatus(projectType);

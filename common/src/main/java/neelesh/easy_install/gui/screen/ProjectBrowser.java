@@ -28,7 +28,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.function.Function;
 
 public class ProjectBrowser extends Screen {
     private Identifier[] ICON_TEXTURE_ID = new Identifier[100];
@@ -44,6 +43,9 @@ public class ProjectBrowser extends Screen {
     private static Thread t;
     private static Thread searchThread;
     private final ProjectType projectType;
+
+    private final InstallationState installationState;
+
     private final Button doneButton = Button.builder(Component.nullToEmpty("Done"), button -> {
         minecraft.gui.setScreen(prevScreen);
     }).build();
@@ -77,7 +79,11 @@ public class ProjectBrowser extends Screen {
 
     public ProjectBrowser(Screen parent, ProjectType projectType) {
         super(Component.literal(""));
+        this.installationState = EasyInstallClient.getInstallationState(projectType);
         EasyInstallClient.setNumUpdates(0);
+        if (projectType == ProjectType.DATA_PACK) {
+            EasyInstallClient.initializeDatapacks();
+        }
 //        filtersButton.setTooltip(Tooltip.create(Component.nullToEmpty("Show Filter Options")));
         EasyInstallClient.search("", projectType);
         prevScreen = parent;
@@ -212,33 +218,39 @@ public class ProjectBrowser extends Screen {
         for (int i = 0; i < 100; i++) {
             int finalI = i;
             Button buttonWidget = Button.builder(Component.nullToEmpty("Install"), button -> {
-                INFO[finalI].setInstalling(true);
+                ProjectInfo projectInfo = INFO[finalI];
                 Thread thread = new Thread(() -> {
                     boolean successful = false;
-                    if (!INFO[finalI].isUpdated()) {
+                    if (installationState.needsUpdate(projectInfo.getId())) {
+                        installationState.setProjectStatus(projectInfo.getId(), ProjectStatus.INSTALLING_UPDATE);
                         if (updatedVersions == null) {
                             this.updatedVersions = EasyInstallClient.getUpdatedVersions(projectType);
                         }
+                        String versionDownloadedHash = null;
                         for (Version version : updatedVersions) {
-                            if (version.getId().equals(INFO[finalI].getId())) {
+                            if (version.getId().equals(projectInfo.getId())) {
                                 successful = version.download(false);
+                                versionDownloadedHash = version.getHash();
+                                break;
                             }
                         }
                         if (successful) {
-                            EasyInstallClient.deleteOldFiles(projectType, INFO[finalI].getLatestHash());
+                            EasyInstallClient.deleteOldFiles(projectType, versionDownloadedHash);
                         }
                     } else {
-                        successful = EasyInstallClient.downloadVersion(INFO[finalI].getSlug(), projectType, filteredByGameVersion);
+                        installationState.setProjectStatus(projectInfo.getId(), ProjectStatus.INSTALLING_REGULAR);
+                        successful = EasyInstallClient.downloadVersion(projectInfo.getSlug(), projectType, filteredByGameVersion);
                     }
-                    INFO[finalI].setInstalling(false);
-                    INFO[finalI].setInstalled(successful);
-                    if (!successful) {
+                    if (successful) {
+                        installationState.setProjectStatus(projectInfo.getId(), ProjectStatus.INSTALLED);
+                    } else {
+                        installationState.removeProject(projectInfo.getId());
                         minecraft.schedule(() ->
                             minecraft.gui.toastManager().addToast(
                                     new SystemToast(
                                             SystemToast.SystemToastId.WORLD_ACCESS_FAILURE,
                                             Component.literal("Download Failed").withStyle(ChatFormatting.RED, ChatFormatting.BOLD),
-                                            Component.literal("Could not download project: " + INFO[finalI].getTitle()).withStyle(ChatFormatting.WHITE)
+                                            Component.literal("Could not download project: " + projectInfo.getTitle()).withStyle(ChatFormatting.WHITE)
                                     )
                             )
                         );
@@ -256,7 +268,7 @@ public class ProjectBrowser extends Screen {
             installButtons[i] = buttonWidget;
             installButtons[i].setX(width - 70);
             Button projectButtonWidget = Button.builder(Component.nullToEmpty("More Info"), button -> {
-                minecraft.gui.setScreen(new ProjectScreen(this, INFO[finalI], this.updatedVersions));
+                minecraft.gui.setScreen(new ProjectScreen(this, INFO[finalI], installationState, this.updatedVersions));
             }).build();
             projectButtonWidget.setSize(60, 14);
             projectScreenButtons[i] = projectButtonWidget;
@@ -296,16 +308,18 @@ public class ProjectBrowser extends Screen {
                 this.addWidget(authors[i]);
                 context.textWithWordWrap(font, FormattedText.of(INFO[i].getDescription().replace("\n", "")), 55, firstRowY + (int) scrollAmount + i * 50 + 15, width - 65, CommonColors.WHITE, false);
                 installButtons[i].setY(firstRowY + (int) scrollAmount + i * 50 - 3);
-                if (INFO[i].isInstalling()) {
+                ProjectStatus projectStatus = installationState.getProjectStatus(INFO[i].getId());
+                if (projectStatus == ProjectStatus.INSTALLING_REGULAR || projectStatus == ProjectStatus.INSTALLING_UPDATE) {
                     installButtons[i].setMessage(Component.nullToEmpty("Installing"));
-                } else if (INFO[i].isInstalled()) {
+                } else if (projectStatus == ProjectStatus.INSTALLED) {
                     installButtons[i].setMessage(Component.nullToEmpty("Installed"));
-                } else if (INFO[i].isUpdated()) {
+                } else if (projectStatus == ProjectStatus.NONE) {
                     installButtons[i].setMessage(Component.nullToEmpty("Install"));
-                } else {
+                } else if (projectStatus == ProjectStatus.NEEDS_UPDATE) {
                     installButtons[i].setMessage(Component.nullToEmpty("Update"));
                 }
-                installButtons[i].active = !INFO[i].isInstalled() && !INFO[i].isInstalling();
+                installButtons[i].active = projectStatus != ProjectStatus.INSTALLED && projectStatus != (ProjectStatus.INSTALLING_REGULAR)
+                                                        && projectStatus != ProjectStatus.INSTALLING_UPDATE;
                 installButtons[i].extractRenderState(context, mouseX, mouseY, delta);
                 projectScreenButtons[i].setY(firstRowY + (int) scrollAmount + i * 50 - 3);
                 projectScreenButtons[i].extractRenderState(context, mouseX, mouseY, delta);
