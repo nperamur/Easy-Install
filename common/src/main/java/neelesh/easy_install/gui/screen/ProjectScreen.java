@@ -22,12 +22,10 @@ import net.minecraft.client.gui.components.tabs.Tab;
 import net.minecraft.client.gui.components.tabs.TabManager;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.TabButton;
-import net.minecraft.client.gui.components.tabs.MenuTabBar;
 import net.minecraft.network.chat.FormattedText;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.CommonColors;
 import net.minecraft.resources.Identifier;
-import net.minecraft.util.Util;
 import org.jetbrains.annotations.Nullable;
 
 import java.net.MalformedURLException;
@@ -57,7 +55,7 @@ public class ProjectScreen extends Screen implements MarkdownScreenInterface {
                 this.updatedVersions = EasyInstallClient.getUpdatedVersions(projectInfo.getProjectType());
                 String versionDownloadedHash = null;
                 for (Version version : updatedVersions) {
-                    if (version.getId().equals(projectInfo.getId())) {
+                    if (version.getProjectId().equals(projectInfo.getId())) {
                         downloadSuccessful = version.download(false);
                         versionDownloadedHash = version.getHash();
                         break;
@@ -331,7 +329,7 @@ public class ProjectScreen extends Screen implements MarkdownScreenInterface {
     public Version getUpdatedVersion() {
         updatedVersions = EasyInstallClient.getUpdatedVersions(projectInfo.getProjectType());
         for (Version version : updatedVersions) {
-            if (version.getId().equals(projectInfo.getId())) {
+            if (version.getProjectId().equals(projectInfo.getId())) {
                 return version;
             }
         }

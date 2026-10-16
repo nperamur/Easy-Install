@@ -25,12 +25,12 @@ public class EasyInstallClient {
     private static int totalPages;
     private static String sortMethod = "Relevance";
     private static int numRows = 20;
-    private static HashMap<String, String> oldHashes = new HashMap<>();
+    private static ConcurrentHashMap<String, String> oldHashes = new ConcurrentHashMap<>();
     private static int numUpdates;
 
     private static VersionsTab versionsTab = null;
 
-    private static HashMap<ProjectType, InstallationState> installationStates = new HashMap<>();
+    private static ConcurrentHashMap<ProjectType, InstallationState> installationStates = new ConcurrentHashMap<>();
 
     static {
         for (ProjectType type : ProjectType.values()) {
@@ -825,6 +825,10 @@ public class EasyInstallClient {
         }
         return new ArrayList<>();
 
+    }
+
+    public static boolean containsUpdatedHash(String updatedHash) {
+        return oldHashes.containsValue(updatedHash);
     }
 
     public static HttpURLConnection getConnection(String endpoint) throws IOException {

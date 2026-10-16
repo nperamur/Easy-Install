@@ -71,21 +71,15 @@ public class VersionsTab extends GridLayoutTab implements Renderable {
                     e.printStackTrace();
                 }
                 int finalI = i;
-                //TODO: fix this
                 Minecraft.getInstance().submit(() -> {
                     versionButtons[finalI] = Button.builder(Component.nullToEmpty("Install"), buttonWidget -> {
                         Thread t = new Thread(() -> {
                             Minecraft.getInstance().schedule(() -> {
                                 versionButtons[finalI].setMessage(Component.nullToEmpty("Installing"));
                             });
-                            Version updatedVersion = null;
                             boolean needsUpdate = projectScreen.getInstallationState().needsUpdate(projectScreen.getProjectId());
-                            if (needsUpdate) {
-                                updatedVersion = projectScreen.getUpdatedVersion();
-                            }
                             boolean case1 = this.projectInstallVersion != null && this.projectInstallVersion.getHash().equals(versions[finalI].getHash()) && !needsUpdate;
-                            boolean case2 = updatedVersion != null && versions[finalI].getHash().equals(updatedVersion.getHash());
-
+                            boolean case2 = EasyInstallClient.containsUpdatedHash(versions[finalI].getHash());
 
                             Minecraft.getInstance().schedule(() -> {
                                 versionButtons[finalI].active = false;

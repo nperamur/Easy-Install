@@ -2,12 +2,13 @@ package neelesh.easy_install;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class InstallationState {
 
-    private HashMap<String, ProjectStatus> projectState = new HashMap<>();
+    private ConcurrentHashMap<String, ProjectStatus> projectState = new ConcurrentHashMap<>();
 
-    private HashSet<String> installingHashes = new HashSet<>();
+    private ConcurrentHashMap.KeySetView<String, Boolean> installingHashes = ConcurrentHashMap.newKeySet();
 
 
     public ProjectStatus getProjectStatus(String id) {
@@ -50,7 +51,7 @@ public class InstallationState {
         }
     }
     public void loadInstallationState(HashSet<String> installedProjects, HashSet<String> updatesNeeded) {
-        HashMap<String, ProjectStatus> tempProjectState = new HashMap<>(projectState);
+        ConcurrentHashMap<String, ProjectStatus> tempProjectState = new ConcurrentHashMap<>(projectState);
         tempProjectState.entrySet().removeIf(e -> !e.getValue().equals(ProjectStatus.INSTALLING_REGULAR)
                                            && !e.getValue().equals(ProjectStatus.INSTALLING_UPDATE));
         for (String s : installedProjects) {

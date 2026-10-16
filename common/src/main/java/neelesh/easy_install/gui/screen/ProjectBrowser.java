@@ -228,7 +228,7 @@ public class ProjectBrowser extends Screen {
                         }
                         String versionDownloadedHash = null;
                         for (Version version : updatedVersions) {
-                            if (version.getId().equals(projectInfo.getId())) {
+                            if (version.getProjectId().equals(projectInfo.getId())) {
                                 successful = version.download(false);
                                 versionDownloadedHash = version.getHash();
                                 break;

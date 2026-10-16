@@ -18,14 +18,14 @@ public class Version {
     private final int numDownloads;
     private final ProjectType projectType;
     private final JsonArray dependencies;
-    private final String id;
+    private final String projectId;
     private final String filename;
     private final String hash;
     private final String changelog;
     private final JsonArray gameVersions;
     private int fileSize;
 
-    public Version(String name, String versionNumber, String versionType, URL downloadUrl, int numDownloads, ProjectType projectType, String filename, JsonArray gameVersions, JsonArray dependencies, String hash, String id, String changelog, int fileSize) {
+    public Version(String name, String versionNumber, String versionType, URL downloadUrl, int numDownloads, ProjectType projectType, String filename, JsonArray gameVersions, JsonArray dependencies, String hash, String projectId, String changelog, int fileSize) {
         this.name = name;
         this.versionNumber = versionNumber;
         this.versionType = versionType;
@@ -35,7 +35,7 @@ public class Version {
         this.filename = filename;
         this.dependencies = dependencies;
         this.hash = hash;
-        this.id = id;
+        this.projectId = projectId;
         this.changelog = changelog;
         this.gameVersions = gameVersions;
         this.fileSize = fileSize;
@@ -68,8 +68,8 @@ public class Version {
         return filename;
     }
 
-    public String getId() {
-        return id;
+    public String getProjectId() {
+        return projectId;
     }
 
     public boolean download(boolean installDependencies) {
@@ -122,7 +122,7 @@ public class Version {
                 ", numDownloads=" + numDownloads +
                 ", projectType=" + projectType +
                 ", dependencies=" + dependencies +
-                ", id='" + id + '\'' +
+                ", id='" + projectId + '\'' +
                 ", filename='" + filename + '\'' +
                 ", hash='" + hash + '\'' +
                 ", changelog='" + changelog + '\'' +

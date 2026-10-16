@@ -21,8 +21,6 @@ import java.io.InputStreamReader;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 public class UpdateScreen extends Screen {
 
@@ -46,7 +44,7 @@ public class UpdateScreen extends Screen {
             ArrayList<Version> versionTemp = EasyInstallClient.getUpdatedVersions(projectType);
             JsonArray projectIds = new JsonArray();
             for (int i = 0; i < versionTemp.size(); i++) {
-                projectIds.add(versionTemp.get(i).getId());
+                projectIds.add(versionTemp.get(i).getProjectId());
                 ICON_TEXTURE_ID.add(Identifier.fromNamespaceAndPath(EasyInstall.MOD_ID, "update_icon" + i));
                 ImageLoader.loadPlaceholder(ICON_TEXTURE_ID.get(i));
                 titles.add("");
@@ -65,7 +63,7 @@ public class UpdateScreen extends Screen {
                         for (int i = 0; i < versionTemp.size(); i++) {
                             int x = 0;
                             for (int j = 0; j < jsonArray.size(); j++) {
-                                if (jsonArray.get(j).getAsJsonObject().get("id").getAsString().equals(versionTemp.get(i).getId())) {
+                                if (jsonArray.get(j).getAsJsonObject().get("id").getAsString().equals(versionTemp.get(i).getProjectId())) {
                                     x = j;
                                     break;
                                 }
@@ -230,12 +228,12 @@ public class UpdateScreen extends Screen {
 
 
     public void updateVersion(ProjectType projectType, Version version) {
-        EasyInstallClient.getInstallationState(projectType).setProjectStatus(version.getId(), ProjectStatus.INSTALLING_UPDATE);
+        EasyInstallClient.getInstallationState(projectType).setProjectStatus(version.getProjectId(), ProjectStatus.INSTALLING_UPDATE);
         Thread thread = new Thread(() -> {
             boolean successful = version.download(false);
             if (successful) {
                 EasyInstallClient.deleteOldFiles(projectType, version.getHash());
-                EasyInstallClient.getInstallationState(projectType).setProjectStatus(version.getId(), ProjectStatus.INSTALLED);
+                EasyInstallClient.getInstallationState(projectType).setProjectStatus(version.getProjectId(), ProjectStatus.INSTALLED);
             } else {
                 minecraft.schedule(() -> {
                     minecraft.gui.toastManager().addToast(
@@ -246,7 +244,7 @@ public class UpdateScreen extends Screen {
                             )
                     );
                 });
-                EasyInstallClient.getInstallationState(projectType).removeProject(version.getId());
+                EasyInstallClient.getInstallationState(projectType).removeProject(version.getProjectId());
 
             }
             EasyInstallClient.checkStatus(projectType);
