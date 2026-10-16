@@ -45,14 +45,13 @@ public class ProjectScreen extends Screen implements MarkdownScreenInterface {
     private boolean initialized;
     private Screen prevScreen;
     private boolean filteredByGameVersion;
-    private ArrayList<Version> updatedVersions;
     private InstallationState installationState;
     private final Button installButton = Button.builder(Component.nullToEmpty("Install"), button -> {
         Thread thread = new Thread(() -> {
             boolean downloadSuccessful = false;
             if (installationState.needsUpdate(projectInfo.getId())) {
                 installationState.setProjectStatus(projectInfo.getId(), ProjectStatus.INSTALLING_UPDATE);
-                this.updatedVersions = EasyInstallClient.getUpdatedVersions(projectInfo.getProjectType());
+                ArrayList<Version> updatedVersions = EasyInstallClient.getUpdatedVersions(projectInfo.getProjectType());
                 String versionDownloadedHash = null;
                 for (Version version : updatedVersions) {
                     if (version.getProjectId().equals(projectInfo.getId())) {
@@ -85,8 +84,6 @@ public class ProjectScreen extends Screen implements MarkdownScreenInterface {
                 versionsTab.setInitialized(false);
             });
             EasyInstallClient.checkStatus(projectInfo.getProjectType());
-            Thread thread3 = new Thread(() -> this.updatedVersions = EasyInstallClient.getUpdatedVersions(projectInfo.getProjectType()));
-            thread3.start();
         });
         thread.start();
     }).build();
@@ -110,10 +107,9 @@ public class ProjectScreen extends Screen implements MarkdownScreenInterface {
     private int scrollAmount = 15;
     public static final Identifier VERTICAL_SEPARATOR_TEXTURE = Identifier.fromNamespaceAndPath(EasyInstall.MOD_ID,"textures/gui/vertical_separator.png");
 
-    protected ProjectScreen(Screen parent, ProjectInfo projectInfo, InstallationState installationState, ArrayList<Version> updatedVersions) {
+    protected ProjectScreen(Screen parent, ProjectInfo projectInfo, InstallationState installationState) {
         super(Component.literal(projectInfo.getTitle()));
         this.projectInfo = projectInfo;
-        this.updatedVersions = updatedVersions;
         iconTextureId = Identifier.parse("project_texture_id");
         this.prevScreen = parent;
         this.installationState = installationState;
@@ -325,14 +321,4 @@ public class ProjectScreen extends Screen implements MarkdownScreenInterface {
         return projectInfo.getId();
     }
 
-    @Nullable
-    public Version getUpdatedVersion() {
-        updatedVersions = EasyInstallClient.getUpdatedVersions(projectInfo.getProjectType());
-        for (Version version : updatedVersions) {
-            if (version.getProjectId().equals(projectInfo.getId())) {
-                return version;
-            }
-        }
-        return null;
-    }
 }

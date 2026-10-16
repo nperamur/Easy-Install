@@ -73,7 +73,6 @@ public class ProjectBrowser extends Screen {
     private Button categoriesButton;
     private boolean filteredByGameVersion;
     private Button settingsButton;
-    private ArrayList<Version> updatedVersions;
 
     private Environment environment = null;
 
@@ -162,9 +161,6 @@ public class ProjectBrowser extends Screen {
             thread.start();
             Thread thread2 = new Thread(this::loadIcons);
             thread2.start();
-            Thread thread3 = new Thread(() -> this.updatedVersions = EasyInstallClient.getUpdatedVersions(projectType));
-            thread3.start();
-
 
         }
         doneButton.setPosition(width / 3 + 65, 0);
@@ -221,11 +217,12 @@ public class ProjectBrowser extends Screen {
                 ProjectInfo projectInfo = INFO[finalI];
                 Thread thread = new Thread(() -> {
                     boolean successful = false;
+                    boolean changedNumUpdates = false;
                     if (installationState.needsUpdate(projectInfo.getId())) {
                         installationState.setProjectStatus(projectInfo.getId(), ProjectStatus.INSTALLING_UPDATE);
-                        if (updatedVersions == null) {
-                            this.updatedVersions = EasyInstallClient.getUpdatedVersions(projectType);
-                        }
+                        EasyInstallClient.setNumUpdates(EasyInstallClient.getNumUpdates() - 1);
+                        changedNumUpdates = true;
+                        ArrayList<Version> updatedVersions = EasyInstallClient.getUpdatedVersions(projectType);
                         String versionDownloadedHash = null;
                         for (Version version : updatedVersions) {
                             if (version.getProjectId().equals(projectInfo.getId())) {
@@ -254,11 +251,12 @@ public class ProjectBrowser extends Screen {
                                     )
                             )
                         );
+                        if (changedNumUpdates) {
+                            EasyInstallClient.setNumUpdates(EasyInstallClient.getNumUpdates() + 1);
+                        }
                     }
                     t = new Thread(() -> EasyInstallClient.checkStatus(projectType));
                     t.start();
-                    Thread thread2 = new Thread(() -> this.updatedVersions = EasyInstallClient.getUpdatedVersions(projectType));
-                    thread2.start();
 
                 });
                 thread.start();
@@ -268,7 +266,7 @@ public class ProjectBrowser extends Screen {
             installButtons[i] = buttonWidget;
             installButtons[i].setX(width - 70);
             Button projectButtonWidget = Button.builder(Component.nullToEmpty("More Info"), button -> {
-                minecraft.gui.setScreen(new ProjectScreen(this, INFO[finalI], installationState, this.updatedVersions));
+                minecraft.gui.setScreen(new ProjectScreen(this, INFO[finalI], installationState));
             }).build();
             projectButtonWidget.setSize(60, 14);
             projectScreenButtons[i] = projectButtonWidget;
@@ -498,8 +496,6 @@ public class ProjectBrowser extends Screen {
                 });
                 t.start();
 
-                Thread thread2 = new Thread(() -> updatedVersions = EasyInstallClient.getUpdatedVersions(this.projectType));
-                thread2.start();
                 loadIcons();
             }
         });
