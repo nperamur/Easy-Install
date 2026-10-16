@@ -290,4 +290,10 @@ public class VersionDetailsScreen extends Screen implements MarkdownScreenInterf
         return 0;
     }
 
+    @Override
+    public void onClose() {
+        EasyInstallClient.clearProjectInfo(projectType);
+        super.onClose();
+    }
+
 }

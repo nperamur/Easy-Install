@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 
 public class EasyInstallClient {
     private static int rowsOnPage = 20;
-    private static ProjectInfo[] projectInfo = new ProjectInfo[100];
+    private static HashMap<ProjectType, ProjectInfo[]> projectInfo = new HashMap<ProjectType, ProjectInfo[]>();
     private static Path dataPackTempDir;
     private static int totalPages;
     private static String sortMethod = "Relevance";
@@ -38,6 +38,8 @@ public class EasyInstallClient {
         for (ProjectType type : ProjectType.values()) {
             installationStates.put(type, new InstallationState());
             updatedVersions.put(type, new HashSet<>());
+            projectInfo.put(type, new ProjectInfo[100]);
+            EasyInstallClient.clearProjectInfo(type);
         }
     }
     //private static String GAME_VERSION = SharedConstants.getCurrentVersion().name();
@@ -71,6 +73,13 @@ public class EasyInstallClient {
 
     public static InstallationState getInstallationState(ProjectType projectType) {
         return installationStates.get(projectType);
+    }
+
+    public static void clearProjectInfo(ProjectType projectType) {
+        Thread thread = new Thread(() -> {
+            EasyInstallClient.search("", projectType);
+        });
+        thread.start();
     }
     
     public static String getCurrentTargetUpdateVersion() {
@@ -116,8 +125,8 @@ public class EasyInstallClient {
         rowsOnPage = rows;
     }
 
-    public static ProjectInfo[] getProjectInformation() {
-        return projectInfo;
+    public static ProjectInfo[] getProjectInformation(ProjectType projectType) {
+        return projectInfo.get(projectType);
     }
 
     public static void setDataPackTempDir(Path path) {
@@ -445,11 +454,11 @@ public class EasyInstallClient {
                 try {
                     jsonObject = JsonParser.parseString(response).getAsJsonObject().get("hits").getAsJsonArray().get(x).getAsJsonObject();
                 } catch (Exception e) {
-                    projectInfo[x] = null;
+                    projectInfo.get(projectType)[x] = null;
                     continue;
                 }
                 try {
-                    projectInfo[x] = new ProjectInfo(new URL(jsonObject.get("icon_url").getAsString()),
+                    projectInfo.get(projectType)[x] = new ProjectInfo(new URL(jsonObject.get("icon_url").getAsString()),
                             jsonObject.get("title").getAsString(),
                             jsonObject.get("description").getAsString(),
                             jsonObject.get("author").getAsString(),
@@ -457,7 +466,7 @@ public class EasyInstallClient {
                             jsonObject.get("project_id").getAsString(),
                             false, projectType);
                 } catch (MalformedURLException e) {
-                    projectInfo[x] = new ProjectInfo(null,
+                    projectInfo.get(projectType)[x] = new ProjectInfo(null,
                             jsonObject.get("title").getAsString(),
                             jsonObject.get("description").getAsString(),
                             jsonObject.get("author").getAsString(),
