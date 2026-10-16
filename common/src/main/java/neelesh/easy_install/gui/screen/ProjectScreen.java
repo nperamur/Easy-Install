@@ -49,14 +49,17 @@ public class ProjectScreen extends Screen implements MarkdownScreenInterface {
     private final Button installButton = Button.builder(Component.nullToEmpty("Install"), button -> {
         Thread thread = new Thread(() -> {
             boolean downloadSuccessful = false;
+            Version versionUpdated = null;
             if (installationState.needsUpdate(projectInfo.getId())) {
                 installationState.setProjectStatus(projectInfo.getId(), ProjectStatus.INSTALLING_UPDATE);
                 ArrayList<Version> updatedVersions = EasyInstallClient.getUpdatedVersions(projectInfo.getProjectType());
                 String versionDownloadedHash = null;
                 for (Version version : updatedVersions) {
                     if (version.getProjectId().equals(projectInfo.getId())) {
+                        EasyInstallClient.removeUpdatedVersion(version, projectInfo.getProjectType());
                         downloadSuccessful = version.download(false);
                         versionDownloadedHash = version.getHash();
+                        versionUpdated = version;
                         break;
                     }
                 }
@@ -68,6 +71,9 @@ public class ProjectScreen extends Screen implements MarkdownScreenInterface {
                 downloadSuccessful = EasyInstallClient.downloadVersion(projectInfo.getSlug(), projectInfo.getProjectType(), ((ProjectBrowser) prevScreen).isFilteredByGameVersion());
             }
             boolean finalDownloadSuccessful = downloadSuccessful;
+            if (!downloadSuccessful && versionUpdated != null) {
+                EasyInstallClient.removeUpdatedVersion(versionUpdated, projectInfo.getProjectType());
+            }
             Minecraft.getInstance().schedule(() -> {
                 if (finalDownloadSuccessful) {
                     installationState.setProjectStatus(projectInfo.getId(),  ProjectStatus.INSTALLED);

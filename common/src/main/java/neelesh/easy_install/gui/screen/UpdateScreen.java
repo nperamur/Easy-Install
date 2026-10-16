@@ -213,10 +213,10 @@ public class UpdateScreen extends Screen {
                 i++;
             }
 
-            if (-EasyInstallClient.getNumUpdates() * 50 - 45 + height > 0) {
+            if (-EasyInstallClient.getNumUpdates(projectType) * 50 - 45 + height > 0) {
                 scrollAmount = 0;
-            } else if (scrollAmount != 0 && scrollAmount < -EasyInstallClient.getNumUpdates() * 50 - 45 + height) {
-                scrollAmount = -EasyInstallClient.getNumUpdates() * 50 - 45 + height;
+            } else if (scrollAmount != 0 && scrollAmount < -EasyInstallClient.getNumUpdates(projectType) * 50 - 45 + height) {
+                scrollAmount = -EasyInstallClient.getNumUpdates(projectType) * 50 - 45 + height;
             }
 
         }
@@ -230,6 +230,7 @@ public class UpdateScreen extends Screen {
     public void updateVersion(ProjectType projectType, Version version) {
         EasyInstallClient.getInstallationState(projectType).setProjectStatus(version.getProjectId(), ProjectStatus.INSTALLING_UPDATE);
         Thread thread = new Thread(() -> {
+            EasyInstallClient.removeUpdatedVersion(version, projectType);
             boolean successful = version.download(false);
             if (successful) {
                 EasyInstallClient.deleteOldFiles(projectType, version.getHash());
@@ -244,21 +245,20 @@ public class UpdateScreen extends Screen {
                             )
                     );
                 });
+                EasyInstallClient.addUpdatedVersion(version, projectType);
                 EasyInstallClient.getInstallationState(projectType).removeProject(version.getProjectId());
-
             }
             EasyInstallClient.checkStatus(projectType);
         });
         thread.start();
-        EasyInstallClient.setNumUpdates(EasyInstallClient.getNumUpdates() - 1);
     }
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
-        if (scrollAmount + verticalAmount * 13 <= 0 && scrollAmount + verticalAmount * 13 >= -EasyInstallClient.getNumUpdates() * 50 - 45 + height) {
+        if (scrollAmount + verticalAmount * 13 <= 0 && scrollAmount + verticalAmount * 13 >= -EasyInstallClient.getNumUpdates(projectType) * 50 - 45 + height) {
             scrollAmount += verticalAmount * 13;
-        } else if (scrollAmount + verticalAmount * 13 < -EasyInstallClient.getNumUpdates() * 50 - 45 + height && scrollAmount != 0) {
-            scrollAmount = -EasyInstallClient.getNumUpdates() * 50 - 45 + height;
+        } else if (scrollAmount + verticalAmount * 13 < -EasyInstallClient.getNumUpdates(projectType) * 50 - 45 + height && scrollAmount != 0) {
+            scrollAmount = -EasyInstallClient.getNumUpdates(projectType) * 50 - 45 + height;
         } else if (scrollAmount + verticalAmount * 13 > 0) {
             scrollAmount = 0;
         }
