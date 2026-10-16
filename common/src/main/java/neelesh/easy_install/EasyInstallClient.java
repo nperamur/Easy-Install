@@ -175,9 +175,9 @@ public class EasyInstallClient {
                         executorService.submit(() -> {
                             boolean dependencyDownloadSuccess = downloadVersion(id, dependencyProjectType, true);
                             if (dependencyDownloadSuccess) {
-                                installationStates.get(projectType).setProjectStatus(id, ProjectStatus.INSTALLED);
+                                installationStates.get(dependencyProjectType).setProjectStatus(id, ProjectStatus.INSTALLED);
                             } else {
-                                installationStates.get(projectType).removeProject(id);
+                                installationStates.get(dependencyProjectType).removeProject(id);
                             }
                         });
                     }

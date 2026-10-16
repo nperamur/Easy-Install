@@ -90,9 +90,9 @@ public class Version {
                             executorService.submit(() ->{
                                 boolean dependencyDownloadSuccess = EasyInstallClient.downloadVersion(id, dependencyProjectType, true);
                                 if (dependencyDownloadSuccess) {
-                                    EasyInstallClient.getInstallationState(projectType).setProjectStatus(id, ProjectStatus.INSTALLED);
+                                    EasyInstallClient.getInstallationState(dependencyProjectType).setProjectStatus(id, ProjectStatus.INSTALLED);
                                 } else {
-                                    EasyInstallClient.getInstallationState(projectType).removeProject(id);
+                                    EasyInstallClient.getInstallationState(dependencyProjectType).removeProject(id);
                                 }
                             });
                         }
