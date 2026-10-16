@@ -16,6 +16,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 public class EasyInstallClient {
@@ -25,10 +26,11 @@ public class EasyInstallClient {
     private static int totalPages;
     private static String sortMethod = "Relevance";
     private static int numRows = 20;
+
+    private static AtomicInteger latestScanId = new AtomicInteger(0);
     private static ConcurrentHashMap<String, String> oldHashes = new ConcurrentHashMap<>();
 
     private static ConcurrentHashMap<ProjectType, HashSet<Version>> updatedVersions = new ConcurrentHashMap<>();
-    private static int numUpdates;
 
     private static VersionsTab versionsTab = null;
 
@@ -93,24 +95,19 @@ public class EasyInstallClient {
         versionsTab = tab;
     }
 
+    public static void removeUpdatedVersion(Version version, ProjectType projectType) {
+        updatedVersions.get(projectType).remove(version);
+    }
 
-
-
+    public static void addUpdatedVersion(Version version, ProjectType projectType) {
+        updatedVersions.get(projectType).add(version);
+    }
     public static void setCurrentTargetUpdateVersion(String targetUpdateVersion) {
         currentTargetUpdateVersion = targetUpdateVersion;
     }
 
     public static void resetTargetUpdateVersion() {
         currentTargetUpdateVersion = getGameVersion();
-    }
-
-
-    public static int getNumUpdates() {
-        return numUpdates;
-    }
-
-    public static void setNumUpdates(int n) {
-        numUpdates = n;
     }
 
     public static int getRowsOnPage() {
@@ -135,6 +132,10 @@ public class EasyInstallClient {
 
     public static int getTotalPages() {
         return totalPages;
+    }
+
+    public static int getNumUpdates(ProjectType projectType) {
+        return updatedVersions.get(projectType).size();
     }
 
     public static boolean downloadVersion(String slug, ProjectType projectType, boolean filteredByGameVersion) {
@@ -274,6 +275,7 @@ public class EasyInstallClient {
 
 
     public static void checkStatus(ProjectType projectType) {
+        int scanId = latestScanId.incrementAndGet();
         if (versionsTab != null) {
             versionsTab.setInitialized(false);
         }
@@ -288,14 +290,13 @@ public class EasyInstallClient {
         JsonObject jsonObject = JsonParser.parseString(response).getAsJsonObject();
         HashSet<String> installedProjectIds = new HashSet<>();
         HashSet<String> updateNeededProjectIds = new HashSet<>();
-        HashMap<String, String> hashMap = new HashMap<>();
-        oldHashes.clear();
+        HashMap<String, String> oldHashesTemp = new HashMap<>();
         HashSet<Version> versions = new HashSet<>();
         HashSet<String> hashes2 = new HashSet<>();
         for (String hash : hashes) {
             if (jsonObject.get(hash) != null) {
                 String h = jsonObject.get(hash).getAsJsonObject().get("files").getAsJsonArray().get(0).getAsJsonObject().get("hashes").getAsJsonObject().get("sha1").getAsString();
-                oldHashes.put(hash, h);
+                oldHashesTemp.put(hash, h);
                 JsonObject versionInfo = jsonObject.get(hash).getAsJsonObject();
                 try {
                     if (!hashes.contains(h)) {
@@ -310,7 +311,6 @@ public class EasyInstallClient {
                     installedProjectIds.add(projectId);
                 } else {
                     updateNeededProjectIds.add(projectId);
-                    hashMap.put(projectId, h);
                 }
             } else {
                 hashes2.add(hash);
@@ -326,17 +326,20 @@ public class EasyInstallClient {
             for (String hash : hashes2) {
                 if (jsonObject.get(hash) != null) {
                     String h = jsonObject.get(hash).getAsJsonObject().get("files").getAsJsonArray().get(0).getAsJsonObject().get("hashes").getAsJsonObject().get("sha1").getAsString();
-                    oldHashes.put(hash, h);
+                    oldHashesTemp.put(hash, h);
                     String projectId = jsonObject.get(hash).getAsJsonObject().get("project_id").getAsString();
                     installedProjectIds.add(projectId);
                 }
             }
         }
 
-        updatedVersions.put(projectType, versions);
-        numUpdates = updateNeededProjectIds.size() - installationStates.get(projectType).getNumUpdatesInstalling();
-        installationStates.get(projectType).loadInstallationState(installedProjectIds, updateNeededProjectIds);
-
+        if (scanId == latestScanId.get()) {
+            HashSet<String> installingUpdates = installationStates.get(projectType).getInstallingUpdates();
+            versions.removeIf(e -> installingUpdates.contains(e.getProjectId()));
+            updatedVersions.put(projectType, versions);
+            installationStates.get(projectType).loadInstallationState(installedProjectIds, updateNeededProjectIds);
+            oldHashes = new ConcurrentHashMap<>(oldHashesTemp);
+        }
     }
     public static String getTempPath() {
         return getGameDir() + "/easy_install/temp/";

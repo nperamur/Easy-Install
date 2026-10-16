@@ -1,5 +1,6 @@
 package neelesh.easy_install;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.concurrent.ConcurrentHashMap;
@@ -43,6 +44,15 @@ public class InstallationState {
         return count;
     }
 
+    public HashSet<String> getInstallingUpdates() {
+        HashSet<String> updatesInstalling = new HashSet<>();
+        for (String key : projectState.keySet()) {
+            if (projectState.get(key).equals(ProjectStatus.INSTALLING_UPDATE)) {
+                updatesInstalling.add(key);
+            }
+        }
+        return updatesInstalling;
+    }
     public boolean needsUpdate(String id) {
         return projectState.get(id) == ProjectStatus.NEEDS_UPDATE
                 || projectState.get(id) == ProjectStatus.INSTALLING_UPDATE;

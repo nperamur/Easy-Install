@@ -80,7 +80,6 @@ public class ProjectBrowser extends Screen {
     public ProjectBrowser(Screen parent, ProjectType projectType) {
         super(Component.literal(""));
         this.installationState = EasyInstallClient.getInstallationState(projectType);
-        EasyInstallClient.setNumUpdates(0);
         if (projectType == ProjectType.DATA_PACK) {
             EasyInstallClient.initializeDatapacks();
         }
@@ -219,17 +218,17 @@ public class ProjectBrowser extends Screen {
                 ProjectInfo projectInfo = INFO[finalI];
                 Thread thread = new Thread(() -> {
                     boolean successful = false;
-                    boolean changedNumUpdates = false;
+                    Version versionUpdated = null;
                     if (installationState.needsUpdate(projectInfo.getId())) {
                         installationState.setProjectStatus(projectInfo.getId(), ProjectStatus.INSTALLING_UPDATE);
-                        EasyInstallClient.setNumUpdates(EasyInstallClient.getNumUpdates() - 1);
-                        changedNumUpdates = true;
                         ArrayList<Version> updatedVersions = EasyInstallClient.getUpdatedVersions(projectType);
                         String versionDownloadedHash = null;
                         for (Version version : updatedVersions) {
                             if (version.getProjectId().equals(projectInfo.getId())) {
+                                EasyInstallClient.removeUpdatedVersion(versionUpdated, projectType);
                                 successful = version.download(false);
                                 versionDownloadedHash = version.getHash();
+                                versionUpdated = version;
                                 break;
                             }
                         }
@@ -243,6 +242,9 @@ public class ProjectBrowser extends Screen {
                     if (successful) {
                         installationState.setProjectStatus(projectInfo.getId(), ProjectStatus.INSTALLED);
                     } else {
+                        if (versionUpdated != null) {
+                            EasyInstallClient.addUpdatedVersion(versionUpdated, projectType);
+                        }
                         installationState.removeProject(projectInfo.getId());
                         minecraft.schedule(() ->
                             minecraft.gui.toastManager().addToast(
@@ -253,9 +255,6 @@ public class ProjectBrowser extends Screen {
                                     )
                             )
                         );
-                        if (changedNumUpdates) {
-                            EasyInstallClient.setNumUpdates(EasyInstallClient.getNumUpdates() + 1);
-                        }
                     }
                     t = new Thread(() -> EasyInstallClient.checkStatus(projectType));
                     t.start();
@@ -288,7 +287,7 @@ public class ProjectBrowser extends Screen {
         } else {
             firstRowY = 35;
         }
-        updateScreenButton.visible = EasyInstallClient.getNumUpdates() >= 1;
+        updateScreenButton.visible = EasyInstallClient.getNumUpdates(projectType) >= 1;
         context.enableScissor(0, firstRowY - 14, width, height);
         extractMenuBackground(context);
         for (int i = 0; i < EasyInstallClient.getNumRows(); i++) {
@@ -414,7 +413,7 @@ public class ProjectBrowser extends Screen {
         context.blit(RenderPipelines.GUI_TEXTURED, FILTER_TEXTURE, filtersButton.getX() + 2, filtersButton.getY() + 2, 0, 0, 16, 16, 16, 16);
         context.blit(RenderPipelines.GUI_TEXTURED, SETTINGS_TEXTURE, settingsButton.getX() + 2, settingsButton.getY() + 2, -0.5f, 0, 16, 16, 16, 16);
 
-        if (EasyInstallClient.getNumUpdates() >= 1) {
+        if (EasyInstallClient.getNumUpdates(projectType) >= 1) {
             context.blit(RenderPipelines.GUI_TEXTURED, UPDATE_TEXTURE, updateScreenButton.getX() + 3, updateScreenButton.getY() + 3, 0, 0, 14, 14, 14, 14);
         }
     }
