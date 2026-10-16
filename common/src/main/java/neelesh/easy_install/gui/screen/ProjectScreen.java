@@ -72,7 +72,7 @@ public class ProjectScreen extends Screen implements MarkdownScreenInterface {
             }
             boolean finalDownloadSuccessful = downloadSuccessful;
             if (!downloadSuccessful && versionUpdated != null) {
-                EasyInstallClient.removeUpdatedVersion(versionUpdated, projectInfo.getProjectType());
+                EasyInstallClient.addUpdatedVersion(versionUpdated, projectInfo.getProjectType());
             }
             Minecraft.getInstance().schedule(() -> {
                 if (finalDownloadSuccessful) {
