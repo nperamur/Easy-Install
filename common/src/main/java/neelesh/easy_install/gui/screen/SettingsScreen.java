@@ -160,4 +160,10 @@ public class SettingsScreen extends Screen {
         });
         thread.start();
     }
+
+    @Override
+    public void onClose() {
+        EasyInstallClient.clearProjectInfo(projectType);
+        super.onClose();
+    }
 }

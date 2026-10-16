@@ -211,4 +211,11 @@ public class CategoryScreen extends Screen {
 
     }
 
+    @Override
+    public void onClose() {
+        EasyInstallClient.clearProjectInfo(projectType);
+        super.onClose();
+    }
+
+
 }

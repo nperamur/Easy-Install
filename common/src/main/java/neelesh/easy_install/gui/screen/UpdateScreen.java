@@ -265,6 +265,12 @@ public class UpdateScreen extends Screen {
         return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount);
     }
 
+    @Override
+    public void onClose() {
+        EasyInstallClient.clearProjectInfo(projectType);
+        super.onClose();
+    }
+
 
 
 }

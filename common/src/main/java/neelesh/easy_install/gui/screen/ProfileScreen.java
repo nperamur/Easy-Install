@@ -4,6 +4,7 @@ import com.google.gson.JsonObject;
 import neelesh.easy_install.EasyInstall;
 import neelesh.easy_install.EasyInstallClient;
 import neelesh.easy_install.ImageLoader;
+import neelesh.easy_install.ProjectType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.RenderPipelines;
@@ -24,8 +25,11 @@ public class ProfileScreen extends Screen {
     private String bio;
     private Button doneButton;
 
-    protected ProfileScreen(String name, Screen parent) {
+    private ProjectType projectType;
+
+    protected ProfileScreen(String name, Screen parent, ProjectType projectType) {
         super(Component.nullToEmpty("Profile Screen"));
+        this.projectType = projectType;
         doneButton = Button.builder(Component.nullToEmpty("Done"), button -> {
             minecraft.gui.setScreen(parent);
         }).build();
@@ -75,5 +79,11 @@ public class ProfileScreen extends Screen {
     protected void init() {
         super.init();
         this.addWidget(doneButton);
+    }
+
+    @Override
+    public void onClose() {
+        EasyInstallClient.clearProjectInfo(projectType);
+        super.onClose();
     }
 }

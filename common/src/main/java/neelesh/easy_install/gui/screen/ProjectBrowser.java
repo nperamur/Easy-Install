@@ -33,7 +33,7 @@ public class ProjectBrowser extends Screen {
     private Identifier[] ICON_TEXTURE_ID = new Identifier[100];
     private static final Identifier SCROLLER_TEXTURE = Identifier.withDefaultNamespace("widget/scroller");
     public static final Identifier SCROLLER_BACKGROUND_TEXTURE = Identifier.withDefaultNamespace("widget/scroller_background");
-    private ProjectInfo[] INFO = EasyInstallClient.getProjectInformation();
+    private ProjectInfo[] INFO;
     private double scrollAmount = 0;
     private EditBox searchBox;
     private Button[] installButtons = new Button[100];
@@ -42,11 +42,12 @@ public class ProjectBrowser extends Screen {
     private Screen prevScreen;
     private static Thread t;
     private static Thread searchThread;
-    private final ProjectType projectType;
+    private ProjectType projectType;
 
     private final InstallationState installationState;
 
     private final Button doneButton = Button.builder(Component.nullToEmpty("Done"), button -> {
+        EasyInstallClient.clearProjectInfo(projectType);
         minecraft.gui.setScreen(prevScreen);
     }).build();
     private Button backButton;
@@ -83,8 +84,9 @@ public class ProjectBrowser extends Screen {
         if (projectType == ProjectType.DATA_PACK) {
             EasyInstallClient.initializeDatapacks();
         }
+        INFO = EasyInstallClient.getProjectInformation(projectType);
 //        filtersButton.setTooltip(Tooltip.create(Component.nullToEmpty("Show Filter Options")));
-        EasyInstallClient.search("", projectType);
+        EasyInstallClient.clearProjectInfo(projectType);
         prevScreen = parent;
         this.projectType = projectType;
         for (int i = 0; i < 100; i++) {
@@ -299,7 +301,7 @@ public class ProjectBrowser extends Screen {
                     removeWidget(authors[i]);
                 }
                 authors[i] = new PressableTextWidgetShadowless(0, 0, font.width(Component.translationArg(Component.nullToEmpty(INFO[i].getAuthor()))), 9, Component.literal(INFO[i].getAuthor()), button -> {
-                    minecraft.gui.setScreen(new ProfileScreen(INFO[finalI].getAuthor(), this));
+                    minecraft.gui.setScreen(new ProfileScreen(INFO[finalI].getAuthor(), this, projectType));
                 }, font);
                 authors[i].setPosition(75 + font.width(INFO[i].getTitle() + "by "), firstRowY + (int) scrollAmount + i * 50);
                 authors[i].extractRenderState(context, mouseX, mouseY, delta);
@@ -584,5 +586,11 @@ public class ProjectBrowser extends Screen {
 
     public Environment getEnvironment() {
         return this.environment;
+    }
+
+    @Override
+    public void onClose() {
+        EasyInstallClient.clearProjectInfo(projectType);
+        super.onClose();
     }
 }

@@ -33,16 +33,6 @@ public class PauseScreenMixin extends Screen {
         Minecraft.getInstance().gui.setScreen(modBrowser);
     }).build();
 
-//    private SpriteIconButton buttonWidget = SpriteIconButton.builder(
-//            Component.literal("Add Mods"),
-//            button -> {
-//                ProjectBrowser modBrowser = new ProjectBrowser(this, ProjectType.MOD);
-//                Minecraft.getInstance().gui.setScreen(modBrowser);
-//            },
-//            true
-//            ).sprite(Identifier.fromNamespaceAndPath(EasyInstall.MOD_ID, "icon/browse_mods_icon"), 16, 16).tooltip(Component.literal("Add Mods"))
-//            .width(20).build();
-
 
 
     @Inject(

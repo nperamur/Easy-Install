@@ -321,4 +321,10 @@ public class ProjectScreen extends Screen implements MarkdownScreenInterface {
         return projectInfo.getId();
     }
 
+    @Override
+    public void onClose() {
+        EasyInstallClient.clearProjectInfo(projectInfo.getProjectType());
+        super.onClose();
+    }
+
 }
