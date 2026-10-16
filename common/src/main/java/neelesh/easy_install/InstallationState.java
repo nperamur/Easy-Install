@@ -33,6 +33,16 @@ public class InstallationState {
         return installingHashes.contains(hash);
     }
 
+    public int getNumUpdatesInstalling() {
+        int count = 0;
+        for (ProjectStatus status : projectState.values()) {
+            if (status.equals(ProjectStatus.INSTALLING_UPDATE)) {
+                count++;
+            }
+        }
+        return count;
+    }
+
     public boolean needsUpdate(String id) {
         return projectState.get(id) == ProjectStatus.NEEDS_UPDATE
                 || projectState.get(id) == ProjectStatus.INSTALLING_UPDATE;
@@ -72,6 +82,8 @@ public class InstallationState {
     public void clear() {
         projectState.clear();
     }
+
+
 
 
 

@@ -26,6 +26,8 @@ public class EasyInstallClient {
     private static String sortMethod = "Relevance";
     private static int numRows = 20;
     private static ConcurrentHashMap<String, String> oldHashes = new ConcurrentHashMap<>();
+
+    private static ConcurrentHashMap<ProjectType, HashSet<Version>> updatedVersions = new ConcurrentHashMap<>();
     private static int numUpdates;
 
     private static VersionsTab versionsTab = null;
@@ -35,6 +37,7 @@ public class EasyInstallClient {
     static {
         for (ProjectType type : ProjectType.values()) {
             installationStates.put(type, new InstallationState());
+            updatedVersions.put(type, new HashSet<>());
         }
     }
     //private static String GAME_VERSION = SharedConstants.getCurrentVersion().name();
@@ -278,12 +281,21 @@ public class EasyInstallClient {
         HashSet<String> updateNeededProjectIds = new HashSet<>();
         HashMap<String, String> hashMap = new HashMap<>();
         oldHashes.clear();
-
+        HashSet<Version> versions = new HashSet<>();
         HashSet<String> hashes2 = new HashSet<>();
         for (String hash : hashes) {
             if (jsonObject.get(hash) != null) {
                 String h = jsonObject.get(hash).getAsJsonObject().get("files").getAsJsonArray().get(0).getAsJsonObject().get("hashes").getAsJsonObject().get("sha1").getAsString();
                 oldHashes.put(hash, h);
+                JsonObject versionInfo = jsonObject.get(hash).getAsJsonObject();
+                try {
+                    if (!hashes.contains(h)) {
+                        Version version = createVersion(versionInfo, projectType);
+                        versions.add(version);
+                    }
+                } catch (MalformedURLException e) {
+                    e.printStackTrace();
+                }
                 String projectId = jsonObject.get(hash).getAsJsonObject().get("project_id").getAsString();
                 if (hashes.contains(h)) {
                     installedProjectIds.add(projectId);
@@ -312,8 +324,8 @@ public class EasyInstallClient {
             }
         }
 
-
-        numUpdates = updateNeededProjectIds.size();
+        updatedVersions.put(projectType, versions);
+        numUpdates = updateNeededProjectIds.size() - installationStates.get(projectType).getNumUpdatesInstalling();
         installationStates.get(projectType).loadInstallationState(installedProjectIds, updateNeededProjectIds);
 
     }
@@ -523,31 +535,12 @@ public class EasyInstallClient {
 
     }
 
+
     public static ArrayList<Version> getUpdatedVersions(ProjectType projectType) {
-        oldHashes.clear();
-        HashSet<String> hashes = getFileHashes(projectType);
-        String response = getUpdates(hashes, projectType);
-        if (response == null) return new ArrayList<>();
-        JsonObject jsonObject = JsonParser.parseString(response).getAsJsonObject();
-        HashSet<Version> versions = new HashSet<>();
-        for (String hash : hashes) {
-            if (jsonObject.get(hash) != null) {
-                String h = jsonObject.get(hash).getAsJsonObject().get("files").getAsJsonArray().get(0).getAsJsonObject().get("hashes").getAsJsonObject().get("sha1").getAsString();
-                if (!hashes.contains(h)) {
-                    JsonObject versionInfo = jsonObject.get(hash).getAsJsonObject();
-                    try {
-                        Version version = createVersion(versionInfo, projectType);
-                        versions.add(version);
-                        oldHashes.put(hash, version.getHash());
-                    } catch (MalformedURLException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        }
-        numUpdates = versions.size();
-        return new ArrayList<>(versions);
+        return new ArrayList<>(updatedVersions.get(projectType));
     }
+
+
 
 
     private static String getVersionsFromHashes(HashSet<String> hashes, ProjectType projectType) {
