@@ -408,7 +408,7 @@ public class EasyInstallClient {
                      inputStream = in;
                      downloadStreams.add(in);
                      byte[] buffer = new byte[8192];
-                     int transferByteCount = 0;
+                     long transferByteCount = 0;
                      int numBytes;
                      Thread timeElapseThread = new Thread(() -> {
                          try {
