@@ -231,6 +231,7 @@ public class UpdateScreen extends Screen {
         EasyInstallClient.getInstallationState(projectType).setProjectStatus(version.getProjectId(), ProjectStatus.INSTALLING_UPDATE);
         Thread thread = new Thread(() -> {
             EasyInstallClient.removeUpdatedVersion(version, projectType);
+            EasyInstallClient.setProjectIdHashMapping(version.getProjectId(), version.getHash());
             boolean successful = version.download(false);
             if (successful) {
                 EasyInstallClient.deleteOldFiles(projectType, version.getHash());
@@ -247,6 +248,7 @@ public class UpdateScreen extends Screen {
                 });
                 EasyInstallClient.addUpdatedVersion(version, projectType);
                 EasyInstallClient.getInstallationState(projectType).removeProject(version.getProjectId());
+                EasyInstallClient.removeProjectIdHashMapping(version.getProjectId());
             }
             EasyInstallClient.checkStatus(projectType);
         });

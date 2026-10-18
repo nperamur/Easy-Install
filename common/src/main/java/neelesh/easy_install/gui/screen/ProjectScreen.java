@@ -56,6 +56,7 @@ public class ProjectScreen extends Screen implements MarkdownScreenInterface {
                 String versionDownloadedHash = null;
                 for (Version version : updatedVersions) {
                     if (version.getProjectId().equals(projectInfo.getId())) {
+                        EasyInstallClient.setSlugHashMapping(projectInfo.getSlug(), version.getHash());
                         EasyInstallClient.removeUpdatedVersion(version, projectInfo.getProjectType());
                         downloadSuccessful = version.download(false);
                         versionDownloadedHash = version.getHash();
@@ -70,6 +71,7 @@ public class ProjectScreen extends Screen implements MarkdownScreenInterface {
                 installationState.setProjectStatus(projectInfo.getId(), ProjectStatus.INSTALLING_REGULAR);
                 downloadSuccessful = EasyInstallClient.downloadVersion(projectInfo.getSlug(), projectInfo.getProjectType(), ((ProjectBrowser) prevScreen).isFilteredByGameVersion());
             }
+            EasyInstallClient.removeSlugHashMapping(projectInfo.getSlug());
             boolean finalDownloadSuccessful = downloadSuccessful;
             if (!downloadSuccessful && versionUpdated != null) {
                 EasyInstallClient.addUpdatedVersion(versionUpdated, projectInfo.getProjectType());

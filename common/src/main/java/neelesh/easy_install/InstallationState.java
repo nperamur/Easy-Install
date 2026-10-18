@@ -8,9 +8,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public class InstallationState {
 
     private ConcurrentHashMap<String, ProjectStatus> projectState = new ConcurrentHashMap<>();
-
-    private ConcurrentHashMap.KeySetView<String, Boolean> installingHashes = ConcurrentHashMap.newKeySet();
-
+    //download hash -> download progress mapping.
+    private ConcurrentHashMap<String, DownloadProgress> installingHashes = new ConcurrentHashMap<>();
 
     public ProjectStatus getProjectStatus(String id) {
         ProjectStatus projectStatus = projectState.get(id);
@@ -23,7 +22,12 @@ public class InstallationState {
     }
 
     public void addInstallingHash(String hash) {
-        installingHashes.add(hash);
+        installingHashes.put(hash, new DownloadProgress());
+    }
+
+    public DownloadProgress getDownloadProgress(String hash) {
+        if (hash == null) return null;
+        return installingHashes.get(hash);
     }
 
     public void removeInstallingHash(String hash) {
@@ -31,7 +35,7 @@ public class InstallationState {
     }
 
     public boolean isInstallingHash(String hash) {
-        return installingHashes.contains(hash);
+        return installingHashes.containsKey(hash);
     }
 
     public HashSet<String> getInstallingUpdates() {

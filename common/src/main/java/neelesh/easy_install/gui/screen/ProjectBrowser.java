@@ -20,9 +20,12 @@ import com.mojang.blaze3d.platform.NativeImage;
 import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.network.chat.FormattedText;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.Style;
 import net.minecraft.util.CommonColors;
 import net.minecraft.resources.Identifier;
+import net.minecraft.util.FormattedCharSequence;
 
+import java.awt.*;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -43,6 +46,10 @@ public class ProjectBrowser extends Screen {
     private static Thread t;
     private static Thread searchThread;
     private ProjectType projectType;
+
+    private final int rowHeight = 50;
+
+    private int padding = 0;
 
     private final InstallationState installationState;
 
@@ -226,6 +233,7 @@ public class ProjectBrowser extends Screen {
                         for (Version version : updatedVersions) {
                             if (version.getProjectId().equals(projectInfo.getId())) {
                                 EasyInstallClient.removeUpdatedVersion(version, projectType);
+                                EasyInstallClient.setSlugHashMapping(projectInfo.getSlug(), version.getHash());
                                 successful = version.download(false);
                                 versionDownloadedHash = version.getHash();
                                 versionUpdated = version;
@@ -239,6 +247,7 @@ public class ProjectBrowser extends Screen {
                         installationState.setProjectStatus(projectInfo.getId(), ProjectStatus.INSTALLING_REGULAR);
                         successful = EasyInstallClient.downloadVersion(projectInfo.getSlug(), projectType, filteredByGameVersion);
                     }
+                    EasyInstallClient.removeSlugHashMapping(projectInfo.getSlug());
                     if (successful) {
                         installationState.setProjectStatus(projectInfo.getId(), ProjectStatus.INSTALLED);
                     } else {
@@ -290,11 +299,12 @@ public class ProjectBrowser extends Screen {
         updateScreenButton.visible = EasyInstallClient.getNumUpdates(projectType) >= 1;
         context.enableScissor(0, firstRowY - 14, width, height);
         extractMenuBackground(context);
+        int progressPadding = 0;
         for (int i = 0; i < EasyInstallClient.getNumRows(); i++) {
             try {
-                context.blit(RenderPipelines.GUI_TEXTURED, ICON_TEXTURE_ID[i], 0, firstRowY + (int) scrollAmount + i * 50, 0, 0, 40, 40, 40, 40);
-                context.text(font, INFO[i].getTitle(), 55, firstRowY + (int) scrollAmount + i * 50, CommonColors.WHITE, false);
-                context.text(font, "by ", 75 + font.width(INFO[i].getTitle()), firstRowY + (int) scrollAmount + i * 50, CommonColors.WHITE, false);
+                context.blit(RenderPipelines.GUI_TEXTURED, ICON_TEXTURE_ID[i], 0, firstRowY + (int) scrollAmount + i * rowHeight + progressPadding, 0, 0, 40, 40, 40, 40);
+                context.text(font, INFO[i].getTitle(), 55, firstRowY + (int) scrollAmount + i * rowHeight + progressPadding, CommonColors.WHITE, false);
+                context.text(font, "by ", 75 + font.width(INFO[i].getTitle()), firstRowY + (int) scrollAmount + i * rowHeight + progressPadding, CommonColors.WHITE, false);
                 int finalI = i;
                 if (children().contains(authors[i])) {
                     removeWidget(authors[i]);
@@ -302,11 +312,35 @@ public class ProjectBrowser extends Screen {
                 authors[i] = new PressableTextWidgetShadowless(0, 0, font.width(Component.translationArg(Component.nullToEmpty(INFO[i].getAuthor()))), 9, Component.literal(INFO[i].getAuthor()), button -> {
                     minecraft.gui.setScreen(new ProfileScreen(INFO[finalI].getAuthor(), this, projectType));
                 }, font);
-                authors[i].setPosition(75 + font.width(INFO[i].getTitle() + "by "), firstRowY + (int) scrollAmount + i * 50);
+                authors[i].setPosition(75 + font.width(INFO[i].getTitle() + "by "), firstRowY + (int) scrollAmount + i * rowHeight + progressPadding);
                 authors[i].extractRenderState(context, mouseX, mouseY, delta);
                 this.addWidget(authors[i]);
-                context.textWithWordWrap(font, FormattedText.of(INFO[i].getDescription().replace("\n", "")), 55, firstRowY + (int) scrollAmount + i * 50 + 15, width - 65, CommonColors.WHITE, false);
-                installButtons[i].setY(firstRowY + (int) scrollAmount + i * 50 - 3);
+
+                List<String> lines = font.getSplitter()
+                        .splitLines(
+                                FormattedText.of(INFO[i].getDescription().replace("\n", "")),
+                                width - 100,
+                                Style.EMPTY
+                        )
+                        .stream()
+                        .map(FormattedText::getString)
+                        .toList();
+                int maxLines = 3;
+
+                StringBuilder description = new StringBuilder();
+                if (lines.size() > maxLines) {
+                    lines = new ArrayList<>(lines.subList(0, maxLines));
+                    String line = lines.get(maxLines - 1);
+
+                    lines.set(maxLines - 1, line + "...");
+                }
+
+                for (String line : lines) {
+                    description.append(line);
+                }
+                context.textWithWordWrap(font, FormattedText.of(description.toString()), 55, firstRowY + (int) scrollAmount + i * rowHeight + progressPadding + 15, width - 65, CommonColors.WHITE, false);
+
+                installButtons[i].setY(firstRowY + (int) scrollAmount + i * rowHeight + progressPadding - 3);
                 ProjectStatus projectStatus = installationState.getProjectStatus(INFO[i].getId());
                 if (projectStatus == ProjectStatus.INSTALLING_REGULAR || projectStatus == ProjectStatus.INSTALLING_UPDATE) {
                     installButtons[i].setMessage(Component.nullToEmpty("Installing"));
@@ -320,21 +354,33 @@ public class ProjectBrowser extends Screen {
                 installButtons[i].active = projectStatus != ProjectStatus.INSTALLED && projectStatus != (ProjectStatus.INSTALLING_REGULAR)
                                                         && projectStatus != ProjectStatus.INSTALLING_UPDATE;
                 installButtons[i].extractRenderState(context, mouseX, mouseY, delta);
-                projectScreenButtons[i].setY(firstRowY + (int) scrollAmount + i * 50 - 3);
+                projectScreenButtons[i].setY(firstRowY + (int) scrollAmount + i * rowHeight + progressPadding - 3);
                 projectScreenButtons[i].extractRenderState(context, mouseX, mouseY, delta);
+                DownloadProgress downloadProgress = EasyInstallClient.getDownloadProgressFromSlug(INFO[i].getSlug(), INFO[i].getProjectType());
+                if (downloadProgress == null) {
+                    downloadProgress = EasyInstallClient.getDownloadProgressFromProjectId(INFO[i].getId(), INFO[i].getProjectType());
+                }
 
-
+                if (downloadProgress != null && downloadProgress.isShowingProgress()) {
+                    float progress = downloadProgress.getProgress();
+                    int percentProgress = (int) (progress * 100);
+                    String progressText = String.valueOf(percentProgress) + "%";
+                    context.text(font, progressText, width - 20 - font.width(progressText), firstRowY + (int) scrollAmount + (i + 1) * rowHeight + progressPadding - 7 - font.lineHeight / 2, CommonColors.WHITE, true);
+                    drawProgressBar(context, 0, firstRowY + (int) scrollAmount + (i + 1) * rowHeight + progressPadding - 7, width - 20 - font.width(progressText) - 5, 2, progress);
+                    progressPadding += 12;
+                }
             } catch (NullPointerException ignored) {
 
             }
         }
-        int scrollBarHeight = Math.max(35, (int) (Math.pow(height - firstRowY + 13, 2) / (EasyInstallClient.getNumRows() * 50 + 35)));
+        this.padding = progressPadding;
+        int scrollBarHeight = Math.max(35, (int) (Math.pow(height - firstRowY + 13, 2) / (EasyInstallClient.getNumRows() * rowHeight + progressPadding + 35)));
         double scrollBarY = firstRowY - 13;
-        if (-50 * EasyInstallClient.getNumRows() - firstRowY + height - 35 < 0) {
-            scrollBarY = scrollAmount * (height - firstRowY + 13 - scrollBarHeight) / (-50 * EasyInstallClient.getNumRows() - firstRowY + height - 35) + firstRowY - 13;
+        if (-rowHeight * EasyInstallClient.getNumRows() - firstRowY - progressPadding + height - 35 < 0) {
+            scrollBarY = scrollAmount * (height - firstRowY + 13 - scrollBarHeight) / (-rowHeight * EasyInstallClient.getNumRows() - progressPadding - firstRowY + height - 35) + firstRowY - 13;
         }
         if (scrollBarHeight < height - firstRowY + 13) {
-            context.blitSprite(RenderPipelines.GUI_TEXTURED, SCROLLER_BACKGROUND_TEXTURE, width - 6, 0, 6, EasyInstallClient.getNumRows() * 50 + 100);
+            context.blitSprite(RenderPipelines.GUI_TEXTURED, SCROLLER_BACKGROUND_TEXTURE, width - 6, 0, 6, EasyInstallClient.getNumRows() * rowHeight + progressPadding + 100);
             context.blitSprite(RenderPipelines.GUI_TEXTURED, SCROLLER_TEXTURE, width - 6, (int) scrollBarY, 6, scrollBarHeight);
         }
         for (int i = 0; i < 100; i++) {
@@ -347,15 +393,15 @@ public class ProjectBrowser extends Screen {
         backButton.extractRenderState(context, mouseX, mouseY, delta);
         backButton.active = pageNumber != 0;
         if (EasyInstallClient.getTotalPages() <= 5) {
-            backButton.setPosition(width / 2 - 60 + 12 * (3 - EasyInstallClient.getTotalPages()), firstRowY + (int) scrollAmount + EasyInstallClient.getNumRows() * 50);
-            nextButton.setPosition(width / 2 + 40 - 12 * (3 - EasyInstallClient.getTotalPages()), firstRowY + (int) scrollAmount + EasyInstallClient.getNumRows() * 50);
-            firstPage.setPosition(width / 2 - 35 + 12 * (3 - EasyInstallClient.getTotalPages()), firstRowY + (int) scrollAmount + EasyInstallClient.getNumRows() * 50);
-            lastPage.setPosition(width / 2 + 15 - 12 * (3 - EasyInstallClient.getTotalPages()), firstRowY + (int) scrollAmount + EasyInstallClient.getNumRows() * 50);
+            backButton.setPosition(width / 2 - 60 + 12 * (3 - EasyInstallClient.getTotalPages()), firstRowY + (int) scrollAmount + EasyInstallClient.getNumRows() * rowHeight + progressPadding);
+            nextButton.setPosition(width / 2 + 40 - 12 * (3 - EasyInstallClient.getTotalPages()), firstRowY + (int) scrollAmount + EasyInstallClient.getNumRows() * rowHeight + progressPadding);
+            firstPage.setPosition(width / 2 - 35 + 12 * (3 - EasyInstallClient.getTotalPages()), firstRowY + (int) scrollAmount + EasyInstallClient.getNumRows() * rowHeight + progressPadding);
+            lastPage.setPosition(width / 2 + 15 - 12 * (3 - EasyInstallClient.getTotalPages()), firstRowY + (int) scrollAmount + EasyInstallClient.getNumRows() * rowHeight + progressPadding);
         } else {
-            backButton.setPosition(width / 2 - 110, firstRowY + (int) scrollAmount + EasyInstallClient.getNumRows() * 50);
-            nextButton.setPosition(width / 2 + 90, firstRowY + (int) scrollAmount + EasyInstallClient.getNumRows() * 50);
-            firstPage.setPosition(width / 2 - 85, firstRowY + (int) scrollAmount + EasyInstallClient.getNumRows() * 50);
-            lastPage.setPosition(width / 2 + 65, firstRowY + (int) scrollAmount + EasyInstallClient.getNumRows() * 50);
+            backButton.setPosition(width / 2 - 110, firstRowY + (int) scrollAmount + EasyInstallClient.getNumRows() * rowHeight + progressPadding);
+            nextButton.setPosition(width / 2 + 90, firstRowY + (int) scrollAmount + EasyInstallClient.getNumRows() * rowHeight + progressPadding);
+            firstPage.setPosition(width / 2 - 85, firstRowY + (int) scrollAmount + EasyInstallClient.getNumRows() * rowHeight + progressPadding);
+            lastPage.setPosition(width / 2 + 65, firstRowY + (int) scrollAmount + EasyInstallClient.getNumRows() * rowHeight + progressPadding);
         }
         lastPage.visible = EasyInstallClient.getTotalPages() > 1;
         nextButton.extractRenderState(context, mouseX, mouseY, delta);
@@ -376,17 +422,17 @@ public class ProjectBrowser extends Screen {
 
 
                 if (EasyInstallClient.getTotalPages() <= 5) {
-                    pageButtons[i].setPosition(width / 2 - 85 + (int) (12.5 * (5 - EasyInstallClient.getTotalPages())) + 25 * (i + 2), firstRowY + (int) scrollAmount + EasyInstallClient.getNumRows() * 50);
+                    pageButtons[i].setPosition(width / 2 - 85 + (int) (12.5 * (5 - EasyInstallClient.getTotalPages())) + 25 * (i + 2), firstRowY + (int) scrollAmount + EasyInstallClient.getNumRows() * rowHeight + progressPadding);
                 } else if ((pageNumber < EasyInstallClient.getTotalPages() - 3 && pageNumber >= 3)) {
-                    pageButtons[i].setPosition(width / 2 - 85 + 25 * (i + 2), firstRowY + (int) scrollAmount + EasyInstallClient.getNumRows() * 50);
-                    context.text(font, "—", width / 2 - 53, firstRowY + (int) scrollAmount + EasyInstallClient.getNumRows() * 50 + 7, CommonColors.WHITE, true);
-                    context.text(font, "—", width / 2 + 46, firstRowY + (int) scrollAmount + EasyInstallClient.getNumRows() * 50 + 7, CommonColors.WHITE, true);
+                    pageButtons[i].setPosition(width / 2 - 85 + 25 * (i + 2), firstRowY + (int) scrollAmount + EasyInstallClient.getNumRows() * rowHeight + progressPadding);
+                    context.text(font, "—", width / 2 - 53, firstRowY + (int) scrollAmount + EasyInstallClient.getNumRows() * rowHeight + 7 + progressPadding, CommonColors.WHITE, true);
+                    context.text(font, "—", width / 2 + 46, firstRowY + (int) scrollAmount + EasyInstallClient.getNumRows() * rowHeight + 7 + progressPadding, CommonColors.WHITE, true);
                 } else if (pageNumber < 3) {
-                    pageButtons[i].setPosition(width / 2 - 110 + 25 * (i + 2), firstRowY + (int) scrollAmount + EasyInstallClient.getNumRows() * 50);
-                    context.text(font, "—", width / 2 + 29 + 5 * i, firstRowY + (int) scrollAmount + EasyInstallClient.getNumRows() * 50 + 7, CommonColors.WHITE, true);
+                    pageButtons[i].setPosition(width / 2 - 110 + 25 * (i + 2), firstRowY + (int) scrollAmount + EasyInstallClient.getNumRows() * rowHeight + progressPadding);
+                    context.text(font, "—", width / 2 + 29 + 5 * i, firstRowY + (int) scrollAmount + EasyInstallClient.getNumRows() * rowHeight + progressPadding + 7, CommonColors.WHITE, true);
                 } else {
-                    pageButtons[i].setPosition(width / 2 - 60 + 25 * (i + 2), firstRowY + (int) scrollAmount + EasyInstallClient.getNumRows() * 50);
-                    context.text(font, "—", width / 2 - 46 + 5 * i, firstRowY + (int) scrollAmount + EasyInstallClient.getNumRows() * 50 + 7, CommonColors.WHITE, true);
+                    pageButtons[i].setPosition(width / 2 - 60 + 25 * (i + 2), firstRowY + (int) scrollAmount + EasyInstallClient.getNumRows() * rowHeight + progressPadding);
+                    context.text(font, "—", width / 2 - 46 + 5 * i, firstRowY + (int) scrollAmount + EasyInstallClient.getNumRows() * rowHeight + progressPadding + 7, CommonColors.WHITE, true);
                 }
                 pageButtons[i].visible = Integer.parseInt(pageButtons[i].getMessage().getString()) < EasyInstallClient.getTotalPages() && Integer.parseInt(pageButtons[i].getMessage().getString()) > 1;
                 pageButtons[i].extractRenderState(context, mouseX, mouseY, delta);
@@ -421,10 +467,10 @@ public class ProjectBrowser extends Screen {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
-        if (scrollAmount + verticalAmount * 13 <= 0 && scrollAmount + verticalAmount * 13 >= -50 * EasyInstallClient.getNumRows() - (double) firstRowY + height - 35) {
+        if (scrollAmount + verticalAmount * 13 <= 0 && scrollAmount + verticalAmount * 13 >= -rowHeight * EasyInstallClient.getNumRows() - padding - (double) firstRowY + height - 35) {
             scrollAmount += verticalAmount * 13;
-        } else if (scrollAmount + verticalAmount * 13 < -50 * EasyInstallClient.getNumRows() - (double) firstRowY + height - 35 && scrollAmount != 0) {
-            scrollAmount = -50 * EasyInstallClient.getNumRows() - firstRowY + height - 35;
+        } else if (scrollAmount + verticalAmount * 13 < -rowHeight * EasyInstallClient.getNumRows() - (double) firstRowY - padding + height - 35 && scrollAmount != 0) {
+            scrollAmount = -rowHeight * EasyInstallClient.getNumRows() - firstRowY - padding + height - 35;
         } else if (scrollAmount + verticalAmount * 13 > 0) {
             scrollAmount = 0;
         }
@@ -483,10 +529,10 @@ public class ProjectBrowser extends Screen {
         }
         searchThread = new Thread(() -> {
             EasyInstallClient.search(query, projectType, pageNumber * EasyInstallClient.getRowsOnPage(), categories, filteredByGameVersion, environment);
-            if (scrollAmount >= 0 || -50 * EasyInstallClient.getNumRows() - firstRowY + height - 35 >= 0) {
+            if (scrollAmount >= 0 || -rowHeight * EasyInstallClient.getNumRows() - firstRowY - padding + height - 35 >= 0) {
                 scrollAmount = 0;
-            } else if (scrollAmount < -50 * EasyInstallClient.getNumRows() - firstRowY + height - 35) {
-                scrollAmount = -50 * EasyInstallClient.getNumRows() - firstRowY + height - 35;
+            } else if (scrollAmount < -rowHeight * EasyInstallClient.getNumRows() - firstRowY - padding + height - 35) {
+                scrollAmount = -rowHeight * EasyInstallClient.getNumRows() - firstRowY - padding + height - 35;
             }
             if (!searchThread.isInterrupted()) {
                 if (t != null) {
@@ -505,10 +551,10 @@ public class ProjectBrowser extends Screen {
 
     @Override
     public boolean mouseClicked(MouseButtonEvent click, boolean doubled) {
-        int scrollBarHeight = Math.max(35, (int) (Math.pow(height - firstRowY + 13, 2) / (EasyInstallClient.getNumRows() * 50 + 35)));
+        int scrollBarHeight = Math.max(35, (int) (Math.pow(height - firstRowY + 13, 2) / (EasyInstallClient.getNumRows() * rowHeight + padding + 35)));
         double scrollBarY;
-        if (-50 * EasyInstallClient.getNumRows() - firstRowY + height - 35 < 0) {
-            scrollBarY = scrollAmount * (height - firstRowY + 13 - scrollBarHeight) / (-50 * EasyInstallClient.getNumRows() - firstRowY + height - 35) + firstRowY - 13;
+        if (-rowHeight * EasyInstallClient.getNumRows() - firstRowY - padding + height - 35 < 0) {
+            scrollBarY = scrollAmount * (height - firstRowY + 13 - scrollBarHeight) / (-rowHeight * EasyInstallClient.getNumRows() - padding - firstRowY + height - 35) + firstRowY - 13;
         } else {
             scrollBarY = firstRowY - 13;
         }
@@ -522,15 +568,15 @@ public class ProjectBrowser extends Screen {
     @Override
     public boolean mouseDragged(MouseButtonEvent click, double offsetX, double offsetY) {
         if (this.isScrolling && click.y() > firstRowY - 13) {
-            double scrollBarHeight = Math.max(35.0, (Math.pow(height - firstRowY + 13, 2) / (EasyInstallClient.getNumRows() * 50 + 35)));
-            double scrollDeltaY = (-50 * EasyInstallClient.getNumRows() - firstRowY + height - 35) * offsetY / (height - firstRowY + 13 - scrollBarHeight);
+            double scrollBarHeight = Math.max(35.0, (Math.pow(height - firstRowY + 13, 2) / (EasyInstallClient.getNumRows() * rowHeight + padding + 35)));
+            double scrollDeltaY = (-rowHeight * EasyInstallClient.getNumRows() - firstRowY - padding + height - 35) * offsetY / (height - firstRowY + 13 - scrollBarHeight);
 
-            if (scrollAmount + scrollDeltaY <= 0 && scrollAmount + scrollDeltaY >= -50 * EasyInstallClient.getNumRows() - firstRowY + height - 35) {
+            if (scrollAmount + scrollDeltaY <= 0 && scrollAmount + scrollDeltaY >= -rowHeight * EasyInstallClient.getNumRows() - firstRowY - padding + height - 35) {
                 scrollAmount += scrollDeltaY;
             } else if (scrollAmount + scrollDeltaY > 0) {
                 scrollAmount = 0;
-            } else if (scrollAmount + scrollDeltaY < -50 * EasyInstallClient.getNumRows() - firstRowY + height - 35 && scrollAmount != 0) {
-                scrollAmount = -50 * EasyInstallClient.getNumRows() - firstRowY + height - 35;
+            } else if (scrollAmount + scrollDeltaY < -rowHeight * EasyInstallClient.getNumRows() - firstRowY - padding + height - 35 && scrollAmount != 0) {
+                scrollAmount = -rowHeight * EasyInstallClient.getNumRows() - padding - firstRowY + height - 35;
             }
         }
         return super.mouseDragged(click, offsetX, offsetY);
@@ -572,6 +618,11 @@ public class ProjectBrowser extends Screen {
 
     public void setFilteredByGameVersion(boolean isFiltered) {
         this.filteredByGameVersion = isFiltered;
+    }
+
+    private void drawProgressBar(final GuiGraphicsExtractor graphics, final int left, final int top, final int width, final int height, final float progress) {
+        graphics.fill(left, top, left + width, top + height, new Color(0, 0, 0, 100).getRGB());
+        graphics.fill(left, top, left + Math.round(progress * (float) width), top + height, new Color(0, 255, 0, 192).getRGB());
     }
 
 

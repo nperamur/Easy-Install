@@ -3,6 +3,7 @@ package neelesh.easy_install.gui.tab;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import neelesh.easy_install.DownloadProgress;
 import neelesh.easy_install.EasyInstallClient;
 import neelesh.easy_install.ProjectStatus;
 import neelesh.easy_install.Version;
@@ -22,6 +23,7 @@ import net.minecraft.util.CommonColors;
 import net.minecraft.ChatFormatting;
 import org.jetbrains.annotations.Nullable;
 
+import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -35,6 +37,7 @@ public class VersionsTab extends GridLayoutTab implements Renderable {
     private Button[] versionButtons;
     private boolean initialized;
     private ProjectScreen projectScreen;
+    private int prevProgressPadding = 0;
     private PlainTextButton[] versionDetailButtons;
 
     private Version projectInstallVersion;
@@ -149,8 +152,9 @@ public class VersionsTab extends GridLayoutTab implements Renderable {
         if (versions == null) {
             return;
         }
-        projectScreen.renderMenuBackground(context, 131, projectScreen.getScrollAmount() + ((TabButton) projectScreen.getTabNavigationWidget().children().get(0)).getHeight()-10, projectScreen.width, versions.length * 40 + 10);
+        projectScreen.renderMenuBackground(context, 131, projectScreen.getScrollAmount() + ((TabButton) projectScreen.getTabNavigationWidget().children().get(0)).getHeight()-10, projectScreen.width, versions.length * 40 + 10 + prevProgressPadding);
 
+        int progressPadding = 0;
         for (int i = 0; i < versions.length; i++) {
             if (versions[i] == null || versionDetailButtons[i] == null) {
                 break;
@@ -164,7 +168,7 @@ public class VersionsTab extends GridLayoutTab implements Renderable {
 
             }
 
-            versionDetailButtons[i].setPosition(140, i * 40 + projectScreen.getScrollAmount() + 20);
+            versionDetailButtons[i].setPosition(140, i * 40 + projectScreen.getScrollAmount() + 20 + progressPadding);
             versionDetailButtons[i].extractRenderState(context, mouseX, mouseY, delta);
             //context.drawText(projectScreen.getTextRenderer(), Text.of(versions[i].getName()), 140, i * 40 + projectScreen.getScrollAmount() + 20, Colors.WHITE, true);
             ChatFormatting formatting;
@@ -174,9 +178,9 @@ public class VersionsTab extends GridLayoutTab implements Renderable {
                 case "alpha" -> ChatFormatting.RED;
                 default -> null;
             };
-            context.text(projectScreen.getFont(), Component.literal("•" + versions[i].getVersionType()).withStyle(formatting), 140, i * 40 + projectScreen.getScrollAmount() + 30, CommonColors.WHITE, true);
-            context.text(projectScreen.getFont(), Component.nullToEmpty(versions[i].getVersionNumber()), 140 + projectScreen.getFont().width("•" + versions[i].getVersionType()) + 8, i * 40 + projectScreen.getScrollAmount() + 30, CommonColors.WHITE, true);
-            context.text(projectScreen.getFont(), Component.nullToEmpty(String.format("%,d", versions[i].getNumDownloads()) + " downloads"), projectScreen.width - projectScreen.getFont().width(String.format("%,d", versions[i].getNumDownloads()) + " downloads") - 8, i * 40 + projectScreen.getScrollAmount() + 36, CommonColors.WHITE, true);
+            context.text(projectScreen.getFont(), Component.literal("•" + versions[i].getVersionType()).withStyle(formatting), 140, i * 40 + projectScreen.getScrollAmount() + 30 + progressPadding, CommonColors.WHITE, true);
+            context.text(projectScreen.getFont(), Component.nullToEmpty(versions[i].getVersionNumber()), 140 + projectScreen.getFont().width("•" + versions[i].getVersionType()) + 8, i * 40 + projectScreen.getScrollAmount() + 30 + progressPadding, CommonColors.WHITE, true);
+            context.text(projectScreen.getFont(), Component.nullToEmpty(String.format("%,d", versions[i].getNumDownloads()) + " downloads"), projectScreen.width - projectScreen.getFont().width(String.format("%,d", versions[i].getNumDownloads()) + " downloads") - 8, i * 40 + projectScreen.getScrollAmount() + 36 + progressPadding, CommonColors.WHITE, true);
 
 
             File file = new File(EasyInstallClient.getSavePath(projectScreen.getProjectInfo().getProjectType(), versions[i].getFilename()).toString());
@@ -210,14 +214,30 @@ public class VersionsTab extends GridLayoutTab implements Renderable {
                 versionButtons[i].setMessage(Component.nullToEmpty("Install"));
 
             }
-            versionButtons[i].setPosition(projectScreen.width - versionButtons[i].getWidth() - 10, i * 40 + 20 + projectScreen.getScrollAmount());
+            versionButtons[i].setPosition(projectScreen.width - versionButtons[i].getWidth() - 10, i * 40 + 20 + projectScreen.getScrollAmount() + progressPadding);
             versionButtons[i].extractRenderState(context, mouseX, mouseY, delta);
+
+            DownloadProgress downloadProgress = EasyInstallClient.getDownloadProgressFromHash(versions[i].getHash(), projectScreen.getProjectInfo().getProjectType());
+
+
+            if (downloadProgress != null && downloadProgress.isShowingProgress()) {
+                float progress = downloadProgress.getProgress();
+                int percentProgress = (int) (progress * 100);
+                String progressText = String.valueOf(percentProgress) + "%";
+                context.text(projectScreen.getFont(), progressText, projectScreen.width - 10 - projectScreen.getFont().width(progressText), (i + 1) * 40 + 12 + projectScreen.getScrollAmount() + progressPadding - projectScreen.getFont().lineHeight / 2, CommonColors.WHITE, true);
+
+
+                drawProgressBar(context, 140, (i + 1) * 40 + 12 + projectScreen.getScrollAmount() + progressPadding, projectScreen.width - 156 - projectScreen.getFont().width(progressText), 2, progress);
+                progressPadding += 7;
+            }
         }
+
+        prevProgressPadding = progressPadding;
         initialized = true;
         context.blit(
-                RenderPipelines.GUI_TEXTURED, VERTICAL_SEPARATOR_TEXTURE, 131, projectScreen.getScrollAmount() + ((TabButton) projectScreen.getTabNavigationWidget().children().getFirst()).getHeight() - 12, 0.0F, 0.0F, 2, versions.length * 40 + 10, 2, 32
+                RenderPipelines.GUI_TEXTURED, VERTICAL_SEPARATOR_TEXTURE, 131, projectScreen.getScrollAmount() + ((TabButton) projectScreen.getTabNavigationWidget().children().getFirst()).getHeight() - 12, 0.0F, 0.0F, 2, versions.length * 40 + 10 + progressPadding, 2, 32
         );
-        projectScreen.setMaxY(versions.length * 40 + 10);
+        projectScreen.setMaxY(versions.length * 40 + 10 + progressPadding);
     }
 
     public void setInitialized(boolean initialized) {
@@ -242,5 +262,10 @@ public class VersionsTab extends GridLayoutTab implements Renderable {
             }
             versionDetailsButton.active = active;
         }
+    }
+
+    private void drawProgressBar(final GuiGraphicsExtractor graphics, final int left, final int top, final int width, final int height, final float progress) {
+        graphics.fill(left, top, left + width, top + height, new Color(0, 0, 0, 100).getRGB());
+        graphics.fill(left, top, left + Math.round(progress * (float) width), top + height, new Color(0, 255, 0, 192).getRGB());
     }
 }

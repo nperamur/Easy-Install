@@ -78,7 +78,7 @@ public class Version {
         try (ExecutorService executorService = Executors.newFixedThreadPool(numberOfThreads)) {
             executorService.submit(() -> {
                 EasyInstallClient.getInstallationState(projectType).addInstallingHash(hash);
-                successful.set(EasyInstallClient.downloadVersion(this.downloadUrl, this.filename, this.projectType));
+                successful.set(EasyInstallClient.downloadVersion(this.downloadUrl, this.filename, this.projectType, EasyInstallClient.getInstallationState(projectType).getDownloadProgress(hash)));
             });
             if (installDependencies) {
                 for (int i = 0; i < this.dependencies.size(); i++) {

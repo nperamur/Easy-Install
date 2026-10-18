@@ -39,7 +39,7 @@ public class TitleScreenMixin extends Screen {
 		if (buttonWidget != null) {
 			buttonWidget.setHeight(15);
 			buttonWidget.setWidth(80);
-			buttonWidget.setPosition(font.width(EasyInstallClient.getModLoaderDisplayText()) + 10, height-15);
+			buttonWidget.setPosition(font.width(EasyInstallClient.getModLoaderDisplayText()) + 5, height-15);
 			buttonWidget.extractRenderState(context, mouseX, mouseY, delta);
 			this.addWidget(buttonWidget);
 		}

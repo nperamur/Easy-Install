@@ -6,6 +6,7 @@ import com.google.gson.*;
 import neelesh.easy_install.gui.tab.VersionsTab;
 import net.minecraft.SharedConstants;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.*;
 import java.net.*;
@@ -26,6 +27,11 @@ public class EasyInstallClient {
     private static int totalPages;
     private static String sortMethod = "Relevance";
     private static int numRows = 20;
+
+    //slug -> download's hash mapping.
+    private static ConcurrentHashMap<String, String> slugHashMapping = new ConcurrentHashMap<>();
+
+    private static ConcurrentHashMap<String, String> projectIdHashMapping = new ConcurrentHashMap<>();
 
     private static AtomicInteger latestScanId = new AtomicInteger(0);
     private static ConcurrentHashMap<String, String> oldHashes = new ConcurrentHashMap<>();
@@ -69,6 +75,33 @@ public class EasyInstallClient {
         EasyInstallClient.sortMethod = sortMethod;
     }
 
+    public static void setSlugHashMapping(String slug, String fileHash) {
+        slugHashMapping.put(slug, fileHash);
+    }
+
+    public static void removeSlugHashMapping(String slug) {
+        slugHashMapping.remove(slug);
+    }
+
+    public static void setProjectIdHashMapping(String projectId, String fileHash) {
+        projectIdHashMapping.put(projectId, fileHash);
+    }
+
+    public static void removeProjectIdHashMapping(String slug) {
+        projectIdHashMapping.remove(slug);
+    }
+
+    public static DownloadProgress getDownloadProgressFromSlug(String slug, ProjectType projectType) {
+        return installationStates.get(projectType).getDownloadProgress(slugHashMapping.get(slug));
+    }
+
+    public static DownloadProgress getDownloadProgressFromProjectId(String projectId, ProjectType projectType) {
+        return installationStates.get(projectType).getDownloadProgress(projectIdHashMapping.get(projectId));
+    }
+
+    public static DownloadProgress getDownloadProgressFromHash(String hash, ProjectType projectType) {
+        return installationStates.get(projectType).getDownloadProgress(hash);
+    }
     public static void initializeDatapacks() {
         installationStates.get(ProjectType.DATA_PACK).clear();
     }
@@ -154,12 +187,13 @@ public class EasyInstallClient {
         AtomicBoolean successful = new AtomicBoolean(true);
         String fileHash = jsonObject.get("hashes").getAsJsonObject().get("sha1").getAsString();
         installationStates.get(projectType).addInstallingHash(fileHash);
+        slugHashMapping.put(slug, fileHash);
         int numberOfThreads = 5;
         try(ExecutorService executorService = Executors.newFixedThreadPool(numberOfThreads)) {
             try {
                 URL versionURL = URI.create(jsonObject.get("url").getAsString()).toURL();
                 executorService.submit(() -> {
-                    successful.set(downloadVersion(versionURL, filename, projectType));
+                    successful.set(downloadVersion(versionURL, filename, projectType, installationStates.get(projectType).getDownloadProgress(fileHash)));
                 });
             } catch (MalformedURLException e) {
                 throw new RuntimeException(e);
@@ -191,6 +225,7 @@ public class EasyInstallClient {
                 e.printStackTrace();
             }
             installationStates.get(projectType).removeInstallingHash(fileHash);
+            slugHashMapping.remove(slug);
             return successful.get();
         }
     }
@@ -345,7 +380,7 @@ public class EasyInstallClient {
         return getGameDir() + "/easy_install/temp/";
     }
 
-    public static boolean downloadVersion(URL url, String fileName, ProjectType projectType) {
+    public static boolean downloadVersion(URL url, String fileName, ProjectType projectType, @Nullable DownloadProgress downloadProgress) {
         String savePath = getSavePath(projectType, fileName).toString();
         Path tempPath = Paths.get(getTempPath());
         boolean successful = true;
@@ -372,7 +407,29 @@ public class EasyInstallClient {
                      FileOutputStream out = new FileOutputStream(tempFilePath.toFile())) {
                      inputStream = in;
                      downloadStreams.add(in);
-                     long transferByteCount = in.transferTo(out);
+                     byte[] buffer = new byte[8192];
+                     int transferByteCount = 0;
+                     int numBytes;
+                     Thread timeElapseThread = new Thread(() -> {
+                         try {
+                             Thread.sleep(75);
+                             if (downloadProgress != null && downloadProgress.getProgress() < 0.15f) {
+                                 downloadProgress.setShowingProgress(true);
+                             }
+                         } catch (InterruptedException e) {
+                             e.printStackTrace();
+                         }
+                     });
+                     timeElapseThread.start();
+                     while ((numBytes = in.read(buffer)) != -1) {
+                         out.write(buffer, 0, numBytes);
+                         transferByteCount += numBytes;
+                         float progress = (float) transferByteCount / connection.getContentLengthLong();
+                         if (downloadProgress != null) {
+                             downloadProgress.setProgress(progress);
+                         }
+                     }
+                     //long transferByteCount = in.transferTo(out);
                      out.close();
                      if (connection.getContentLengthLong() == transferByteCount || connection.getContentLengthLong() == -1) {
                          java.nio.file.Files.move(tempFilePath, Path.of(savePath), StandardCopyOption.ATOMIC_MOVE);
