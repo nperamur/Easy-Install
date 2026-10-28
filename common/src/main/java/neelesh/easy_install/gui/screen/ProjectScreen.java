@@ -84,8 +84,8 @@ public class ProjectScreen extends Screen implements MarkdownScreenInterface {
                     minecraft.gui.toastManager().addToast(
                             new SystemToast(
                                     SystemToast.SystemToastId.WORLD_ACCESS_FAILURE,
-                                    Component.literal("Download Failed").withStyle(ChatFormatting.RED, ChatFormatting.BOLD),
-                                    Component.literal("Could not download project: " + projectInfo.getTitle()).withStyle(ChatFormatting.WHITE)
+                                    Component.literal("Download Failed: " + projectInfo.getTitle()).withStyle(ChatFormatting.RED, ChatFormatting.BOLD),
+                                    Component.literal("Please check your internet connection and try again.").withStyle(ChatFormatting.WHITE)
                             )
                     );
                 }

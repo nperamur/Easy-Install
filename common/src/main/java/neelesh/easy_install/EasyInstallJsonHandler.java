@@ -1,11 +1,10 @@
 package neelesh.easy_install;
 
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonParser;
-import net.fabricmc.loader.api.FabricLoader;
+import com.google.gson.*;
+import neelesh.easy_install.gui.screen.ConfigButtonPlacement;
+import net.minecraft.client.Minecraft;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -15,45 +14,92 @@ import java.nio.file.Path;
 
 public class EasyInstallJsonHandler {
 
-    private static Path getPath() {
+    private static Path getDeletedFilesPath() {
         return EasyInstallClient.getGameDirAsFile().toPath().resolve("easy_install/deleted_files.json");
+    }
+
+    private static Path getConfigDir() {
+        return EasyInstallClient.getConfigDir().resolve("easy_install.json");
     }
     public static void addDeletedFile(String file) {
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
         try {
             JsonArray jsonArray = getDeletedFiles();
             jsonArray.add(file);
-            Files.write(getPath(), gson.toJson(jsonArray).getBytes());
+            Files.write(getDeletedFilesPath(), gson.toJson(jsonArray).getBytes());
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
+    public static void setButtonPlacementConfig(String buttonPlacement) {
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+        try {
+            JsonObject jsonObject = getConfig();
+            jsonObject.addProperty("config_button_placement", buttonPlacement);
+
+            Files.write(getConfigDir(), gson.toJson(jsonObject).getBytes());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    public static ConfigButtonPlacement getButtonPlacementConfig() {
+        JsonObject json = getConfig();
+        ConfigButtonPlacement defaultConfig = ConfigButtonPlacement.getDefaultConfigButtonPlacement();
+        if (json == null) {
+            return defaultConfig;
+        }
+        JsonElement configButtonPlacement = json.get("config_button_placement");
+        if (configButtonPlacement == null) {
+            return defaultConfig;
+        }
+        return ConfigButtonPlacement.fromType(configButtonPlacement.getAsString());
+    }
+
+
+    public static JsonObject getConfig() {
+        JsonElement jsonResult = parseJson(getConfigDir());
+        if (jsonResult == null) {
+            return new JsonObject();
+        }
+        return jsonResult.getAsJsonObject();
+    }
     public static JsonArray getDeletedFiles() {
-        if (Files.notExists(getPath().getParent())) {
+        JsonElement jsonResult = parseJson(getDeletedFilesPath());
+        if (jsonResult == null) {
+            return new JsonArray();
+        }
+
+        return jsonResult.getAsJsonArray();
+    }
+
+    private static JsonElement parseJson(Path path) {
+        if (Files.notExists(path.getParent())) {
             try {
-                Files.createDirectories(getPath().getParent());
+                Files.createDirectories(path.getParent());
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
-        File file = getPath().toFile();
+        File file = path.toFile();
         if (!file.exists()) {
-            return new JsonArray();
+            return null;
         }
-        JsonArray jsonArray = null;
-        try (BufferedReader bufferedReader = Files.newBufferedReader(getPath())) {
-            jsonArray = new JsonParser().parse(bufferedReader).getAsJsonArray();
+        JsonElement jsonElement = null;
+        try (BufferedReader bufferedReader = Files.newBufferedReader(path)) {
+            jsonElement = new JsonParser().parse(bufferedReader);
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return jsonArray;
+        return jsonElement;
     }
 
     public static void clearDeletedFiles() {
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
         try {
-            Files.write(getPath(), gson.toJson(new JsonArray()).getBytes());
+            Files.write(getDeletedFilesPath(), gson.toJson(new JsonArray()).getBytes());
         } catch (IOException e) {
             e.printStackTrace();
         }

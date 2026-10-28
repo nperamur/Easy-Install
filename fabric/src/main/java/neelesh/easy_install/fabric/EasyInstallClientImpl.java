@@ -7,6 +7,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.resources.Identifier;
 
 import java.io.File;
+import java.nio.file.Path;
 
 public class EasyInstallClientImpl implements Platform {
     public String getLoader() {
@@ -27,5 +28,10 @@ public class EasyInstallClientImpl implements Platform {
         } else {
             return "Minecraft " + EasyInstallClient.getGameVersion() + " (Modded)";
         }
+    }
+
+    @Override
+    public Path getConfigDir() {
+        return FabricLoader.getInstance().getConfigDir();
     }
 }

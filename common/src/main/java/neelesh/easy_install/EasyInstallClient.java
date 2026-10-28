@@ -55,7 +55,7 @@ public class EasyInstallClient {
 
     private static boolean isShuttingDown = false;
 
-    private static ArrayList<InputStream> downloadStreams = new ArrayList<InputStream>();
+    private static ArrayList<HttpURLConnection> downloadStreams = new ArrayList<HttpURLConnection>();
 
     public static String getGameVersion() {
         return SharedConstants.getCurrentVersion().name();
@@ -69,6 +69,10 @@ public class EasyInstallClient {
 
     public static String getSortMethod() {
         return sortMethod;
+    }
+
+    public static Path getConfigDir() {
+        return PLATFORM.getConfigDir();
     }
 
     public static void setSortMethod(String sortMethod) {
@@ -406,7 +410,7 @@ public class EasyInstallClient {
                 try (InputStream in = new BufferedInputStream(connection.getInputStream());
                      FileOutputStream out = new FileOutputStream(tempFilePath.toFile())) {
                      inputStream = in;
-                     downloadStreams.add(in);
+                     downloadStreams.add(connection);
                      byte[] buffer = new byte[8192];
                      long transferByteCount = 0;
                      int numBytes;
@@ -464,14 +468,10 @@ public class EasyInstallClient {
     }
 
     public static void stopAllDownloads() {
-        ArrayList<InputStream> inputStreams = new ArrayList<>(downloadStreams);
+        ArrayList<HttpURLConnection> connections = new ArrayList<>(downloadStreams);
         isShuttingDown = true;
-        for (InputStream in : inputStreams) {
-            try {
-                in.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+        for (HttpURLConnection connection : connections) {
+            connection.disconnect();
 
         }
     }

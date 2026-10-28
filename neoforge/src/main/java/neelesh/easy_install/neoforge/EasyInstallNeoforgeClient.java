@@ -6,10 +6,13 @@ import neelesh.easy_install.EasyInstall;
 import neelesh.easy_install.EasyInstallClient;
 import neelesh.easy_install.EasyInstallJsonHandler;
 import neelesh.easy_install.ProjectType;
+import neelesh.easy_install.gui.screen.ConfigScreen;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.common.Mod;
+import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 import net.neoforged.neoforge.event.GameShuttingDownEvent;
 
 import java.io.File;
@@ -19,7 +22,7 @@ import static neelesh.easy_install.EasyInstallClient.*;
 @Mod(EasyInstall.MOD_ID)
 @EventBusSubscriber(modid = EasyInstall.MOD_ID, value = Dist.CLIENT)
 public class EasyInstallNeoforgeClient {
-	public EasyInstallNeoforgeClient() {
+	public EasyInstallNeoforgeClient(ModContainer modContainer) {
 		JsonArray deletedFiles = EasyInstallJsonHandler.getDeletedFiles();
 		for (int i = 0; i < deletedFiles.size(); i++) {
 			File file = new File(deletedFiles.get(i).getAsString());
@@ -33,6 +36,9 @@ public class EasyInstallNeoforgeClient {
 			}
 		}
 		initializeDatapacks();
+		modContainer.registerExtensionPoint(IConfigScreenFactory.class, (mc, parent) -> new ConfigScreen(parent));
+
+
 	}
 
 	@SubscribeEvent

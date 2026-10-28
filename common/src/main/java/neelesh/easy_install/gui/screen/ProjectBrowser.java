@@ -85,7 +85,7 @@ public class ProjectBrowser extends Screen {
     private Environment environment = null;
 
     public ProjectBrowser(Screen parent, ProjectType projectType) {
-        super(Component.literal(""));
+        super(Component.literal("Project Browser"));
         this.installationState = EasyInstallClient.getInstallationState(projectType);
         if (projectType == ProjectType.DATA_PACK) {
             EasyInstallClient.initializeDatapacks();
@@ -107,51 +107,6 @@ public class ProjectBrowser extends Screen {
     @Override
     protected void init() {
         super.init();
-        showPerPage = CycleButton.<Integer>builder(integer -> Component.nullToEmpty(String.valueOf(integer)), EasyInstallClient::getRowsOnPage).withValues(5, 10, 15, 20, 50, 100).create(55, 22, 105, 18, Component.nullToEmpty("Show per page"), (button, value) -> {
-            pageNumber = 0;
-            EasyInstallClient.setRowsOnPage(value);
-            search(searchBox.getValue());
-            scrollAmount = 0;
-        });
-//        showPerPage.setValue(EasyInstallClient.getRowsOnPage());
-        sortButton = CycleButton.<String>builder(Component::nullToEmpty, EasyInstallClient::getSortMethod).withValues("Relevance", "Downloads", "Follows", "Newest", "Updated").create(165, 22, 90, 18, Component.nullToEmpty("Sort"), (button, value) -> {
-            pageNumber = 0;
-            EasyInstallClient.setSortMethod(value);
-            search(searchBox.getValue());
-            scrollAmount = 0;
-        });
-//        sortButton.setValue(EasyInstallClient.getSortMethod());
-        categoriesButton = Button.builder(Component.nullToEmpty("Select Categories"), button -> {
-            Minecraft.getInstance().gui.setScreen(new CategoryScreen(this, projectType));
-        }).build();
-        categoriesButton.setSize(100, 18);
-        categoriesButton.setPosition(260, 22);
-        this.addWidget(categoriesButton);
-        settingsButton = Button.builder(Component.nullToEmpty(""), button -> {
-            Minecraft.getInstance().gui.setScreen(new SettingsScreen(this, this.projectType));
-        }).build();
-        settingsButton.setSize(20, 20);
-        settingsButton.setPosition(width - 30, 0);
-        settingsButton.setTooltip(Tooltip.create(Component.nullToEmpty("Settings")));
-        this.addWidget(settingsButton);
-        updateScreenButton = Button.builder(Component.nullToEmpty(""), button -> {
-            minecraft.gui.setScreen(new UpdateScreen(projectType, this));
-        }).build();
-        updateScreenButton.setSize(20, 20);
-        updateScreenButton.setPosition(width - 55, 0);
-        updateScreenButton.setTooltip(Tooltip.create(Component.nullToEmpty("See All Updates")));
-        for (int i = 0; i < EasyInstallClient.getRowsOnPage(); i++) {
-            int finalI = i;
-            minecraft.execute(() -> {
-                DynamicTexture texture = new DynamicTexture(() -> "", new NativeImage(1, 1, false));
-                texture.getPixels().setPixel(0, 0, 0x00000000);
-                texture.upload();
-                minecraft.getTextureManager().register(ICON_TEXTURE_ID[finalI], texture);
-            });
-        }
-        this.addWidget(updateScreenButton);
-        this.addWidget(showPerPage);
-        this.addWidget(sortButton);
         String text;
         if (searchBox != null) {
             text = searchBox.getValue();
@@ -194,31 +149,62 @@ public class ProjectBrowser extends Screen {
         }).build();
         lastPage.setSize(20, 20);
         nextButton.setSize(20, 20);
-        for (int i = 1; i < 4; i++) {
-            Button pageButton = Button.builder(Component.nullToEmpty(String.valueOf(i)), button -> {
-                pageNumber = Integer.parseInt(button.getMessage().getString()) - 1;
-                if (pageNumber > 1) {
-                    int index = List.of(pageButtons).indexOf(button);
-                    Button temp = pageButtons[index];
-                    pageButtons[index] = pageButtons[1];
-                    pageButtons[1] = temp;
-                }
-                search(searchBox.getValue());
-            }).build();
-            pageButton.setSize(20, 20);
-            this.addWidget(pageButton);
-            pageButtons[i - 1] = pageButton;
-        }
+
         filtersButton.setSize(20, 20);
         filtersButton.setPosition(width / 3 + 205, 0);
         //        versionButton.setPosition(width/6 + 75, 20);
         this.addWidget(searchBox);
         this.addWidget(doneButton);
-        this.addWidget(backButton);
-        this.addWidget(nextButton);
-        this.addWidget(firstPage);
-        this.addWidget(lastPage);
         this.addWidget(filtersButton);
+
+        showPerPage = CycleButton.<Integer>builder(integer -> Component.nullToEmpty(String.valueOf(integer)), EasyInstallClient::getRowsOnPage).withValues(5, 10, 15, 20, 50, 100).create(55, 22, 105, 18, Component.nullToEmpty("Show per page"), (button, value) -> {
+            pageNumber = 0;
+            EasyInstallClient.setRowsOnPage(value);
+            search(searchBox.getValue());
+            scrollAmount = 0;
+        });
+//        showPerPage.setValue(EasyInstallClient.getRowsOnPage());
+        sortButton = CycleButton.<String>builder(Component::nullToEmpty, EasyInstallClient::getSortMethod).withValues("Relevance", "Downloads", "Follows", "Newest", "Updated").create(165, 22, 90, 18, Component.nullToEmpty("Sort"), (button, value) -> {
+            pageNumber = 0;
+            EasyInstallClient.setSortMethod(value);
+            search(searchBox.getValue());
+            scrollAmount = 0;
+        });
+//        sortButton.setValue(EasyInstallClient.getSortMethod());
+        categoriesButton = Button.builder(Component.nullToEmpty("Select Categories"), button -> {
+            Minecraft.getInstance().gui.setScreen(new CategoryScreen(this, projectType));
+        }).build();
+        categoriesButton.setSize(100, 18);
+        categoriesButton.setPosition(260, 22);
+        settingsButton = Button.builder(Component.nullToEmpty(""), button -> {
+            Minecraft.getInstance().gui.setScreen(new SettingsScreen(this, this.projectType));
+        }).build();
+        settingsButton.setSize(20, 20);
+        settingsButton.setPosition(width - 30, 0);
+        settingsButton.setTooltip(Tooltip.create(Component.nullToEmpty("Settings")));
+        this.addWidget(settingsButton);
+        updateScreenButton = Button.builder(Component.nullToEmpty(""), button -> {
+            minecraft.gui.setScreen(new UpdateScreen(projectType, this));
+        }).build();
+        updateScreenButton.setSize(20, 20);
+        updateScreenButton.setPosition(width - 55, 0);
+        updateScreenButton.setTooltip(Tooltip.create(Component.nullToEmpty("See All Updates")));
+        for (int i = 0; i < EasyInstallClient.getRowsOnPage(); i++) {
+            int finalI = i;
+            minecraft.execute(() -> {
+                DynamicTexture texture = new DynamicTexture(() -> "", new NativeImage(1, 1, false));
+                texture.getPixels().setPixel(0, 0, 0x00000000);
+                texture.upload();
+                minecraft.getTextureManager().register(ICON_TEXTURE_ID[finalI], texture);
+            });
+        }
+        this.addWidget(updateScreenButton);
+        this.addWidget(showPerPage);
+        this.addWidget(sortButton);
+        this.addWidget(categoriesButton);
+
+
+
         for (int i = 0; i < 100; i++) {
             int finalI = i;
             Button buttonWidget = Button.builder(Component.nullToEmpty("Install"), button -> {
@@ -259,8 +245,9 @@ public class ProjectBrowser extends Screen {
                             minecraft.gui.toastManager().addToast(
                                     new SystemToast(
                                             SystemToast.SystemToastId.WORLD_ACCESS_FAILURE,
-                                            Component.literal("Download Failed").withStyle(ChatFormatting.RED, ChatFormatting.BOLD),
-                                            Component.literal("Could not download project: " + projectInfo.getTitle()).withStyle(ChatFormatting.WHITE)
+                                            Component.literal("Download Failed: " + projectInfo.getTitle()).withStyle(ChatFormatting.RED, ChatFormatting.BOLD),
+                                            Component.literal("Please check your internet connection and try again.")
+                                                    .withStyle(ChatFormatting.WHITE)
                                     )
                             )
                         );
@@ -282,10 +269,29 @@ public class ProjectBrowser extends Screen {
             projectScreenButtons[i] = projectButtonWidget;
             projectScreenButtons[i].setX(width - 150);
 
-            this.addWidget(buttonWidget);
             this.addWidget(projectButtonWidget);
+            this.addWidget(buttonWidget);
 
         }
+        this.addWidget(backButton);
+        this.addWidget(firstPage);
+        for (int i = 1; i < 4; i++) {
+            Button pageButton = Button.builder(Component.nullToEmpty(String.valueOf(i)), button -> {
+                pageNumber = Integer.parseInt(button.getMessage().getString()) - 1;
+                if (pageNumber > 1) {
+                    int index = List.of(pageButtons).indexOf(button);
+                    Button temp = pageButtons[index];
+                    pageButtons[index] = pageButtons[1];
+                    pageButtons[1] = temp;
+                }
+                search(searchBox.getValue());
+            }).build();
+            pageButton.setSize(20, 20);
+            this.addWidget(pageButton);
+            pageButtons[i - 1] = pageButton;
+        }
+        this.addWidget(lastPage);
+        this.addWidget(nextButton);
     }
 
     @Override

@@ -119,8 +119,8 @@ public class VersionsTab extends GridLayoutTab implements Renderable {
                                         Minecraft.getInstance().gui.toastManager().addToast(
                                                 new SystemToast(
                                                         SystemToast.SystemToastId.WORLD_ACCESS_FAILURE,
-                                                        Component.literal("Download Failed").withStyle(ChatFormatting.RED, ChatFormatting.BOLD),
-                                                        Component.literal("Could not download project: " + projectScreen.getProjectInfo().getTitle()).withStyle(ChatFormatting.WHITE)
+                                                        Component.literal("Download Failed: " + projectScreen.getProjectInfo().getTitle()).withStyle(ChatFormatting.RED, ChatFormatting.BOLD),
+                                                        Component.literal("Please check your internet connection and try again.").withStyle(ChatFormatting.WHITE)
                                                 )
                                         );
                                     });
