@@ -4,7 +4,9 @@ import neelesh.easy_install.*;
 import neelesh.easy_install.gui.widget.PressableTextWidgetShadowless;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.ComponentPath;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.components.toasts.SystemToast;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.input.MouseButtonEvent;
@@ -23,12 +25,12 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
 import net.minecraft.util.CommonColors;
 import net.minecraft.resources.Identifier;
-import net.minecraft.util.FormattedCharSequence;
 
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -58,6 +60,7 @@ public class ProjectBrowser extends Screen {
         minecraft.gui.setScreen(prevScreen);
     }).build();
     private Button backButton;
+
     private Button nextButton;
     private Button firstPage;
     private Button lastPage;
@@ -390,8 +393,8 @@ public class ProjectBrowser extends Screen {
             context.blitSprite(RenderPipelines.GUI_TEXTURED, SCROLLER_TEXTURE, width - 6, (int) scrollBarY, 6, scrollBarHeight);
         }
         for (int i = 0; i < 100; i++) {
-            projectScreenButtons[i].visible = i < showPerPage.getValue() && projectScreenButtons[i].getY() > firstRowY - 26;
-            installButtons[i].visible = i < showPerPage.getValue() && installButtons[i].getY() > firstRowY - 26;
+            projectScreenButtons[i].visible = i < showPerPage.getValue();
+            installButtons[i].visible = i < showPerPage.getValue();
             if (authors[i] != null){
                 authors[i].visible = i < showPerPage.getValue() && authors[i].getY() > firstRowY - 26;
             }
@@ -567,25 +570,80 @@ public class ProjectBrowser extends Screen {
         if (click.x() >= width - 6 && click.y() >= scrollBarY && click.y() <= scrollBarY + scrollBarHeight) {
             this.isScrolling = true;
         }
+        Optional<GuiEventListener> guiEventListener = getChildAt(click.x(), click.y());
+        if (guiEventListener.isPresent()) {
+            if (guiEventListener.get() instanceof Button clickedButton) {
+                for (Button button : installButtons) {
+                    if (clickedButton.equals(button) && click.y() < firstRowY - 14) {
+                        return false;
+                    }
+
+                }
+
+                for (Button button : projectScreenButtons) {
+                    if (clickedButton.equals(button) && click.y() < firstRowY - 14) {
+                        return false;
+                    }
+                }
+
+            }
+
+        }
         return super.mouseClicked(click, doubled);
     }
 
+    @Override
+    protected void changeFocus(ComponentPath componentPath) {
+        super.changeFocus(componentPath);
+        GuiEventListener element = getFocused();
+        if (element instanceof Button button) {
+//            if (button.getY() > height) {
+//                scrollByOffset(button.getY() - height);
+//            }
+
+            for (Button installButton : installButtons) {
+                if (button.equals(installButton)) scrollToNextButton(installButton);
+            }
+
+            for (Button projectScreenButton : projectScreenButtons) {
+                if (button.equals(projectScreenButton)) scrollToNextButton(projectScreenButton);
+            }
+
+            for (Button pageButton : pageButtons) {
+                if (button.equals(pageButton)) scrollToNextButton(pageButton);
+            }
+        }
+
+    }
+
+
+    public void scrollToNextButton(Button button) {
+        if (button.getY() > height) {
+            scrollByOffset(button.getY() - height + 80);
+        } else if (button.getY() < firstRowY - 13) {
+            scrollByOffset(-firstRowY + button.getY() - 10);
+        }
+    }
 
     @Override
     public boolean mouseDragged(MouseButtonEvent click, double offsetX, double offsetY) {
+        double scrollBarHeight = Math.max(35.0, (Math.pow(height - firstRowY + 13, 2) / (EasyInstallClient.getNumRows() * rowHeight + padding + 35)));
+        double scrollDeltaY = (-rowHeight * EasyInstallClient.getNumRows() - firstRowY - padding + height - 35) * offsetY / (height - firstRowY + 13 - scrollBarHeight);
         if (this.isScrolling && click.y() > firstRowY - 13) {
-            double scrollBarHeight = Math.max(35.0, (Math.pow(height - firstRowY + 13, 2) / (EasyInstallClient.getNumRows() * rowHeight + padding + 35)));
-            double scrollDeltaY = (-rowHeight * EasyInstallClient.getNumRows() - firstRowY - padding + height - 35) * offsetY / (height - firstRowY + 13 - scrollBarHeight);
-
-            if (scrollAmount + scrollDeltaY <= 0 && scrollAmount + scrollDeltaY >= -rowHeight * EasyInstallClient.getNumRows() - firstRowY - padding + height - 35) {
-                scrollAmount += scrollDeltaY;
-            } else if (scrollAmount + scrollDeltaY > 0) {
-                scrollAmount = 0;
-            } else if (scrollAmount + scrollDeltaY < -rowHeight * EasyInstallClient.getNumRows() - firstRowY - padding + height - 35 && scrollAmount != 0) {
-                scrollAmount = -rowHeight * EasyInstallClient.getNumRows() - padding - firstRowY + height - 35;
-            }
+            this.scrollByOffset(-scrollDeltaY);
         }
         return super.mouseDragged(click, offsetX, offsetY);
+    }
+
+    public void scrollByOffset(double scrollDeltaY) {
+        scrollDeltaY = -scrollDeltaY;
+        if (scrollAmount + scrollDeltaY <= 0 && scrollAmount + scrollDeltaY >= -rowHeight * EasyInstallClient.getNumRows() - firstRowY - padding + height - 35) {
+            scrollAmount += scrollDeltaY;
+        } else if (scrollAmount + scrollDeltaY > 0) {
+            scrollAmount = 0;
+        } else if (scrollAmount + scrollDeltaY < -rowHeight * EasyInstallClient.getNumRows() - firstRowY - padding + height - 35 && scrollAmount != 0) {
+            scrollAmount = -rowHeight * EasyInstallClient.getNumRows() - padding - firstRowY + height - 35;
+        }
     }
 
     @Override

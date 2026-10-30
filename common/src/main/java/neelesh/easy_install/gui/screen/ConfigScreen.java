@@ -60,6 +60,7 @@ public class ConfigScreen extends Screen {
         graphics.disableScissor();
         graphics.blit(RenderPipelines.GUI_TEXTURED, Screen.HEADER_SEPARATOR, this.layout.getX(), this.layout.getHeaderHeight() - 2, 0.0F, 0.0F, this.width, 2, 32, 2);
         graphics.blit(RenderPipelines.GUI_TEXTURED, Screen.FOOTER_SEPARATOR, this.layout.getX(), this.height - this.layout.getFooterHeight(), 0.0F, 0.0F, this.width, 2, 32, 2);
+        titleScreenButtonPlacement.extractRenderState(graphics, mouseX, mouseY, a);
     }
 
 
