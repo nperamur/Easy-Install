@@ -91,8 +91,8 @@ public class EasyInstallClient {
         projectIdHashMapping.put(projectId, fileHash);
     }
 
-    public static void removeProjectIdHashMapping(String slug) {
-        projectIdHashMapping.remove(slug);
+    public static void removeProjectIdHashMapping(String id) {
+        projectIdHashMapping.remove(id);
     }
 
     public static DownloadProgress getDownloadProgressFromSlug(String slug, ProjectType projectType) {
@@ -417,7 +417,7 @@ public class EasyInstallClient {
                      Thread timeElapseThread = new Thread(() -> {
                          try {
                              Thread.sleep(75);
-                             if (downloadProgress != null && downloadProgress.getProgress() < 0.15f) {
+                             if (downloadProgress != null && downloadProgress.getProgress() < 0.10f) {
                                  downloadProgress.setShowingProgress(true);
                              }
                          } catch (InterruptedException e) {

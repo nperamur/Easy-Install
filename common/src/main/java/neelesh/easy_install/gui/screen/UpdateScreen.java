@@ -73,10 +73,6 @@ public class UpdateScreen extends Screen {
                             Minecraft.getInstance().execute(() -> {
                                 titles.set(finalI, jsonArray.get(finalX).getAsJsonObject().get("title").getAsString());
 
-                                versionDetailButtons.add(new PlainTextButton(140, (int) (finalI * 40 + scrollAmount), font.width(versionTemp.get(finalI).getName()), 9, Component.nullToEmpty(versionTemp.get(finalI).getName()), button -> {
-                                    Minecraft.getInstance().gui.setScreen(new VersionDetailsScreen(versionTemp.get(finalI), this, projectType));
-                                }, font));
-                                this.addWidget(versionDetailButtons.get(finalI));
                                 Thread thread2 = new Thread(() -> {
                                     try {
                                         ImageLoader.loadPlaceholder(ICON_TEXTURE_ID.get(finalI));
@@ -109,6 +105,11 @@ public class UpdateScreen extends Screen {
                     installButtons.get(i).setSize(60, 18);
                     installButtons.get(i).setPosition(width - 70, i * 50 + 30);
                     this.addWidget(installButtons.get(i));
+
+                    versionDetailButtons.add(new PlainTextButton(140, (int) (finalI * 40 + scrollAmount), font.width(versionTemp.get(finalI).getName()), 9, Component.nullToEmpty(versionTemp.get(finalI).getName()), button -> {
+                        Minecraft.getInstance().gui.setScreen(new VersionDetailsScreen(versionTemp.get(finalI), this, projectType));
+                    }, font));
+                    this.addWidget(versionDetailButtons.get(finalI));
 
                 }
                 this.addWidget(doneButton);

@@ -15,7 +15,7 @@ public enum ConfigButtonPlacement {
     }
 
     public static ConfigButtonPlacement getDefaultConfigButtonPlacement() {
-        return ConfigButtonPlacement.IN_BUTTON_ROW;
+        return ConfigButtonPlacement.FOOTER;
     }
 
     public static ConfigButtonPlacement fromType(String type) {

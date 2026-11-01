@@ -97,7 +97,9 @@ public class VersionsTab extends GridLayoutTab implements Renderable {
                                             .setProjectStatus(projectScreen.getProjectId(), ProjectStatus.INSTALLING_UPDATE);
                                 }
                             });
+                            EasyInstallClient.setProjectIdHashMapping(versions[finalI].getProjectId(), versions[finalI].getHash());
                             boolean successful = versions[finalI].download(true);
+                            EasyInstallClient.removeProjectIdHashMapping(versions[finalI].getProjectId());
                             Minecraft.getInstance().schedule(() -> {
                                 if (case1 || case2) {
                                     if (successful) {
@@ -167,9 +169,8 @@ public class VersionsTab extends GridLayoutTab implements Renderable {
                 }
 
             }
-
-            versionDetailButtons[i].setPosition(140, i * 40 + projectScreen.getScrollAmount() + 20 + progressPadding);
-            versionDetailButtons[i].extractRenderState(context, mouseX, mouseY, delta);
+            int versionStartY = i * 40 + projectScreen.getScrollAmount() + 20 + progressPadding;
+            versionDetailButtons[i].setPosition(140, versionStartY);
             //context.drawText(projectScreen.getTextRenderer(), Text.of(versions[i].getName()), 140, i * 40 + projectScreen.getScrollAmount() + 20, Colors.WHITE, true);
             ChatFormatting formatting;
             formatting = switch(versions[i].getVersionType()) {
@@ -178,10 +179,15 @@ public class VersionsTab extends GridLayoutTab implements Renderable {
                 case "alpha" -> ChatFormatting.RED;
                 default -> null;
             };
-            context.text(projectScreen.getFont(), Component.literal("•" + versions[i].getVersionType()).withStyle(formatting), 140, i * 40 + projectScreen.getScrollAmount() + 30 + progressPadding, CommonColors.WHITE, true);
-            context.text(projectScreen.getFont(), Component.nullToEmpty(versions[i].getVersionNumber()), 140 + projectScreen.getFont().width("•" + versions[i].getVersionType()) + 8, i * 40 + projectScreen.getScrollAmount() + 30 + progressPadding, CommonColors.WHITE, true);
-            context.text(projectScreen.getFont(), Component.nullToEmpty(String.format("%,d", versions[i].getNumDownloads()) + " downloads"), projectScreen.width - projectScreen.getFont().width(String.format("%,d", versions[i].getNumDownloads()) + " downloads") - 8, i * 40 + projectScreen.getScrollAmount() + 36 + progressPadding, CommonColors.WHITE, true);
+            versionButtons[i].setPosition(projectScreen.width - versionButtons[i].getWidth() - 10, versionStartY);
+            if (versionStartY < projectScreen.getHeight() && versionStartY > -50) {
+                versionDetailButtons[i].extractRenderState(context, mouseX, mouseY, delta);
+                context.text(projectScreen.getFont(), Component.literal("•" + versions[i].getVersionType()).withStyle(formatting), 140, versionStartY + 10, CommonColors.WHITE, true);
+                context.text(projectScreen.getFont(), Component.nullToEmpty(versions[i].getVersionNumber()), 140 + projectScreen.getFont().width("•" + versions[i].getVersionType()) + 8, versionStartY + 10 + progressPadding, CommonColors.WHITE, true);
+                context.text(projectScreen.getFont(), Component.nullToEmpty(String.format("%,d", versions[i].getNumDownloads()) + " downloads"), projectScreen.width - projectScreen.getFont().width(String.format("%,d", versions[i].getNumDownloads()) + " downloads") - 8, versionStartY + 16, CommonColors.WHITE, true);
+                versionButtons[i].extractRenderState(context, mouseX, mouseY, delta);
 
+            }
 
             File file = new File(EasyInstallClient.getSavePath(projectScreen.getProjectInfo().getProjectType(), versions[i].getFilename()).toString());
 
@@ -214,8 +220,6 @@ public class VersionsTab extends GridLayoutTab implements Renderable {
                 versionButtons[i].setMessage(Component.nullToEmpty("Install"));
 
             }
-            versionButtons[i].setPosition(projectScreen.width - versionButtons[i].getWidth() - 10, i * 40 + 20 + projectScreen.getScrollAmount() + progressPadding);
-            versionButtons[i].extractRenderState(context, mouseX, mouseY, delta);
 
             DownloadProgress downloadProgress = EasyInstallClient.getDownloadProgressFromHash(versions[i].getHash(), projectScreen.getProjectInfo().getProjectType());
 

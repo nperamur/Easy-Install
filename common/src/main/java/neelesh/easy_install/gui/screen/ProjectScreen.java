@@ -180,6 +180,7 @@ public class ProjectScreen extends Screen implements MarkdownScreenInterface {
     @Override
     protected void init() {
         super.init();
+        scrollAmount = 15;
         installButton.setSize(52, 14);
         siteButton.setSize(55, 14);
         this.addSelectableChild(doneButton);
@@ -334,5 +335,11 @@ public class ProjectScreen extends Screen implements MarkdownScreenInterface {
         EasyInstallClient.clearProjectInfo(projectInfo.getProjectType());
         super.onClose();
     }
+
+    public int getHeight() {
+        return this.height;
+    }
+
+
 
 }
