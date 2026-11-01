@@ -26,6 +26,7 @@ public class EasyInstallClient {
     private static Path dataPackTempDir;
     private static int totalPages;
     private static String sortMethod = "Relevance";
+    private static volatile HashSet<String> installedHashes = new HashSet<>();
     private static int numRows = 20;
 
     //slug -> download's hash mapping.
@@ -83,6 +84,9 @@ public class EasyInstallClient {
         slugHashMapping.put(slug, fileHash);
     }
 
+    public static HashSet<String> getFileHashes() {
+        return new HashSet<>(installedHashes);
+    }
     public static void removeSlugHashMapping(String slug) {
         slugHashMapping.remove(slug);
     }
@@ -228,8 +232,12 @@ public class EasyInstallClient {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
+
             installationStates.get(projectType).removeInstallingHash(fileHash);
             slugHashMapping.remove(slug);
+            if (successful.get()) {
+                addHash(fileHash);
+            }
             return successful.get();
         }
     }
@@ -312,17 +320,21 @@ public class EasyInstallClient {
         return null;
     }
 
+    public static void addHash(String hash) {
+        installedHashes.add(hash);
+    }
+
 
     public static void checkStatus(ProjectType projectType) {
         int scanId = latestScanId.incrementAndGet();
+        installedHashes = getFileHashes(projectType);
         if (versionsTab != null) {
             versionsTab.setInitialized(false);
         }
-        HashSet<String> hashes = getFileHashes(projectType);
-        if (Thread.currentThread().isInterrupted() || hashes == null) {
+        if (Thread.currentThread().isInterrupted() || installedHashes == null) {
             return;
         }
-        String response = getUpdates(hashes, projectType);
+        String response = getUpdates(installedHashes, projectType);
         if (Thread.currentThread().isInterrupted() || response == null) {
             return;
         }
@@ -332,13 +344,13 @@ public class EasyInstallClient {
         HashMap<String, String> oldHashesTemp = new HashMap<>();
         HashSet<Version> versions = new HashSet<>();
         HashSet<String> hashes2 = new HashSet<>();
-        for (String hash : hashes) {
+        for (String hash : installedHashes) {
             if (jsonObject.get(hash) != null) {
                 String h = jsonObject.get(hash).getAsJsonObject().get("files").getAsJsonArray().get(0).getAsJsonObject().get("hashes").getAsJsonObject().get("sha1").getAsString();
                 oldHashesTemp.put(hash, h);
                 JsonObject versionInfo = jsonObject.get(hash).getAsJsonObject();
                 try {
-                    if (!hashes.contains(h)) {
+                    if (!installedHashes.contains(h)) {
                         Version version = createVersion(versionInfo, projectType);
                         versions.add(version);
                     }
@@ -346,7 +358,7 @@ public class EasyInstallClient {
                     e.printStackTrace();
                 }
                 String projectId = jsonObject.get(hash).getAsJsonObject().get("project_id").getAsString();
-                if (hashes.contains(h)) {
+                if (installedHashes.contains(h)) {
                     installedProjectIds.add(projectId);
                 } else {
                     updateNeededProjectIds.add(projectId);
@@ -416,8 +428,8 @@ public class EasyInstallClient {
                      int numBytes;
                      Thread timeElapseThread = new Thread(() -> {
                          try {
-                             Thread.sleep(75);
-                             if (downloadProgress != null && downloadProgress.getProgress() < 0.10f) {
+                             Thread.sleep(100);
+                             if (downloadProgress != null && downloadProgress.getProgress() < 0.15f) {
                                  downloadProgress.setShowingProgress(true);
                              }
                          } catch (InterruptedException e) {

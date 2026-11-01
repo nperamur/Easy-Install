@@ -12,7 +12,10 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.tabs.MenuTabBar;
+import net.minecraft.client.gui.components.tabs.TabNavigationBar;
 import net.minecraft.client.gui.components.toasts.SystemToast;
+import net.minecraft.client.gui.screens.worldselection.CreateWorldScreen;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.components.events.GuiEventListener;
@@ -32,6 +35,7 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Optional;
 
 import static net.minecraft.client.gui.screens.worldselection.CreateWorldScreen.TAB_HEADER_BACKGROUND;
 
@@ -44,6 +48,8 @@ public class ProjectScreen extends Screen implements MarkdownScreenInterface {
     private VersionsTab versionsTab;
     private boolean initialized;
     private Screen prevScreen;
+
+    private static final int TAB_NAV_Y = 10;
     private boolean filteredByGameVersion;
     private InstallationState installationState;
     private final Button installButton = Button.builder(Component.nullToEmpty("Install"), button -> {
@@ -141,10 +147,11 @@ public class ProjectScreen extends Screen implements MarkdownScreenInterface {
         for (int i = 0; i < tabNavigationWidget.children().size(); i++) {
             if (tabNavigationWidget instanceof TabNavigationMixinInterface) {
                 ((TabNavigationMixinInterface) tabNavigationWidget).setX(131);
-                ((TabNavigationMixinInterface) tabNavigationWidget).setY(scrollAmount - 10);
+                ((TabNavigationMixinInterface) tabNavigationWidget).setY(TAB_NAV_Y);
             }
             ((TabButton) tabNavigationWidget.children().get(i)).extractRenderState(context, mouseX, mouseY, delta);
         }
+        context.blit(RenderPipelines.GUI_TEXTURED, CreateWorldScreen.HEADER_SEPARATOR, 131, TAB_NAV_Y + tabNavigationWidget.getHeight() - 2, 0, 0, width - 131, 2, width - 131, 2);
         float titleSize = 1.4f;
         context.pose().scale(titleSize, titleSize);
         context.textWithWordWrap(font, FormattedText.of(projectInfo.getTitle()), (int) (10 /titleSize), 40, (int) (110/titleSize), CommonColors.WHITE, false);
@@ -180,7 +187,11 @@ public class ProjectScreen extends Screen implements MarkdownScreenInterface {
     @Override
     protected void init() {
         super.init();
-        scrollAmount = 15;
+        int tabIndex = 0;
+        if (tabNavigationWidget != null && tabManager != null) {
+            tabIndex = tabNavigationWidget.getTabs()
+                    .indexOf(tabManager.getCurrentTab());
+        }
         installButton.setSize(52, 14);
         siteButton.setSize(55, 14);
         this.addSelectableChild(doneButton);
@@ -224,7 +235,9 @@ public class ProjectScreen extends Screen implements MarkdownScreenInterface {
         GalleryTab galleryTab = new GalleryTab(Component.nullToEmpty("Gallery"), this);
         this.versionsTab = new VersionsTab(Component.nullToEmpty("Versions"), this);
         EasyInstallClient.registerVersionsTab(versionsTab);
-        tabManager = new TabManager(this::addSelectableChild, this::removeWidget);
+        tabManager = new TabManager(this::addSelectableChild, this::removeWidget, tab -> {
+            scrollAmount = 20;
+        }, tab -> {});
         if (!galleryImages.isEmpty()) {
             tabNavigationWidget = MenuTabBar.builder(this.tabManager, width - 131)
                     .addTabs(new Tab[]{descriptionTab, galleryTab, versionsTab}).build(); //width - 131
@@ -237,7 +250,11 @@ public class ProjectScreen extends Screen implements MarkdownScreenInterface {
         if (tabNavigationWidget instanceof TabNavigationMixinInterface) {
             ((TabNavigationMixinInterface) tabNavigationWidget).setButtonWidth((this.width - 130)/(tabNavigationWidget.children().size()));
         }
+        int scrollAmount = this.scrollAmount;
         tabNavigationWidget.selectTab(0, false);
+        if (tabIndex == 0) {
+            this.scrollAmount = scrollAmount;
+        }
         this.addSelectableChild(tabNavigationWidget);
     }
 
@@ -261,6 +278,19 @@ public class ProjectScreen extends Screen implements MarkdownScreenInterface {
     }
 
     @Override
+    public boolean mouseClicked(MouseButtonEvent click, boolean doubled) {
+        if (tabNavigationWidget == null) super.mouseClicked(click, doubled);
+        Optional<GuiEventListener> guiEventListener = tabNavigationWidget.getChildAt(click.x(), click.y());
+        if (guiEventListener.isPresent() && guiEventListener.get() instanceof TabButton) {
+            return super.mouseClicked(click, doubled);
+        } else if (click.y() < TAB_NAV_Y + tabNavigationWidget.getHeight()) {
+            return false;
+        }
+        return super.mouseClicked(click, doubled);
+    }
+
+
+    @Override
     public void extractBackground(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         super.extractBackground(context, mouseX, mouseY, delta);
         super.extractMenuBackground(context);
@@ -275,13 +305,11 @@ public class ProjectScreen extends Screen implements MarkdownScreenInterface {
         return this.scrollAmount;
     }
 
-    @Override
-    protected void extractMenuBackground(GuiGraphicsExtractor graphics, int x, int y, int width, int height) {
-        super.extractMenuBackground(graphics, x, y, width, height);
-    }
 
     public void renderMenuBackground(GuiGraphicsExtractor graphics, int x, int y, int width, int height) {
-        extractMenuBackground(graphics, x, y, width, height);
+        for (int i = 0; i < 2; i++) {
+            extractMenuBackground(graphics, x, y, width, height);
+        }
     }
 
 
@@ -338,6 +366,10 @@ public class ProjectScreen extends Screen implements MarkdownScreenInterface {
 
     public int getHeight() {
         return this.height;
+    }
+
+    public int getTabNavY() {
+        return TAB_NAV_Y;
     }
 
 

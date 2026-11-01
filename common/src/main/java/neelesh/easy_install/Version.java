@@ -106,6 +106,9 @@ public class Version {
                 e.printStackTrace();
             }
             EasyInstallClient.getInstallationState(projectType).removeInstallingHash(hash);
+            if (successful.get()) {
+                EasyInstallClient.addHash(hash);
+            }
         }
         return successful.get();
     }

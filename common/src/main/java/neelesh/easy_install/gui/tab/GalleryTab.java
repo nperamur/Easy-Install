@@ -42,6 +42,8 @@ public class GalleryTab extends GridLayoutTab implements Renderable {
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
+        context.enableScissor(0, projectScreen.getTabNavY() + projectScreen.getTabNavigationWidget().getHeight(), projectScreen.width, projectScreen.height);
+
         projectScreen.renderMenuBackground(context, 131, projectScreen.getScrollAmount() + ((TabButton) projectScreen.getTabNavigationWidget().children().getFirst()).getHeight()-10, projectScreen.width, projectScreen.getMaxY());
         int y = 30;
         int prevHeight = 0;
@@ -78,5 +80,6 @@ public class GalleryTab extends GridLayoutTab implements Renderable {
                 RenderPipelines.GUI_TEXTURED, VERTICAL_SEPARATOR_TEXTURE, 131, projectScreen.getScrollAmount() + ((TabButton) projectScreen.getTabNavigationWidget().children().getFirst()).getHeight() - 12, 0.0F, 0.0F, 2, y, 2, 32
         );
         projectScreen.setMaxY(y);
+        context.disableScissor();
     }
 }

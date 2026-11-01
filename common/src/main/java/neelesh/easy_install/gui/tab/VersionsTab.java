@@ -28,6 +28,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.concurrent.CompletableFuture;
 
 import static neelesh.easy_install.gui.screen.ProjectScreen.VERTICAL_SEPARATOR_TEXTURE;
@@ -151,6 +152,7 @@ public class VersionsTab extends GridLayoutTab implements Renderable {
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
+        context.enableScissor(0, projectScreen.getTabNavY() + projectScreen.getTabNavigationWidget().getHeight(), projectScreen.width, projectScreen.height);
         if (versions == null) {
             return;
         }
@@ -162,13 +164,6 @@ public class VersionsTab extends GridLayoutTab implements Renderable {
                 break;
             }
 
-            if (versionButtons.length != 0) {
-                if (projectScreen.getInstallationState().isInstallingHash(versions[i].getHash())) {
-                    versionButtons[i].active = false;
-                    versionButtons[i].setMessage(Component.nullToEmpty("Installing"));
-                }
-
-            }
             int versionStartY = i * 40 + projectScreen.getScrollAmount() + 20 + progressPadding;
             versionDetailButtons[i].setPosition(140, versionStartY);
             //context.drawText(projectScreen.getTextRenderer(), Text.of(versions[i].getName()), 140, i * 40 + projectScreen.getScrollAmount() + 20, Colors.WHITE, true);
@@ -179,8 +174,22 @@ public class VersionsTab extends GridLayoutTab implements Renderable {
                 case "alpha" -> ChatFormatting.RED;
                 default -> null;
             };
+            HashSet<String> hashes = EasyInstallClient.getFileHashes();
+            if (hashes.contains(versions[i].getHash())) {
+                versionButtons[i].active = false;
+                versionButtons[i].setMessage(Component.nullToEmpty("Installed"));
+            } else {
+                versionButtons[i].setMessage(Component.nullToEmpty("Install"));
+                versionButtons[i].active = true;
+            }
+            versionDetailButtons[i].active = true;
+            if (projectScreen.getInstallationState().isInstallingHash(versions[i].getHash())) {
+                versionButtons[i].active = false;
+                versionButtons[i].setMessage(Component.nullToEmpty("Installing"));
+            }
+
             versionButtons[i].setPosition(projectScreen.width - versionButtons[i].getWidth() - 10, versionStartY);
-            if (versionStartY < projectScreen.getHeight() && versionStartY > -50) {
+            if (versionStartY < projectScreen.getHeight() && versionStartY > 0) {
                 versionDetailButtons[i].extractRenderState(context, mouseX, mouseY, delta);
                 context.text(projectScreen.getFont(), Component.literal("•" + versions[i].getVersionType()).withStyle(formatting), 140, versionStartY + 10, CommonColors.WHITE, true);
                 context.text(projectScreen.getFont(), Component.nullToEmpty(versions[i].getVersionNumber()), 140 + projectScreen.getFont().width("•" + versions[i].getVersionType()) + 8, versionStartY + 10 + progressPadding, CommonColors.WHITE, true);
@@ -188,39 +197,6 @@ public class VersionsTab extends GridLayoutTab implements Renderable {
                 versionButtons[i].extractRenderState(context, mouseX, mouseY, delta);
 
             }
-
-            File file = new File(EasyInstallClient.getSavePath(projectScreen.getProjectInfo().getProjectType(), versions[i].getFilename()).toString());
-
-            if (file.exists() && projectScreen.getTabManager().getCurrentTab() == this && !initialized) {
-                int finalI = i;
-                CompletableFuture.supplyAsync(() -> {
-                    try {
-                        return EasyInstallClient.createFileHash(file.toPath());
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                        return null;
-                    }
-                }).thenAcceptAsync(hash -> {
-                    if (hash != null) {
-                        Minecraft.getInstance().schedule(() -> {
-                            if (versions[finalI].getHash().equals(hash)) {
-                                versionButtons[finalI].active = false;
-                                versionButtons[finalI].setMessage(Component.nullToEmpty("Installed"));
-                            } else {
-                                versionButtons[finalI].active = true;
-                                versionButtons[finalI].setMessage(Component.nullToEmpty("Install"));
-                            }
-                        });
-                    }
-                });
-
-            } else if (!initialized) {
-                versionButtons[i].active = true;
-                versionDetailButtons[i].active = true;
-                versionButtons[i].setMessage(Component.nullToEmpty("Install"));
-
-            }
-
             DownloadProgress downloadProgress = EasyInstallClient.getDownloadProgressFromHash(versions[i].getHash(), projectScreen.getProjectInfo().getProjectType());
 
 
@@ -242,6 +218,7 @@ public class VersionsTab extends GridLayoutTab implements Renderable {
                 RenderPipelines.GUI_TEXTURED, VERTICAL_SEPARATOR_TEXTURE, 131, projectScreen.getScrollAmount() + ((TabButton) projectScreen.getTabNavigationWidget().children().getFirst()).getHeight() - 12, 0.0F, 0.0F, 2, versions.length * 40 + 10 + progressPadding, 2, 32
         );
         projectScreen.setMaxY(versions.length * 40 + 10 + progressPadding);
+        context.disableScissor();
     }
 
     public void setInitialized(boolean initialized) {
